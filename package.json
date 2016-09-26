@@ -1,0 +1,40 @@
+{
+  "name": "reconfix",
+  "version": "1.0.0",
+  "description": "(Re)Configuration toolkit",
+  "main": "lib/index.js",
+  "homepage": "https://github.com/resin-io/reconfix",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/resin-io/reconfix.git"
+  },
+  "scripts": {
+    "test": "npm run lint && npm run unit",
+    "unit": "ava tests/**/*.spec.js",
+    "lint": "eslint lib tests"
+  },
+  "keywords": [
+    "configuration",
+    "reconfiguration",
+    "image",
+    "device",
+    "linux",
+    "fix",
+    "resin",
+    "conf",
+    "reconf"
+  ],
+  "author": "Juan Cruz Viotti <juan@resin.io>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "ava": "^0.16.0",
+    "eslint": "^3.6.1"
+  },
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "jsonexp": "0.0.3",
+    "lodash": "^4.16.2",
+    "resin-image-fs": "^2.1.2",
+    "underscore.string": "^3.3.4"
+  }
+}

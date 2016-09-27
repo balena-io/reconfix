@@ -18,7 +18,7 @@
 
 const ava = require('ava');
 const _ = require('lodash');
-const interpolation = require('../../../lib/engine/jsontemplate/interpolation');
+const expression = require('../../../lib/engine/jsontemplate/expression');
 
 _.each([
 
@@ -84,32 +84,32 @@ _.each([
   [ 'foo [name] foo', undefined ]
 
 ], (data) => {
-  const expression = _.first(data);
+  const testCase = _.first(data);
   const expected = _.last(data);
 
-  ava.test(`.getInterpolationPropertyName() should return ${expected} for ${expression}`, (test) => {
-    test.deepEqual(interpolation.getInterpolationPropertyName(expression), expected);
+  ava.test(`.getPropertyName() should return ${expected} for ${testCase}`, (test) => {
+    test.deepEqual(expression.getPropertyName(testCase), expected);
   });
 
   if (!_.isUndefined(expected)) {
-    ava.test(`.buildInterpolationExpression() should return ${expression} for ${expected}`, (test) => {
-      test.deepEqual(interpolation.buildInterpolationExpression(expected), expression);
+    ava.test(`.buildExpression() should return ${testCase} for ${expected}`, (test) => {
+      test.deepEqual(expression.buildExpression(expected), testCase);
     });
   }
 
-  ava.test(`.isInterpolationExpression() should return ${Boolean(expected)} for ${expression}`, (test) => {
-    test.is(interpolation.isInterpolationExpression(expression), Boolean(expected));
+  ava.test(`.isExpression() should return ${Boolean(expected)} for ${testCase}`, (test) => {
+    test.is(expression.isExpression(testCase), Boolean(expected));
   });
 });
 
-ava.test('.buildInterpolationExpression() should throw if input is not a string', (test) => {
+ava.test('.buildExpression() should throw if input is not a string', (test) => {
   test.throws(() => {
-    interpolation.buildInterpolationExpression([ 'f', 'o', 'o' ]);
+    expression.buildExpression([ 'f', 'o', 'o' ]);
   }, 'Invalid input: f,o,o');
 });
 
-ava.test('.buildInterpolationExpression() should throw if string contains spaces', (test) => {
+ava.test('.buildExpression() should throw if string contains spaces', (test) => {
   test.throws(() => {
-    interpolation.buildInterpolationExpression('foo bar');
+    expression.buildExpression('foo bar');
   }, 'Invalid input: foo bar');
 });

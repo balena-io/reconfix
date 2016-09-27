@@ -68,6 +68,12 @@ _.each([
   [ '[[name]]', '[name]' ],
   [ '[[[name]]]', '[[name]]' ],
 
+  // Expressions containing spaces
+  [ '[foo bar]', undefined ],
+  [ '[ foo]', undefined ],
+  [ '[foo ]', undefined ],
+  [ '[ foo ]', undefined ],
+
   // Invalid expressions
   [ 'name', undefined ],
   [ 'NAME', undefined ],

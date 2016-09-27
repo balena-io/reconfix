@@ -23,7 +23,7 @@ const fs = Bluebird.promisifyAll(require('fs'));
 const ini = require('../../../../lib/engine/formats/ini');
 
 const testFile = (filename) => {
-  ava.test(`formats: should parse ${filename}`, (test) => {
+  ava.test(`should parse ${filename}`, (test) => {
     const absolutePath = path.join(__dirname, 'data', filename);
 
     return Bluebird.props({

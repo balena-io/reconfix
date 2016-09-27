@@ -29,13 +29,13 @@ const parseIniLines = (lines) => {
 };
 
 const testParseFor = (title, lines, object) => {
-  ava.test(`formats: should parse ${title}`, (test) => {
+  ava.test(`should parse ${title}`, (test) => {
     test.deepEqual(ini.parse(parseIniLines(lines)), object);
   });
 };
 
 const testSerializeFor = (title, lines, object) => {
-  ava.test(`formats: should serialise ${title}`, (test) => {
+  ava.test(`should serialise ${title}`, (test) => {
     test.deepEqual(ini.serialise(object), parseIniLines(lines));
   });
 };

@@ -24,164 +24,179 @@ const ini = require('../../../../lib/engine/formats/ini');
 // - Test a section name that starts with a period.
 // - Test the informal `key[nestedkey]: value` syntax.
 
-const shouldParse = (title, lines, object) => {
+const parseIniLines = (lines) => {
+  return _.join(_.concat(lines, ''), '\n');
+};
+
+const testParseFor = (title, lines, object) => {
   ava.test(`formats: should parse ${title}`, (test) => {
-    test.deepEqual(ini.parse(_.join(lines, '\n')), object);
+    test.deepEqual(ini.parse(parseIniLines(lines)), object);
   });
 };
 
-shouldParse('a property without a space before the equal sign', [
+const testSerializeFor = (title, lines, object) => {
+  ava.test(`formats: should serialise ${title}`, (test) => {
+    test.deepEqual(ini.serialise(object), parseIniLines(lines));
+  });
+};
+
+const testBidirectionalFor = (title, lines, object) => {
+  testParseFor(title, lines, object);
+  testSerializeFor(title, lines, object);
+};
+
+testParseFor('a property without a space before the equal sign', [
   'foo= bar '
 ], {
   foo: 'bar'
 });
 
-shouldParse('a property without a space after the equal sign', [
+testParseFor('a property without a space after the equal sign', [
   'foo =bar '
 ], {
   foo: 'bar'
 });
 
-shouldParse('a property without spaces around the equal sign', [
-  'foo=bar '
+testParseFor('a property with spaces around the equal sign', [
+  'foo = bar '
 ], {
   foo: 'bar'
 });
 
-shouldParse('an empty string property', [
-  'foo = '
+testBidirectionalFor('an empty string property', [
+  'foo='
 ], {
   foo: ''
 });
 
-shouldParse('a single character string property', [
-  'foo = a'
+testBidirectionalFor('a single character string property', [
+  'foo=a'
 ], {
   foo: 'a'
 });
 
-shouldParse('a multiple character string property', [
-  'foo = bar'
+testBidirectionalFor('a multiple character string property', [
+  'foo=bar'
 ], {
   foo: 'bar'
 });
 
-shouldParse('a single quote surrounded string property', [
-  'foo = \'bar baz\''
+testParseFor('a single quote surrounded string property', [
+  'foo=\'bar baz\''
 ], {
   foo: 'bar baz'
 });
 
-shouldParse('a double quote surrounded string property', [
-  'foo = "bar baz"'
+testParseFor('a double quote surrounded string property', [
+  'foo="bar baz"'
 ], {
   foo: 'bar baz'
 });
 
-shouldParse('a string property prefixed with a number', [
-  'foo = 1bar'
+testBidirectionalFor('a string property prefixed with a number', [
+  'foo=1bar'
 ], {
   foo: '1bar'
 });
 
-shouldParse('a string property suffixed with a number', [
-  'foo = bar1'
+testBidirectionalFor('a string property suffixed with a number', [
+  'foo=bar1'
 ], {
   foo: 'bar1'
 });
 
-shouldParse('a string property infixed with a number', [
-  'foo = he23llo'
+testBidirectionalFor('a string property infixed with a number', [
+  'foo=he23llo'
 ], {
   foo: 'he23llo'
 });
 
-shouldParse('a string property surrounded by numbers', [
-  'foo = 34bar34'
+testBidirectionalFor('a string property surrounded by numbers', [
+  'foo=34bar34'
 ], {
   foo: '34bar34'
 });
 
-shouldParse('a zero property', [
-  'foo = 0'
+testBidirectionalFor('a zero property', [
+  'foo=0'
 ], {
   foo: 0
 });
 
-shouldParse('a single quote surrounded number property', [
-  'foo = \'35\''
+testParseFor('a single quote surrounded number property', [
+  'foo=\'35\''
 ], {
   foo: 35
 });
 
-shouldParse('a double quote surrounded number property', [
-  'foo = "35"'
+testParseFor('a double quote surrounded number property', [
+  'foo="35"'
 ], {
   foo: 35
 });
 
-shouldParse('a positive integer property', [
-  'foo = 1'
+testBidirectionalFor('a positive integer property', [
+  'foo=1'
 ], {
   foo: 1
 });
 
-shouldParse('a negative integer property', [
-  'foo = -5'
+testBidirectionalFor('a negative integer property', [
+  'foo=-5'
 ], {
   foo: -5
 });
 
-shouldParse('a positive float property with a zero decimal', [
-  'foo = 3.0'
+testParseFor('a positive float property with a zero decimal', [
+  'foo=3.0'
 ], {
   foo: 3
 });
 
-shouldParse('a positive float property', [
-  'foo = 3.45'
+testBidirectionalFor('a positive float property', [
+  'foo=3.45'
 ], {
   foo: 3.45
 });
 
-shouldParse('a negative float property', [
-  'foo = -10.5'
+testBidirectionalFor('a negative float property', [
+  'foo=-10.5'
 ], {
   foo: -10.5
 });
 
-shouldParse('a truthy boolean property', [
-  'foo = true'
+testBidirectionalFor('a truthy boolean property', [
+  'foo=true'
 ], {
   foo: true
 });
 
-shouldParse('a falsy boolean property', [
-  'foo = false'
+testBidirectionalFor('a falsy boolean property', [
+  'foo=false'
 ], {
   foo: false
 });
 
-shouldParse('a capitalized truthy boolean property as a string', [
-  'foo = True'
+testBidirectionalFor('a capitalized truthy boolean property as a string', [
+  'foo=True'
 ], {
   foo: 'True'
 });
 
-shouldParse('a capitalized falsy boolean property as a string', [
-  'foo = False'
+testBidirectionalFor('a capitalized falsy boolean property as a string', [
+  'foo=False'
 ], {
   foo: 'False'
 });
 
-shouldParse('a string sentence containing commas', [
-  'foo = The Obelisco, a national historic monument, is the one over there.'
+testBidirectionalFor('a string sentence containing commas', [
+  'foo=The Obelisco, a national historic monument, is the one over there.'
 ], {
   foo: 'The Obelisco, a national historic monument, is the one over there.'
 });
 
-shouldParse('an array of strings', [
-  'hello = foo,bar,baz'
+testParseFor('an array of strings using comma notation', [
+  'hello=foo,bar,baz'
 ], {
   hello: [
     'foo',
@@ -190,79 +205,79 @@ shouldParse('an array of strings', [
   ]
 });
 
-shouldParse('an array containing a single string using the square bracketed notation', [
-  'hello[] = foo'
+testBidirectionalFor('an array of strings', [
+  'hello[]=foo',
+  'hello[]=bar',
+  'hello[]=baz'
+], {
+  hello: [
+    'foo',
+    'bar',
+    'baz'
+  ]
+});
+
+testBidirectionalFor('an array containing a single string', [
+  'hello[]=foo'
 ], {
   hello: [ 'foo' ]
 });
 
-shouldParse('an array of strings using the square bracketed notation', [
-  'hello[] = foo',
-  'hello[] = bar',
-  'hello[] = baz'
-], {
-  hello: [
-    'foo',
-    'bar',
-    'baz'
-  ]
-});
-
-shouldParse('an array of integers', [
-  'hello = 1,2,3,4'
+testParseFor('an array of integers using comma notation', [
+  'hello=1,2,3,4'
 ], {
   hello: [ 1, 2, 3, 4 ]
 });
 
-shouldParse('an array of integers using the square bracketed notation', [
-  'hello[] = 1',
-  'hello[] = 2',
-  'hello[] = 3',
-  'hello[] = 4'
+testBidirectionalFor('an array of integers', [
+  'hello[]=1',
+  'hello[]=2',
+  'hello[]=3',
+  'hello[]=4'
 ], {
   hello: [ 1, 2, 3, 4 ]
 });
 
-shouldParse('an ip address property', [
-  'foo = 192.168.1.5'
+testBidirectionalFor('an ip address property', [
+  'foo=192.168.1.5'
 ], {
   foo: '192.168.1.5'
 });
 
-shouldParse('an empty section', [
+testParseFor('an empty section', [
   '[mysection]'
 ], {
   mysection: {}
 });
 
-shouldParse('a section title containing spaces', [
+testParseFor('a section title containing spaces', [
   '[my spaced section]'
 ], {
   'my spaced section': {}
 });
 
-shouldParse('a string property inside a section', [
+testBidirectionalFor('a string property inside a section', [
   '[mysection]',
-  'foo = bar'
+  'foo=bar'
 ], {
   mysection: {
     foo: 'bar'
   }
 });
 
-shouldParse('a number property inside a section', [
+testBidirectionalFor('a number property inside a section', [
   '[mysection]',
-  'foo = 1'
+  'foo=1'
 ], {
   mysection: {
     foo: 1
   }
 });
 
-shouldParse('multiple properties inside a section', [
+testBidirectionalFor('multiple properties inside a section', [
   '[mysection]',
-  'foo = bar',
-  'bar = baz'
+  'foo=bar',
+  'bar=baz'
 ], {
   mysection: {
     foo: 'bar',

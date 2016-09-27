@@ -22,7 +22,7 @@ const Bluebird = require('bluebird');
 const fs = Bluebird.promisifyAll(require('fs'));
 const ini = require('../../../../lib/engine/formats/ini');
 
-const parseFile = (filename) => {
+const testFile = (filename) => {
   ava.test(`formats: should parse ${filename}`, (test) => {
     const absolutePath = path.join(__dirname, 'data', filename);
 
@@ -35,10 +35,11 @@ const parseFile = (filename) => {
       }).then(JSON.parse)
     }).then((contents) => {
       test.deepEqual(ini.parse(contents.ini), contents.json);
+      test.deepEqual(ini.serialise(contents.json), contents.ini);
     });
   });
 };
 
-parseFile('connman');
-parseFile('desktop');
-parseFile('sample');
+testFile('connman');
+testFile('desktop');
+testFile('sample');

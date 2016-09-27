@@ -101,3 +101,15 @@ _.each([
     test.is(interpolation.isInterpolationExpression(expression), Boolean(expected));
   });
 });
+
+ava.test('.buildInterpolationExpression() should throw if input is not a string', (test) => {
+  test.throws(() => {
+    interpolation.buildInterpolationExpression([ 'f', 'o', 'o' ]);
+  }, 'Invalid input: f,o,o');
+});
+
+ava.test('.buildInterpolationExpression() should throw if string contains spaces', (test) => {
+  test.throws(() => {
+    interpolation.buildInterpolationExpression('foo bar');
+  }, 'Invalid input: foo bar');
+});

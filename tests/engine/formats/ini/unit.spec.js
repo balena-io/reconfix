@@ -195,14 +195,10 @@ testBidirectionalFor('a string sentence containing commas', [
   foo: 'The Obelisco, a national historic monument, is the one over there.'
 });
 
-testParseFor('an array of strings using comma notation', [
+testBidirectionalFor('a list of strings using comma notation', [
   'hello=foo,bar,baz'
 ], {
-  hello: [
-    'foo',
-    'bar',
-    'baz'
-  ]
+  hello: 'foo,bar,baz'
 });
 
 testBidirectionalFor('an array of strings', [
@@ -223,10 +219,10 @@ testBidirectionalFor('an array containing a single string', [
   hello: [ 'foo' ]
 });
 
-testParseFor('an array of integers using comma notation', [
+testBidirectionalFor('a list of integers using comma notation', [
   'hello=1,2,3,4'
 ], {
-  hello: [ 1, 2, 3, 4 ]
+  hello: '1,2,3,4'
 });
 
 testBidirectionalFor('an array of integers', [

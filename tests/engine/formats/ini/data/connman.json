@@ -1,0 +1,19 @@
+{
+  "service_home_ethernet": {
+    "Type": "ethernet",
+    "Nameservers": [
+      "8.8.8.8",
+      "8.8.4.4"
+    ]
+  },
+  "service_home_wifi": {
+    "Hidden": true,
+    "Type": "wifi",
+    "Name": "mywifi",
+    "Passphrase": "secret",
+    "Nameservers": [
+      "8.8.8.8",
+      "8.8.4.4"
+    ]
+  }
+}

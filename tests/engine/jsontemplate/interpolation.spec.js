@@ -22,6 +22,39 @@ const interpolation = require('../../../lib/engine/jsontemplate/interpolation');
 
 _.each([
 
+  [ 'foo bar foo', 'foo', [ 0, 8 ] ],
+  [ 'foo bar baz', 'bar', [ 4 ] ],
+  [ 'foo bar baz', 'qux', [] ],
+  [ 'foo', '', [] ]
+
+], (testCase) => {
+  const string = _.first(testCase);
+  const substring = _.nth(testCase, 1);
+
+  ava.test(`.findAllIndexes() should find all ${substring} in ${string}`, (test) => {
+    test.deepEqual(interpolation.findAllIndexes(string, substring), _.last(testCase));
+  });
+});
+
+_.each([
+
+  [ 'Foo [bar], baz [qux]', [ 'Foo ', '[bar]', ', baz ', '[qux]' ] ],
+  [ 'Hello, [name]!', [ 'Hello, ', '[name]', '!' ] ],
+  [ '[name]', [ '[name]' ] ],
+  [ 'Hello', [ 'Hello' ] ],
+  [ 'Hello world!', [ 'Hello world!' ] ]
+
+], (testCase) => {
+  const template = _.first(testCase);
+  const expected = _.last(testCase);
+
+  ava.test(`.splitTemplateTokens() should split ${template}`, (test) => {
+    test.deepEqual(interpolation.splitTemplateTokens(template), expected);
+  });
+});
+
+_.each([
+
   // -------------------------------------------------------------------
   // Top level string interpolation
   // -------------------------------------------------------------------

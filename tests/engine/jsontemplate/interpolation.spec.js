@@ -240,3 +240,15 @@ ava.test('.interpolateString() should ignore unused data variables', (test) => {
 
   test.deepEqual(result, 'FOO BAR');
 });
+
+ava.test('.deinterpolateString() should throw if strings do not match', (test) => {
+  test.throws(() => {
+    interpolation.deinterpolateString('Hello {{name}}!', 'Hi John Doe!');
+  }, 'No match for \'name\'');
+});
+
+ava.test('.deinterpolateString() should throw if interpolation result is missing', (test) => {
+  test.throws(() => {
+    interpolation.deinterpolateString('Hello {{name}}!', 'Hi !');
+  }, 'No match for \'name\'');
+});

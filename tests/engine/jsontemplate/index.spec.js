@@ -19,9 +19,13 @@
 const ava = require('ava');
 const jsontemplate = require('../../../lib/engine/jsontemplate');
 
-const testCompile = (title, template, data, expected) => {
+const testCompile = (title, template, data, result) => {
   ava.test(`should compile ${title}`, (test) => {
-    test.deepEqual(jsontemplate.compile(template, data), expected);
+    test.deepEqual(jsontemplate.compile(template, data), result);
+  });
+
+  ava.test(`should decompile ${title}`, (test) => {
+    test.deepEqual(jsontemplate.decompile(template, result), data);
   });
 };
 

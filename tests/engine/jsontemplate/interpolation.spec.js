@@ -54,6 +54,13 @@ _.each([
     },
     result: 'FooJohn DoeFoo'
   },
+  {
+    template: 'Foo{{word}}Foo',
+    data: {
+      word: 'Foo'
+    },
+    result: 'FooFooFoo'
+  },
 
   // -------------------------------------------------------------------
   // Top level number interpolation
@@ -134,6 +141,31 @@ _.each([
       }
     },
     result: 'John Doe'
+  },
+
+  // -------------------------------------------------------------------
+  // Multiple interpolations
+  // -------------------------------------------------------------------
+
+  {
+    template: 'Hello, I\'m {{name}} and I\'m {{age}} years old',
+    data: {
+      name: 'John Doe',
+      age: '43'
+    },
+    result: 'Hello, I\'m John Doe and I\'m 43 years old'
+  },
+  {
+    template: 'These are {{person1.name}} and {{person2.name}}',
+    data: {
+      person1: {
+        name: 'John Doe'
+      },
+      person2: {
+        name: 'Jane Doe'
+      }
+    },
+    result: 'These are John Doe and Jane Doe'
   }
 
 ], (testCase) => {

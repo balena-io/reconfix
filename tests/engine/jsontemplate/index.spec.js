@@ -19,17 +19,17 @@
 const ava = require('ava');
 const jsontemplate = require('../../../lib/engine/jsontemplate');
 
-const testCompile = (title, template, data, result) => {
-  ava.test(`should compile ${title}`, (test) => {
+const testBidirectionalCompilation = (title, template, data, result) => {
+  ava.test(`.compile() should compile ${title}`, (test) => {
     test.deepEqual(jsontemplate.compile(template, data), result);
   });
 
-  ava.test(`should decompile ${title}`, (test) => {
+  ava.test(`.decompile() should decompile ${title}`, (test) => {
     test.deepEqual(jsontemplate.decompile(template, result), data);
   });
 };
 
-testCompile('a single top-level independent string property', {
+testBidirectionalCompilation('a single top-level independent string property', {
   person: '{{name}}'
 }, {
   name: 'John Doe'
@@ -37,7 +37,7 @@ testCompile('a single top-level independent string property', {
   person: 'John Doe'
 });
 
-testCompile('a single top-level dependent string property', {
+testBidirectionalCompilation('a single top-level dependent string property', {
   greeting: 'Hello, {{name}}'
 }, {
   name: 'John Doe'
@@ -45,7 +45,7 @@ testCompile('a single top-level dependent string property', {
   greeting: 'Hello, John Doe'
 });
 
-testCompile('a single nested independent string property', {
+testBidirectionalCompilation('a single nested independent string property', {
   data: {
     person: '{{name}}'
   }
@@ -57,7 +57,7 @@ testCompile('a single nested independent string property', {
   }
 });
 
-testCompile('a single top-level independent number property', {
+testBidirectionalCompilation('a single top-level independent number property', {
   magicNumber: '{{age}}'
 }, {
   age: '17'
@@ -65,7 +65,7 @@ testCompile('a single top-level independent number property', {
   magicNumber: '17'
 });
 
-testCompile('a single top-level dependent number property', {
+testBidirectionalCompilation('a single top-level dependent number property', {
   age: 'My age is {{age}}'
 }, {
   age: '21'
@@ -73,7 +73,7 @@ testCompile('a single top-level dependent number property', {
   age: 'My age is 21'
 });
 
-testCompile('multiple independent properties', {
+testBidirectionalCompilation('multiple independent properties', {
   profile: {
     fullName: '{{name}}',
     age: '{{age}}',
@@ -91,7 +91,7 @@ testCompile('multiple independent properties', {
   }
 });
 
-testCompile('multiple nested independent properties', {
+testBidirectionalCompilation('multiple nested independent properties', {
   profile: {
     fullName: '{{person.name}}',
     age: '{{person.age}}',

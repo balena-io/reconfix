@@ -227,3 +227,16 @@ ava.test('.interpolateString() should throw if a referenced nested variable does
     interpolation.interpolateString('{{foo.bar.baz}}', {});
   }, 'Missing variable foo');
 });
+
+ava.test('.interpolateString() should ignore unused data variables', (test) => {
+  const result = interpolation.interpolateString('{{foo}} {{bar}}', {
+    foo: 'FOO',
+    bar: 'BAR',
+    baz: 'BAZ',
+    data: {
+      hello: 'world'
+    }
+  });
+
+  test.deepEqual(result, 'FOO BAR');
+});

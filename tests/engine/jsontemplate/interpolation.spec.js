@@ -23,6 +23,16 @@ const interpolation = require('../../../lib/engine/jsontemplate/interpolation');
 _.each([
 
   // -------------------------------------------------------------------
+  // No interpolation
+  // -------------------------------------------------------------------
+
+  {
+    template: 'Hello world',
+    data: {},
+    result: 'Hello world'
+  },
+
+  // -------------------------------------------------------------------
   // Top level string interpolation
   // -------------------------------------------------------------------
 
@@ -202,4 +212,18 @@ ava.test('.interpolateString() should reject numeric nested data values', (test)
       }
     });
   }, 'Invalid data value: 1');
+});
+
+ava.test('.interpolateString() should throw if a referenced variable does not exist', (test) => {
+  test.throws(() => {
+    interpolation.interpolateString('{{foo}}', {});
+  }, 'Missing variable foo');
+});
+
+// TODO: Notice that in this case, `_.template` throws an undefined error
+// for the first property that is undefined instead of for the whole path.
+ava.test('.interpolateString() should throw if a referenced nested variable does not exist', (test) => {
+  test.throws(() => {
+    interpolation.interpolateString('{{foo.bar.baz}}', {});
+  }, 'Missing variable foo');
 });

@@ -27,28 +27,28 @@ _.each([
   // -------------------------------------------------------------------
 
   {
-    template: '[name]',
+    template: '{{name}}',
     data: {
       name: 'John Doe'
     },
     result: 'John Doe'
   },
   {
-    template: 'Hello, [name]',
+    template: 'Hello, {{name}}',
     data: {
       name: 'John Doe'
     },
     result: 'Hello, John Doe'
   },
   {
-    template: 'Hello, [name]!',
+    template: 'Hello, {{name}}!',
     data: {
       name: 'John Doe'
     },
     result: 'Hello, John Doe!'
   },
   {
-    template: 'Foo[name]Foo',
+    template: 'Foo{{name}}Foo',
     data: {
       name: 'John Doe'
     },
@@ -60,35 +60,35 @@ _.each([
   // -------------------------------------------------------------------
 
   {
-    template: '[number]',
+    template: '{{number}}',
     data: {
       number: '0'
     },
     result: '0'
   },
   {
-    template: '[age]',
+    template: '{{age}}',
     data: {
       age: '17'
     },
     result: '17'
   },
   {
-    template: '[age]',
+    template: '{{age}}',
     data: {
       age: '21.5'
     },
     result: '21.5'
   },
   {
-    template: '[number]',
+    template: '{{number}}',
     data: {
       number: '-14'
     },
     result: '-14'
   },
   {
-    template: '[number]',
+    template: '{{number}}',
     data: {
       number: '5.0'
     },
@@ -102,14 +102,14 @@ _.each([
   /* eslint-disable camelcase */
 
   {
-    template: '[$name]',
+    template: '{{$name}}',
     data: {
       $name: 'John Doe'
     },
     result: 'John Doe'
   },
   {
-    template: '[full_name]',
+    template: '{{full_name}}',
     data: {
       full_name: 'John Doe'
     },
@@ -123,7 +123,7 @@ _.each([
   // -------------------------------------------------------------------
 
   {
-    template: '[foo.bar.baz.name]',
+    template: '{{foo.bar.baz.name}}',
     data: {
       foo: {
         bar: {
@@ -156,7 +156,7 @@ _.each([
 
 ava.test('.interpolateString() should reject numeric data values', (test) => {
   test.throws(() => {
-    interpolation.interpolateString('[foo]', {
+    interpolation.interpolateString('{{foo}}', {
       foo: 1
     });
   }, 'Invalid data value: 1');
@@ -164,7 +164,7 @@ ava.test('.interpolateString() should reject numeric data values', (test) => {
 
 ava.test('.interpolateString() should reject numeric nested data values', (test) => {
   test.throws(() => {
-    interpolation.interpolateString('[foo.bar]', {
+    interpolation.interpolateString('{{foo.bar}}', {
       foo: {
         bar: 1
       }

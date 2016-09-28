@@ -26,7 +26,7 @@ const testCompile = (title, template, data, expected) => {
 };
 
 testCompile('a single top-level independent string property', {
-  person: '[name]'
+  person: '{{name}}'
 }, {
   name: 'John Doe'
 }, {
@@ -34,7 +34,7 @@ testCompile('a single top-level independent string property', {
 });
 
 testCompile('a single top-level dependent string property', {
-  greeting: 'Hello, [name]'
+  greeting: 'Hello, {{name}}'
 }, {
   name: 'John Doe'
 }, {
@@ -43,7 +43,7 @@ testCompile('a single top-level dependent string property', {
 
 testCompile('a single nested independent string property', {
   data: {
-    person: '[name]'
+    person: '{{name}}'
   }
 }, {
   name: 'John Doe'
@@ -54,7 +54,7 @@ testCompile('a single nested independent string property', {
 });
 
 testCompile('a single top-level independent number property', {
-  magicNumber: '[age]'
+  magicNumber: '{{age}}'
 }, {
   age: '17'
 }, {

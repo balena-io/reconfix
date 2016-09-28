@@ -20,7 +20,7 @@ const ava = require('ava');
 const _ = require('lodash');
 
 const parseLines = (lines) => {
-  return _.join(_.concat(lines, ''), '\n');
+  return _.join(lines, '\n');
 };
 
 exports.testParse = (module, title, lines, object) => {

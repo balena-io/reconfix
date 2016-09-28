@@ -60,3 +60,49 @@ testCompile('a single top-level independent number property', {
 }, {
   magicNumber: '17'
 });
+
+testCompile('a single top-level dependent number property', {
+  age: 'My age is {{age}}'
+}, {
+  age: '21'
+}, {
+  age: 'My age is 21'
+});
+
+testCompile('multiple independent properties', {
+  profile: {
+    fullName: '{{name}}',
+    age: '{{age}}',
+    jobTitle: '{{job}}'
+  }
+}, {
+  name: 'John Doe',
+  age: '42',
+  job: 'Software Engineer'
+}, {
+  profile: {
+    fullName: 'John Doe',
+    age: '42',
+    jobTitle: 'Software Engineer'
+  }
+});
+
+testCompile('multiple nested independent properties', {
+  profile: {
+    fullName: '{{person.name}}',
+    age: '{{person.age}}',
+    jobTitle: '{{person.job}}'
+  }
+}, {
+  person: {
+    name: 'John Doe',
+    age: '42',
+    job: 'Software Engineer'
+  }
+}, {
+  profile: {
+    fullName: 'John Doe',
+    age: '42',
+    jobTitle: 'Software Engineer'
+  }
+});

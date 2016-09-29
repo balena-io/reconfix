@@ -182,12 +182,12 @@ ava.test('it should transpile a basic list question', (test) => {
     type: 'list',
     choices: [
       {
-        name: 'Wifi',
-        value: 'wifi'
+        title: 'Wifi',
+        name: 'wifi'
       },
       {
-        name: 'Ethernet',
-        value: 'ethernet'
+        title: 'Ethernet',
+        name: 'ethernet'
       }
     ]
   }), {
@@ -215,12 +215,12 @@ ava.test('it should allow a default list value', (test) => {
     default: 'wifi',
     choices: [
       {
-        name: 'Wifi',
-        value: 'wifi'
+        title: 'Wifi',
+        name: 'wifi'
       },
       {
-        name: 'Ethernet',
-        value: 'ethernet'
+        title: 'Ethernet',
+        name: 'ethernet'
       }
     ]
   }), {

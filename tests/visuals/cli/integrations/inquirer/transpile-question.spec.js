@@ -17,9 +17,9 @@
 'use strict';
 
 const ava = require('ava');
-const inquirer = require('../../../../lib/visuals/cli/integrations/inquirer');
+const inquirer = require('../../../../../lib/visuals/cli/integrations/inquirer');
 
-ava.test('.transpileQuestion() should throw if type is not recognised', (test) => {
+ava.test('should throw if type is not recognised', (test) => {
   test.throws(() => {
     inquirer.transpileQuestion({
       title: 'Foo',
@@ -29,7 +29,7 @@ ava.test('.transpileQuestion() should throw if type is not recognised', (test) =
   }, 'Unknown question type: foo');
 });
 
-ava.test('.transpileQuestion() should throw if question has no title', (test) => {
+ava.test('should throw if question has no title', (test) => {
   test.throws(() => {
     inquirer.transpileQuestion({
       name: 'foo',
@@ -38,7 +38,7 @@ ava.test('.transpileQuestion() should throw if question has no title', (test) =>
   }, 'Invalid question title: undefined');
 });
 
-ava.test('.transpileQuestion() should throw if question has an invalid title', (test) => {
+ava.test('should throw if question has an invalid title', (test) => {
   test.throws(() => {
     inquirer.transpileQuestion({
       title: [ 'foo', 'bar' ],
@@ -48,7 +48,7 @@ ava.test('.transpileQuestion() should throw if question has an invalid title', (
   }, 'Invalid question title: foo,bar');
 });
 
-ava.test('.transpileQuestion() should throw if question has no name', (test) => {
+ava.test('should throw if question has no name', (test) => {
   test.throws(() => {
     inquirer.transpileQuestion({
       title: 'Foo',
@@ -57,7 +57,7 @@ ava.test('.transpileQuestion() should throw if question has no name', (test) => 
   }, 'Invalid question name: undefined');
 });
 
-ava.test('.transpileQuestion() should throw if question has an invalid name', (test) => {
+ava.test('should throw if question has an invalid name', (test) => {
   test.throws(() => {
     inquirer.transpileQuestion({
       title: 'Foo',
@@ -67,7 +67,7 @@ ava.test('.transpileQuestion() should throw if question has an invalid name', (t
   }, 'Invalid question name: foo,bar');
 });
 
-ava.test('.transpileQuestion() it should transpile a basic text question', (test) => {
+ava.test('it should transpile a basic text question', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
@@ -79,7 +79,7 @@ ava.test('.transpileQuestion() it should transpile a basic text question', (test
   });
 });
 
-ava.test('.transpileQuestion() it should transpile a basic password question', (test) => {
+ava.test('it should transpile a basic password question', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Wifi Key',
     name: 'key',
@@ -91,7 +91,7 @@ ava.test('.transpileQuestion() it should transpile a basic password question', (
   });
 });
 
-ava.test('.transpileQuestion() it should transpile a basic number question', (test) => {
+ava.test('it should transpile a basic number question', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
@@ -103,7 +103,7 @@ ava.test('.transpileQuestion() it should transpile a basic number question', (te
   });
 });
 
-ava.test('.transpileQuestion() it should transpile a basic editor question', (test) => {
+ava.test('it should transpile a basic editor question', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Welcome message',
     name: 'welcome',
@@ -115,7 +115,7 @@ ava.test('.transpileQuestion() it should transpile a basic editor question', (te
   });
 });
 
-ava.test('.transpileQuestion() it should allow a default text value', (test) => {
+ava.test('it should allow a default text value', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
@@ -129,7 +129,7 @@ ava.test('.transpileQuestion() it should allow a default text value', (test) => 
   });
 });
 
-ava.test('.transpileQuestion() it should allow a default password value', (test) => {
+ava.test('it should allow a default password value', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Wifi Key',
     name: 'key',
@@ -143,7 +143,7 @@ ava.test('.transpileQuestion() it should allow a default password value', (test)
   });
 });
 
-ava.test('.transpileQuestion() it should allow a default number value', (test) => {
+ava.test('it should allow a default number value', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
@@ -161,7 +161,7 @@ ava.test('.transpileQuestion() it should allow a default number value', (test) =
   });
 });
 
-ava.test('.transpileQuestion() it should allow a default editor value', (test) => {
+ava.test('it should allow a default editor value', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Welcome message',
     name: 'welcome',
@@ -175,7 +175,7 @@ ava.test('.transpileQuestion() it should allow a default editor value', (test) =
   });
 });
 
-ava.test('.transpileQuestion() it should transpile a basic list question', (test) => {
+ava.test('it should transpile a basic list question', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Network Type',
     name: 'networkType',
@@ -207,7 +207,7 @@ ava.test('.transpileQuestion() it should transpile a basic list question', (test
   });
 });
 
-ava.test('.transpileQuestion() it should allow a default list value', (test) => {
+ava.test('it should allow a default list value', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Network Type',
     name: 'networkType',
@@ -241,7 +241,7 @@ ava.test('.transpileQuestion() it should allow a default list value', (test) => 
   });
 });
 
-ava.test('.transpileQuestion() it should transpile a basic checkbox question', (test) => {
+ava.test('it should transpile a basic checkbox question', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Enable HDMI',
     name: 'hdmi',
@@ -253,7 +253,7 @@ ava.test('.transpileQuestion() it should transpile a basic checkbox question', (
   });
 });
 
-ava.test('.transpileQuestion() it should allow a default checkbox value', (test) => {
+ava.test('it should allow a default checkbox value', (test) => {
   test.deepEqual(inquirer.transpileQuestion({
     title: 'Enable HDMI',
     name: 'hdmi',

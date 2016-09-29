@@ -18,7 +18,7 @@
 
 const ava = require('ava');
 const _ = require('lodash');
-const inquirer = require('../../../../lib/visuals/cli/integrations/inquirer');
+const inquirer = require('../../../../../lib/visuals/cli/integrations/inquirer');
 
 _.attempt(() => {
   const question = inquirer.transpileQuestion({

@@ -18,7 +18,7 @@
 
 const ava = require('ava');
 const _ = require('lodash');
-const interpolation = require('../../../lib/engine/jsontemplate/interpolation');
+const interpolation = require('../../lib/jsontemplate/interpolation');
 
 _.each([
 

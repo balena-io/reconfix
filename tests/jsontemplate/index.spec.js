@@ -17,7 +17,7 @@
 'use strict';
 
 const ava = require('ava');
-const jsontemplate = require('../../../lib/engine/jsontemplate');
+const jsontemplate = require('../../lib/jsontemplate');
 
 const testBidirectionalCompilation = (title, template, data, result) => {
   ava.test(`.compile() should compile ${title}`, (test) => {

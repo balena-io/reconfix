@@ -168,6 +168,66 @@ _.attempt(() => {
     name: 'hdmi',
     type: 'checkbox',
     when: {
+      screen: {
+        type: 'led',
+        manufacturer: {
+          name: 'Samsung',
+          serial: 'xxxxxxx'
+        }
+      }
+    }
+  });
+
+  ava.test('(nested object property) should return false if empty object', (test) => {
+    test.false(question.when({}));
+  });
+
+  ava.test('(nested object property) should return true if it matches', (test) => {
+    test.true(question.when({
+      screen: {
+        type: 'led',
+        manufacturer: {
+          name: 'Samsung',
+          serial: 'xxxxxxx'
+        }
+      }
+    }));
+  });
+
+  ava.test('(nested object property) should return false if subset', (test) => {
+    test.false(question.when({
+      screen: {
+        manufacturer: {
+          name: 'Samsung',
+          serial: 'xxxxxxx'
+        }
+      }
+    }));
+  });
+
+  ava.test('(nested object property) should return true if superset', (test) => {
+    test.true(question.when({
+      screen: {
+        type: 'led',
+        foo: 'bar',
+        manufacturer: {
+          foo: 'bar',
+          name: 'Samsung',
+          serial: 'xxxxxxx'
+        }
+      },
+      foo: 'bar'
+    }));
+  });
+
+});
+
+_.attempt(() => {
+  const question = inquirer.transpileQuestion({
+    title: 'HDMI',
+    name: 'hdmi',
+    type: 'checkbox',
+    when: {
       capabilities: [
         {
           name: 'screen'

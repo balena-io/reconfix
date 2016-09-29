@@ -24,7 +24,7 @@ const json = require('../../../../lib/engine/formats/json');
 
 const testFile = (filename) => {
   ava.test(`should parse ${filename}`, (test) => {
-    const absolutePath = path.join(__dirname, 'data', filename);
+    const absolutePath = path.join(__dirname, 'fixtures', filename);
 
     return fs.readFileAsync(`${absolutePath}.json`, {
       encoding: 'utf8'

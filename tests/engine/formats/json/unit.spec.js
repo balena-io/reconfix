@@ -17,7 +17,7 @@
 'use strict';
 
 const json = require('../../../../lib/engine/formats/json');
-const utils = require('../utils');
+const utils = require('../_utils');
 
 utils.testBidirectional(json, 'a single character string property', [
   '{',

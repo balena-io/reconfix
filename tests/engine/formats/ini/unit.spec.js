@@ -17,7 +17,7 @@
 'use strict';
 
 const ini = require('../../../../lib/engine/formats/ini');
-const utils = require('../utils');
+const utils = require('../_utils');
 
 // TODO: Test ideas
 // - Test a section name that starts with a period.

@@ -24,7 +24,7 @@ const ini = require('../../../../lib/engine/formats/ini');
 
 const testFile = (filename) => {
   ava.test(`should parse ${filename}`, (test) => {
-    const absolutePath = path.join(__dirname, 'data', filename);
+    const absolutePath = path.join(__dirname, 'fixtures', filename);
 
     return Bluebird.props({
       ini: fs.readFileAsync(`${absolutePath}.ini`, {

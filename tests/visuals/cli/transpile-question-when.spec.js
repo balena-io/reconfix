@@ -18,10 +18,10 @@
 
 const ava = require('ava');
 const _ = require('lodash');
-const inquirer = require('../../../../../lib/visuals/cli/integrations/inquirer');
+const cli = require('../../../lib/visuals/cli');
 
 _.attempt(() => {
-  const question = inquirer.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
     type: 'text',
@@ -61,7 +61,7 @@ _.attempt(() => {
 });
 
 _.attempt(() => {
-  const question = inquirer.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'HDMI',
     name: 'hdmi',
     type: 'checkbox',
@@ -112,7 +112,7 @@ _.attempt(() => {
 });
 
 _.attempt(() => {
-  const question = inquirer.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'HDMI',
     name: 'hdmi',
     type: 'checkbox',
@@ -163,7 +163,7 @@ _.attempt(() => {
 });
 
 _.attempt(() => {
-  const question = inquirer.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'HDMI',
     name: 'hdmi',
     type: 'checkbox',
@@ -223,7 +223,7 @@ _.attempt(() => {
 });
 
 _.attempt(() => {
-  const question = inquirer.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'HDMI',
     name: 'hdmi',
     type: 'checkbox',
@@ -300,7 +300,7 @@ _.attempt(() => {
 });
 
 _.attempt(() => {
-  const question = inquirer.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
     type: 'text',

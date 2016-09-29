@@ -17,10 +17,10 @@
 'use strict';
 
 const ava = require('ava');
-const inquirer = require('../../../../../lib/visuals/cli/integrations/inquirer');
+const cli = require('../../../lib/visuals/cli');
 
 ava.test('should flatten a list without nested questions', (test) => {
-  test.deepEqual(inquirer.flatten([
+  test.deepEqual(cli.flatten([
     {
       title: 'Network Type',
       name: 'networkType',
@@ -56,7 +56,7 @@ ava.test('should flatten a list without nested questions', (test) => {
 });
 
 ava.test('should flatten a list with single-level nested questions', (test) => {
-  test.deepEqual(inquirer.flatten([
+  test.deepEqual(cli.flatten([
     {
       title: 'Network Type',
       name: 'networkType',
@@ -120,7 +120,7 @@ ava.test('should flatten a list with single-level nested questions', (test) => {
 });
 
 ava.test('should flatten a list with two-level nested questions', (test) => {
-  test.deepEqual(inquirer.flatten([
+  test.deepEqual(cli.flatten([
     {
       title: 'Network Type',
       name: 'networkType',

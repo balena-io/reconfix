@@ -17,11 +17,11 @@
 'use strict';
 
 const ava = require('ava');
-const inquirer = require('../../../../../lib/visuals/cli/integrations/inquirer');
+const cli = require('../../../lib/visuals/cli');
 
 ava.test('should throw if type is not recognised', (test) => {
   test.throws(() => {
-    inquirer.transpileQuestion({
+    cli.transpileQuestion({
       title: 'Foo',
       name: 'foo',
       type: 'foo'
@@ -31,7 +31,7 @@ ava.test('should throw if type is not recognised', (test) => {
 
 ava.test('should throw if question has no title', (test) => {
   test.throws(() => {
-    inquirer.transpileQuestion({
+    cli.transpileQuestion({
       name: 'foo',
       type: 'text'
     });
@@ -40,7 +40,7 @@ ava.test('should throw if question has no title', (test) => {
 
 ava.test('should throw if question has an invalid title', (test) => {
   test.throws(() => {
-    inquirer.transpileQuestion({
+    cli.transpileQuestion({
       title: [ 'foo', 'bar' ],
       name: 'foo',
       type: 'text'
@@ -50,7 +50,7 @@ ava.test('should throw if question has an invalid title', (test) => {
 
 ava.test('should throw if question has no name', (test) => {
   test.throws(() => {
-    inquirer.transpileQuestion({
+    cli.transpileQuestion({
       title: 'Foo',
       type: 'text'
     });
@@ -59,7 +59,7 @@ ava.test('should throw if question has no name', (test) => {
 
 ava.test('should throw if question has an invalid name', (test) => {
   test.throws(() => {
-    inquirer.transpileQuestion({
+    cli.transpileQuestion({
       title: 'Foo',
       name: [ 'foo', 'bar' ],
       type: 'text'
@@ -68,7 +68,7 @@ ava.test('should throw if question has an invalid name', (test) => {
 });
 
 ava.test('it should transpile a basic text question', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
     type: 'text'
@@ -80,7 +80,7 @@ ava.test('it should transpile a basic text question', (test) => {
 });
 
 ava.test('it should transpile a basic password question', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Wifi Key',
     name: 'key',
     type: 'password'
@@ -92,7 +92,7 @@ ava.test('it should transpile a basic password question', (test) => {
 });
 
 ava.test('it should transpile a basic number question', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
     type: 'number'
@@ -104,7 +104,7 @@ ava.test('it should transpile a basic number question', (test) => {
 });
 
 ava.test('it should transpile a basic editor question', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Welcome message',
     name: 'welcome',
     type: 'editor'
@@ -116,7 +116,7 @@ ava.test('it should transpile a basic editor question', (test) => {
 });
 
 ava.test('it should allow a default text value', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
     type: 'text',
@@ -130,7 +130,7 @@ ava.test('it should allow a default text value', (test) => {
 });
 
 ava.test('it should allow a default password value', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Wifi Key',
     name: 'key',
     type: 'password',
@@ -144,7 +144,7 @@ ava.test('it should allow a default password value', (test) => {
 });
 
 ava.test('it should allow a default number value', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
     type: 'number',
@@ -154,7 +154,7 @@ ava.test('it should allow a default number value', (test) => {
     name: 'updatePollInterval',
     type: 'input',
 
-    // Inquirer doesn't support a number input type, so this
+    // cli doesn't support a number input type, so this
     // test ensures the number is converted into a string.
     default: '60000'
 
@@ -162,7 +162,7 @@ ava.test('it should allow a default number value', (test) => {
 });
 
 ava.test('it should allow a default editor value', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Welcome message',
     name: 'welcome',
     type: 'editor',
@@ -176,7 +176,7 @@ ava.test('it should allow a default editor value', (test) => {
 });
 
 ava.test('it should transpile a basic list question', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Network Type',
     name: 'networkType',
     type: 'list',
@@ -208,7 +208,7 @@ ava.test('it should transpile a basic list question', (test) => {
 });
 
 ava.test('it should allow a default list value', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Network Type',
     name: 'networkType',
     type: 'list',
@@ -242,7 +242,7 @@ ava.test('it should allow a default list value', (test) => {
 });
 
 ava.test('it should transpile a basic checkbox question', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Enable HDMI',
     name: 'hdmi',
     type: 'checkbox'
@@ -254,7 +254,7 @@ ava.test('it should transpile a basic checkbox question', (test) => {
 });
 
 ava.test('it should allow a default checkbox value', (test) => {
-  test.deepEqual(inquirer.transpileQuestion({
+  test.deepEqual(cli.transpileQuestion({
     title: 'Enable HDMI',
     name: 'hdmi',
     type: 'checkbox',

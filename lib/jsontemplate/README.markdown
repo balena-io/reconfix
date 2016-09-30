@@ -1,7 +1,7 @@
 JSONTemplate
 ============
 
-> Bidirectional JSON templating engine
+> Bidirectional JSON-based templating engine
 
 JSONTemplate is a templating engine that operates on JSON objects, providing
 the unique benefit of allowing bidirectional transformations, that is, from

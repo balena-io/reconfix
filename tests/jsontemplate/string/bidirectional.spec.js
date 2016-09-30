@@ -18,7 +18,7 @@
 
 const ava = require('ava');
 const _ = require('lodash');
-const interpolation = require('../../lib/jsontemplate/interpolation');
+const string = require('../../../lib/jsontemplate/string');
 
 _.each([
 
@@ -217,99 +217,18 @@ _.each([
 
 ], (testCase) => {
 
-  ava.test(`.interpolateString() should interpolate ${testCase.template}`, (test) => {
-    test.deepEqual(interpolation.interpolateString(
+  ava.test(`.interpolate() should interpolate ${testCase.template}`, (test) => {
+    test.deepEqual(string.interpolate(
       testCase.template,
       testCase.data
     ), testCase.result);
   });
 
-  ava.test(`.deinterpolateString() should deinterpolate ${testCase.result}`, (test) => {
-    test.deepEqual(interpolation.deinterpolateString(
+  ava.test(`.deinterpolate() should deinterpolate ${testCase.result}`, (test) => {
+    test.deepEqual(string.deinterpolate(
       testCase.template,
       testCase.result
     ), testCase.data);
   });
 
-});
-
-ava.test('.interpolateString() should cast positive integer to string if interpolation has context', (test) => {
-  test.deepEqual(interpolation.interpolateString('My age is {{age}}', {
-    age: 21
-  }), 'My age is 21');
-});
-
-ava.test('.interpolateString() should cast negative integer to string if interpolation has context', (test) => {
-  test.deepEqual(interpolation.interpolateString('The temperature is {{temperature}}', {
-    temperature: -5
-  }), 'The temperature is -5');
-});
-
-ava.test('.interpolateString() should cast positive float to string if interpolation has context', (test) => {
-  test.deepEqual(interpolation.interpolateString('Foo {{bar}} baz', {
-    bar: 5.1
-  }), 'Foo 5.1 baz');
-});
-
-ava.test('.interpolateString() should cast negative float to string if interpolation has context', (test) => {
-  test.deepEqual(interpolation.interpolateString('Foo {{bar}} baz', {
-    bar: -3.3
-  }), 'Foo -3.3 baz');
-});
-
-ava.test('.interpolateString() should cast true to string if interpolation has context', (test) => {
-  test.deepEqual(interpolation.interpolateString('Foo {{bool}} baz', {
-    bool: true
-  }), 'Foo true baz');
-});
-
-ava.test('.interpolateString() should cast false to string if interpolation has context', (test) => {
-  test.deepEqual(interpolation.interpolateString('Foo {{bool}} baz', {
-    bool: false
-  }), 'Foo false baz');
-});
-
-ava.test('.interpolateString() should throw if a referenced variable does not exist', (test) => {
-  test.throws(() => {
-    interpolation.interpolateString('{{foo}}', {});
-  }, 'Missing variable foo');
-});
-
-ava.test('.interpolateString() should throw if a referenced variable is null', (test) => {
-  test.throws(() => {
-    interpolation.interpolateString('{{foo}}', {
-      foo: null
-    });
-  }, 'Missing variable foo');
-});
-
-ava.test('.interpolateString() should throw if a referenced nested variable does not exist', (test) => {
-  test.throws(() => {
-    interpolation.interpolateString('{{foo.bar.baz}}', {});
-  }, 'Missing variable foo.bar.baz');
-});
-
-ava.test('.interpolateString() should ignore unused data variables', (test) => {
-  const result = interpolation.interpolateString('{{foo}} {{bar}}', {
-    foo: 'FOO',
-    bar: 'BAR',
-    baz: 'BAZ',
-    data: {
-      hello: 'world'
-    }
-  });
-
-  test.deepEqual(result, 'FOO BAR');
-});
-
-ava.test('.deinterpolateString() should throw if strings do not match', (test) => {
-  test.throws(() => {
-    interpolation.deinterpolateString('Hello {{name}}!', 'Hi John Doe!');
-  }, 'No match for \'name\'');
-});
-
-ava.test('.deinterpolateString() should throw if interpolation result is missing', (test) => {
-  test.throws(() => {
-    interpolation.deinterpolateString('Hello {{name}}!', 'Hi !');
-  }, 'No match for \'name\'');
 });

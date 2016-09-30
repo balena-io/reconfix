@@ -195,10 +195,10 @@ _.each([
   // -------------------------------------------------------------------
 
   {
-    template: 'Hello, I\'m {{name}} and I\'m {{age}} years old',
+    template: 'Hello, I\'m {{name}} and I\'m {{number:age}} years old',
     data: {
       name: 'John Doe',
-      age: '43'
+      age: 43
     },
     result: 'Hello, I\'m John Doe and I\'m 43 years old'
   },
@@ -213,6 +213,25 @@ _.each([
       }
     },
     result: 'These are John Doe and Jane Doe'
+  },
+
+  // -------------------------------------------------------------------
+  // String <-> Number casting
+  // -------------------------------------------------------------------
+
+  {
+    template: '{{number:age}}',
+    data: {
+      age: 43
+    },
+    result: 43
+  },
+  {
+    template: 'Foo {{number:age}}',
+    data: {
+      age: 43
+    },
+    result: 'Foo 43'
   }
 
 ], (testCase) => {

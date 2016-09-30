@@ -87,3 +87,9 @@ ava.test('.interpolate() should ignore unused data variables', (test) => {
 
   test.deepEqual(result, 'FOO BAR');
 });
+
+ava.test('.interpolate() should be able to force a string type on a dependent string', (test) => {
+  test.deepEqual(string.interpolate('{{string:age}}', {
+    age: 43
+  }), '43');
+});

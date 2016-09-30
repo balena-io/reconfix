@@ -60,9 +60,9 @@ testBidirectionalCompilation('a single nested independent string property', {
 testBidirectionalCompilation('a single top-level independent number property', {
   magicNumber: '{{age}}'
 }, {
-  age: '17'
+  age: 17
 }, {
-  magicNumber: '17'
+  magicNumber: 17
 });
 
 testBidirectionalCompilation('a single top-level dependent number property', {

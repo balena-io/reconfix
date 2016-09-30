@@ -79,37 +79,56 @@ _.each([
   {
     template: '{{number}}',
     data: {
-      number: '0'
+      number: 0
     },
-    result: '0'
+    result: 0
   },
   {
     template: '{{age}}',
     data: {
-      age: '17'
+      age: 17
     },
-    result: '17'
+    result: 17
   },
   {
     template: '{{age}}',
     data: {
-      age: '21.5'
+      age: 21.5
     },
-    result: '21.5'
+    result: 21.5
   },
   {
     template: '{{number}}',
     data: {
-      number: '-14'
+      number: -14
     },
-    result: '-14'
+    result: -14
   },
   {
     template: '{{number}}',
     data: {
-      number: '5.0'
+      number: 5.0
     },
-    result: '5.0'
+    result: 5.0
+  },
+
+  // -------------------------------------------------------------------
+  // Top level boolean interpolation
+  // -------------------------------------------------------------------
+
+  {
+    template: '{{bool}}',
+    data: {
+      bool: true
+    },
+    result: true
+  },
+  {
+    template: '{{bool}}',
+    data: {
+      bool: false
+    },
+    result: false
   },
 
   // -------------------------------------------------------------------
@@ -136,7 +155,7 @@ _.each([
   /* eslint-enable camelcase */
 
   // -------------------------------------------------------------------
-  // Nested interpolation
+  // Nested string interpolation
   // -------------------------------------------------------------------
 
   {
@@ -151,6 +170,24 @@ _.each([
       }
     },
     result: 'John Doe'
+  },
+
+  // -------------------------------------------------------------------
+  // Nested number interpolation
+  // -------------------------------------------------------------------
+
+  {
+    template: '{{foo.bar.baz.age}}',
+    data: {
+      foo: {
+        bar: {
+          baz: {
+            age: 21
+          }
+        }
+      }
+    },
+    result: 21
   },
 
   // -------------------------------------------------------------------
@@ -196,22 +233,40 @@ _.each([
 
 });
 
-ava.test('.interpolateString() should reject numeric data values', (test) => {
-  test.throws(() => {
-    interpolation.interpolateString('{{foo}}', {
-      foo: 1
-    });
-  }, 'Invalid data value: 1');
+ava.test('.interpolateString() should cast positive integer to string if interpolation has context', (test) => {
+  test.deepEqual(interpolation.interpolateString('My age is {{age}}', {
+    age: 21
+  }), 'My age is 21');
 });
 
-ava.test('.interpolateString() should reject numeric nested data values', (test) => {
-  test.throws(() => {
-    interpolation.interpolateString('{{foo.bar}}', {
-      foo: {
-        bar: 1
-      }
-    });
-  }, 'Invalid data value: 1');
+ava.test('.interpolateString() should cast negative integer to string if interpolation has context', (test) => {
+  test.deepEqual(interpolation.interpolateString('The temperature is {{temperature}}', {
+    temperature: -5
+  }), 'The temperature is -5');
+});
+
+ava.test('.interpolateString() should cast positive float to string if interpolation has context', (test) => {
+  test.deepEqual(interpolation.interpolateString('Foo {{bar}} baz', {
+    bar: 5.1
+  }), 'Foo 5.1 baz');
+});
+
+ava.test('.interpolateString() should cast negative float to string if interpolation has context', (test) => {
+  test.deepEqual(interpolation.interpolateString('Foo {{bar}} baz', {
+    bar: -3.3
+  }), 'Foo -3.3 baz');
+});
+
+ava.test('.interpolateString() should cast true to string if interpolation has context', (test) => {
+  test.deepEqual(interpolation.interpolateString('Foo {{bool}} baz', {
+    bool: true
+  }), 'Foo true baz');
+});
+
+ava.test('.interpolateString() should cast false to string if interpolation has context', (test) => {
+  test.deepEqual(interpolation.interpolateString('Foo {{bool}} baz', {
+    bool: false
+  }), 'Foo false baz');
 });
 
 ava.test('.interpolateString() should throw if a referenced variable does not exist', (test) => {
@@ -220,12 +275,18 @@ ava.test('.interpolateString() should throw if a referenced variable does not ex
   }, 'Missing variable foo');
 });
 
-// TODO: Notice that in this case, `_.template` throws an undefined error
-// for the first property that is undefined instead of for the whole path.
+ava.test('.interpolateString() should throw if a referenced variable is null', (test) => {
+  test.throws(() => {
+    interpolation.interpolateString('{{foo}}', {
+      foo: null
+    });
+  }, 'Missing variable foo');
+});
+
 ava.test('.interpolateString() should throw if a referenced nested variable does not exist', (test) => {
   test.throws(() => {
     interpolation.interpolateString('{{foo.bar.baz}}', {});
-  }, 'Missing variable foo');
+  }, 'Missing variable foo.bar.baz');
 });
 
 ava.test('.interpolateString() should ignore unused data variables', (test) => {

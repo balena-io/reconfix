@@ -1,9 +1,9 @@
 {
   "config_txt": {
-    "gpu_mem_1024": "64"
+    "gpu_mem_1024": 64
   },
   "config_json": {
-    "appUpdatePollInterval": "60000"
+    "appUpdatePollInterval": 60000
   },
   "network_config": {
     "service_home_ethernet": {

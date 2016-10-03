@@ -18,6 +18,10 @@
 
 const ava = require('ava');
 const path = require('path');
+const Bluebird = require('bluebird');
+const fs = require('fs');
+const rindle = require('rindle');
+const tmp = Bluebird.promisifyAll(require('tmp'));
 const filesystem = require('../../../lib/engine/filesystem');
 
 const testFixture = (name) => {
@@ -43,3 +47,78 @@ const testFixture = (name) => {
 };
 
 testFixture('resinos-v1');
+
+const createTemporaryFileFromFile = (file) => {
+  return tmp.fileAsync().tap((temporaryFilePath) => {
+    const stream = fs.createReadStream(file)
+      .pipe(fs.createWriteStream(temporaryFilePath));
+    return rindle.wait(stream);
+  });
+};
+
+/* eslint-disable camelcase */
+
+ava.test('.writeImageData() should write a files manifest to an empty image', (test) => {
+  const imagePath = path.join(__dirname, 'fixtures', 'images', 'empty', 'image.img');
+
+  const manifest = {
+    config_txt: {
+      location: {
+        path: 'config.txt',
+        partition: {
+          primary: 1
+        }
+      },
+      data: 'gpu_mem_1024=64'
+    },
+    config_json: {
+      location: {
+        path: 'config.json',
+        partition: {
+          primary: 4,
+          logical: 1
+        }
+      },
+      data: '{\n  "foo":"bar"\n}'
+    }
+  };
+
+  const schema = {
+    config_txt: {
+      type: 'ini',
+      location: {
+        path: 'config.txt',
+        partition: {
+          primary: 1
+        }
+      }
+    },
+    network_config: {
+      type: 'ini',
+      location: {
+        parent: 'config_json',
+        property: [ 'files', 'network/network.config' ]
+      }
+    },
+    config_json: {
+      type: 'json',
+      location: {
+        path: 'config.json',
+        partition: {
+          primary: 4,
+          logical: 1
+        }
+      }
+    }
+  };
+
+  return createTemporaryFileFromFile(imagePath).then((temporaryFilePath) => {
+    return filesystem.writeImageData(manifest, temporaryFilePath).then(() => {
+      return filesystem.readImageData(schema, temporaryFilePath).then((data) => {
+        test.deepEqual(data, manifest);
+      });
+    });
+  });
+});
+
+/* eslint-enable camelcase */

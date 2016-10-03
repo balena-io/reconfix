@@ -17,14 +17,15 @@
 'use strict';
 
 const ava = require('ava');
-const path = require('path');
+const _ = require('lodash');
 const Bluebird = require('bluebird');
 const fs = require('fs');
 const rindle = require('rindle');
+const path = require('path');
 const tmp = Bluebird.promisifyAll(require('tmp'));
 const filesystem = require('../../../lib/engine/filesystem');
 
-const testFixture = (name) => {
+const testReadFixture = (name) => {
   const fixturePath = path.join(__dirname, 'fixtures', 'images', name);
   const files = {
     image: path.join(fixturePath, 'image.img'),
@@ -46,7 +47,7 @@ const testFixture = (name) => {
   });
 };
 
-testFixture('resinos-v1');
+testReadFixture('resinos-v1');
 
 const createTemporaryFileFromFile = (file) => {
   return tmp.fileAsync().tap((temporaryFilePath) => {
@@ -56,69 +57,23 @@ const createTemporaryFileFromFile = (file) => {
   });
 };
 
-/* eslint-disable camelcase */
-
-ava.test('.writeImageData() should write a files manifest to an empty image', (test) => {
-  const imagePath = path.join(__dirname, 'fixtures', 'images', 'empty', 'image.img');
-
-  const manifest = {
-    config_txt: {
-      location: {
-        path: 'config.txt',
-        partition: {
-          primary: 1
-        }
-      },
-      data: 'gpu_mem_1024=64'
-    },
-    config_json: {
-      location: {
-        path: 'config.json',
-        partition: {
-          primary: 4,
-          logical: 1
-        }
-      },
-      data: '{\n  "foo":"bar"\n}'
-    }
+const testWriteFixture = (name) => {
+  const fixturePath = path.join(__dirname, 'fixtures', 'images', name);
+  const files = {
+    image: path.join(fixturePath, 'image.img'),
+    schema: require(path.join(fixturePath, 'schema.json')),
+    data: require(path.join(fixturePath, 'data.json'))
   };
 
-  const schema = {
-    config_txt: {
-      type: 'ini',
-      location: {
-        path: 'config.txt',
-        partition: {
-          primary: 1
-        }
-      }
-    },
-    network_config: {
-      type: 'ini',
-      location: {
-        parent: 'config_json',
-        property: [ 'files', 'network/network.config' ]
-      }
-    },
-    config_json: {
-      type: 'json',
-      location: {
-        path: 'config.json',
-        partition: {
-          primary: 4,
-          logical: 1
-        }
-      }
-    }
-  };
-
-  return createTemporaryFileFromFile(imagePath).then((temporaryFilePath) => {
-    return filesystem.writeImageData(manifest, temporaryFilePath).then(() => {
-      return filesystem.readImageData(schema, temporaryFilePath).then((data) => {
-        test.deepEqual(data, manifest);
+  ava.test(`(${name}) should write/read settings`, (test) => {
+    return createTemporaryFileFromFile(files.image).then((temporaryFilePath) => {
+      return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, _.cloneDeep(files.data)).then(() => {
+        return filesystem.readImageConfiguration(files.schema, temporaryFilePath).then((data) => {
+          test.deepEqual(data, files.data);
+        });
       });
     });
   });
-});
+};
 
-/* eslint-enable camelcase */
+testWriteFixture('resinos-v1-empty');

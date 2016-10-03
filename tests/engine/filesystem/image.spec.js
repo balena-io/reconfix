@@ -25,12 +25,19 @@ const testFixture = (name) => {
   const files = {
     image: path.join(fixturePath, 'image.img'),
     schema: require(path.join(fixturePath, 'schema.json')),
+    wet: require(path.join(fixturePath, 'wet.json')),
     data: require(path.join(fixturePath, 'data.json'))
   };
 
-  ava.test(`.readImageConfiguration() (${name}) should read files`, (test) => {
-    return filesystem.readImageConfiguration(files.schema, files.image).then((data) => {
+  ava.test(`.readImageData() (${name}) should read files`, (test) => {
+    return filesystem.readImageData(files.schema, files.image).then((data) => {
       test.deepEqual(data, files.data);
+    });
+  });
+
+  ava.test(`.readImageConfiguration() (${name}) should read configuration`, (test) => {
+    return filesystem.readImageConfiguration(files.schema, files.image).then((data) => {
+      test.deepEqual(data, files.wet);
     });
   });
 };

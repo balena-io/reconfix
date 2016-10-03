@@ -17,19 +17,26 @@
 'use strict';
 
 const ava = require('ava');
+const _ = require('lodash');
 const path = require('path');
 const filesystem = require('../../../lib/engine/filesystem');
 
 const testFixture = (name) => {
   const fixturePath = path.join(__dirname, 'fixtures', name);
   const files = {
-    files: require(path.join(fixturePath, 'files.json')),
+    manifest: require(path.join(fixturePath, 'files.json')),
     wet: require(path.join(fixturePath, 'wet.json')),
     schema: require(path.join(fixturePath, 'schema.json'))
   };
 
-  ava.test(`(${name}) should generate files manifest`, (test) => {
-    test.deepEqual(filesystem.generateFilesManifest(files.schema, files.wet), files.files);
+  ava.test(`.generateFilesManifest() (${name}) should generate files manifest`, (test) => {
+    const clonedFiles = _.cloneDeep(files);
+    test.deepEqual(filesystem.generateFilesManifest(clonedFiles.schema, clonedFiles.wet), clonedFiles.manifest);
+  });
+
+  ava.test(`.parseFilesManifest() (${name}) should parse files manifest`, (test) => {
+    const clonedFiles = _.cloneDeep(files);
+    test.deepEqual(filesystem.parseFilesManifest(clonedFiles.schema, clonedFiles.manifest), clonedFiles.wet);
   });
 };
 

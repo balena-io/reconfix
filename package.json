@@ -35,7 +35,7 @@
     "ini": "^1.3.4",
     "inquirer": "^1.1.3",
     "lodash": "^4.16.2",
-    "resin-image-fs": "resin-io/resin-image-fs#read-write-file",
+    "resin-image-fs": "^2.2.0",
     "rindle": "^1.3.0"
   }
 }

@@ -62,14 +62,14 @@ const testWriteFixture = (name) => {
   const files = {
     image: path.join(fixturePath, 'image.img'),
     schema: require(path.join(fixturePath, 'schema.json')),
-    data: require(path.join(fixturePath, 'data.json'))
+    wet: require(path.join(fixturePath, 'wet.json'))
   };
 
   ava.test(`(${name}) should write/read settings`, (test) => {
     return createTemporaryFileFromFile(files.image).then((temporaryFilePath) => {
-      return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, _.cloneDeep(files.data)).then(() => {
+      return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, _.cloneDeep(files.wet)).then(() => {
         return filesystem.readImageConfiguration(files.schema, temporaryFilePath).then((data) => {
-          test.deepEqual(data, files.data);
+          test.deepEqual(data, files.wet);
         });
       });
     });

@@ -25,6 +25,7 @@ const testFixture = (name) => {
   const files = {
     dry: require(path.join(fixturePath, 'dry.json')),
     wet: require(path.join(fixturePath, 'wet.json')),
+    wetExtra: require(path.join(fixturePath, 'wet-extra.json')),
     schema: require(path.join(fixturePath, 'schema.json'))
   };
 
@@ -34,6 +35,10 @@ const testFixture = (name) => {
 
   ava.test(`(${name}) should extract settings`, (test) => {
     test.deepEqual(configuration.extract(files.schema, files.wet), files.dry);
+  });
+
+  ava.test(`(${name}) should ignore extra settings when extracting`, (test) => {
+    test.deepEqual(configuration.extract(files.schema, files.wetExtra), files.dry);
   });
 };
 

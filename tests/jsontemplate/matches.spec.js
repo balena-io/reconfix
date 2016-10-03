@@ -32,4 +32,5 @@ const testFixture = (name) => {
   });
 };
 
-testFixture('resinos-v1');
+testFixture('resinos-v1-wifi');
+testFixture('resinos-v1-ethernet');

@@ -35,6 +35,7 @@
     "ini": "^1.3.4",
     "inquirer": "^1.1.3",
     "lodash": "^4.16.2",
-    "resin-image-fs": "^2.1.2"
+    "resin-image-fs": "^2.1.2",
+    "rindle": "^1.3.0"
   }
 }

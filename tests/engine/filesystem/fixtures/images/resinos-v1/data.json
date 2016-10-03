@@ -1,0 +1,35 @@
+{
+  "config_txt": {
+    "location": {
+      "path": "config.txt",
+      "partition": {
+        "primary": 1
+      }
+    },
+    "data": {
+      "gpu_mem": 16,
+      "dtparam": "spi=on",
+      "device_tree_overlay": "w1-gpio-pullup-overlay.dtb"
+    }
+  },
+  "config_json": {
+    "location": {
+      "path": "config.json",
+      "partition": {
+        "primary": 4,
+        "logical": 1
+      }
+    },
+    "data": {
+      "applicationId": 9999,
+      "apiKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "userId": 99,
+      "username": "johndoe",
+      "deviceType": "raspberry-pi2",
+      "files": {
+        "network/settings": "[global]\nOfflineMode=false\n\n[WiFi]\nEnable=true\nTethering=false\n\n[Wired]\nEnable=true\nTethering=false\n\n[Bluetooth]\nEnable=true\nTethering=false",
+        "network/network.config": "[service_home_ethernet]\nType = ethernet\nNameservers = 8.8.8.8,8.8.4.4"
+      }
+    }
+  }
+}

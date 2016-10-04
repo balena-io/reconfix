@@ -19,6 +19,7 @@
 const filesystem = require('../lib/engine/filesystem');
 const configuration = require('../lib/engine/configuration');
 const visuals = require('../lib/visuals/cli');
+const reconfix = require('../lib');
 const ARGV_IMAGE = process.argv[2];
 
 if (!ARGV_IMAGE) {
@@ -148,9 +149,7 @@ const schema = {
   }
 };
 
-filesystem.readImageConfiguration(schema.files, ARGV_IMAGE).then((data) => {
-  const settings = configuration.extract(schema.mapper, data);
-
+reconfix.readConfiguration(schema, ARGV_IMAGE).then((data) => {
   return visuals.run(schema.questions, settings).then((answers) => {
     const wet = configuration.generate(schema.mapper, answers);
     return filesystem.writeImageConfiguration(schema.files, ARGV_IMAGE, wet).then(() => {

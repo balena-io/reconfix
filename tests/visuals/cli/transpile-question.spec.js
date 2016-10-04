@@ -17,6 +17,7 @@
 'use strict';
 
 const ava = require('ava');
+const _ = require('lodash');
 const cli = require('../../../lib/visuals/cli');
 
 ava.test('should throw if type is not recognised', (test) => {
@@ -92,14 +93,98 @@ ava.test('it should transpile a basic password question', (test) => {
 });
 
 ava.test('it should transpile a basic number question', (test) => {
-  test.deepEqual(cli.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
     type: 'number'
-  }), {
+  });
+
+  test.deepEqual(_.omitBy(question, _.isFunction), {
     message: 'Update Poll Interval',
     name: 'updatePollInterval',
     type: 'input'
+  });
+});
+
+_.each([
+  {
+    value: '123',
+    expected: true
+  },
+  {
+    value: '0',
+    expected: true
+  },
+  {
+    value: '-1',
+    expected: true
+  },
+  {
+    value: '3.5',
+    expected: true
+  },
+  {
+    value: '.5',
+    expected: true
+  },
+  {
+    value: '-10.3',
+    expected: true
+  },
+  {
+    value: 5,
+    expected: true
+  },
+  {
+    value: 'foo',
+    expected: 'Invalid number'
+  }
+], (testCase) => {
+  ava.test(`it should return ${testCase.expected} for ${testCase.value} number validation`, (test) => {
+    const question = cli.transpileQuestion({
+      title: 'Update Poll Interval',
+      name: 'updatePollInterval',
+      type: 'number'
+    });
+
+    test.is(question.validate(testCase.value), testCase.expected);
+  });
+});
+
+_.each([
+  {
+    value: '123',
+    expected: 123
+  },
+  {
+    value: '0',
+    expected: 0
+  },
+  {
+    value: '-1',
+    expected: -1
+  },
+  {
+    value: '3.5',
+    expected: 3.5
+  },
+  {
+    value: '.5',
+    expected: 0.5
+  },
+  {
+    value: '-10.3',
+    expected: -10.3
+  }
+], (testCase) => {
+  ava.test(`it should return ${testCase.expected} for ${testCase.value} number filter`, (test) => {
+    const question = cli.transpileQuestion({
+      title: 'Update Poll Interval',
+      name: 'updatePollInterval',
+      type: 'number'
+    });
+
+    test.is(question.filter(testCase.value), testCase.expected);
   });
 });
 
@@ -144,20 +229,18 @@ ava.test('it should allow a default password value', (test) => {
 });
 
 ava.test('it should allow a default number value', (test) => {
-  test.deepEqual(cli.transpileQuestion({
+  const question = cli.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
     type: 'number',
     default: 60000
-  }), {
+  });
+
+  test.deepEqual(_.omitBy(question, _.isFunction), {
     message: 'Update Poll Interval',
     name: 'updatePollInterval',
     type: 'input',
-
-    // cli doesn't support a number input type, so this
-    // test ensures the number is converted into a string.
-    default: '60000'
-
+    default: 60000
   });
 });
 

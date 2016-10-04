@@ -26,134 +26,134 @@ if (!ARGV_IMAGE) {
   process.exit(1);
 }
 
-const DRY_VISUALS = [
-  {
-    title: 'GPU Mem',
-    name: 'gpuMem',
-    type: 'number'
-  },
-  {
-    title: 'Application Update Poll Interval',
-    name: 'appUpdatePollInterval',
-    type: 'text'
-  },
-  {
-    title: 'Network Type',
-    name: 'networkType',
-    type: 'list',
-    choices: [
-      {
-        title: 'Wifi',
-        name: 'wifi',
-        questions: [
-          {
-            title: 'Wifi SSID',
-            name: 'networkSsid',
-            type: 'text'
-          },
-          {
-            title: 'Wifi Key',
-            name: 'networkKey',
-            type: 'password'
-          }
-        ]
+const schema = {
+  questions: [
+    {
+      title: 'GPU Mem',
+      name: 'gpuMem',
+      type: 'number'
+    },
+    {
+      title: 'Application Update Poll Interval',
+      name: 'appUpdatePollInterval',
+      type: 'text'
+    },
+    {
+      title: 'Network Type',
+      name: 'networkType',
+      type: 'list',
+      choices: [
+        {
+          title: 'Wifi',
+          name: 'wifi',
+          questions: [
+            {
+              title: 'Wifi SSID',
+              name: 'networkSsid',
+              type: 'text'
+            },
+            {
+              title: 'Wifi Key',
+              name: 'networkKey',
+              type: 'password'
+            }
+          ]
+        },
+        {
+          title: 'Ethernet',
+          name: 'ethernet'
+        }
+      ]
+    }
+  ],
+  mapper: [
+    {
+      template: {
+        gpu_mem: '{{gpuMem}}'
       },
-      {
-        title: 'Ethernet',
-        name: 'ethernet'
-      }
-    ]
-  }
-];
-
-const WET_DRY = [
-  {
-    template: {
-      gpu_mem: '{{gpuMem}}'
+      domain: [
+        [ 'config_txt', 'gpu_mem' ]
+      ]
     },
-    domain: [
-      [ 'config_txt', 'gpu_mem' ]
-    ]
-  },
-  {
-    template: {
-      appUpdatePollInterval: '{{appUpdatePollInterval}}'
+    {
+      template: {
+        appUpdatePollInterval: '{{appUpdatePollInterval}}'
+      },
+      domain: [
+        [ 'config_json', 'appUpdatePollInterval' ]
+      ]
     },
-    domain: [
-      [ 'config_json', 'appUpdatePollInterval' ]
-    ]
-  },
-  {
-    property: [ 'networkType' ],
-    domain: [
-      [ 'network_config', 'service_home_ethernet' ],
-      [ 'network_config', 'service_home_wifi' ]
-    ],
-    choice: [
-      {
-        value: 'ethernet',
-        template: {
-          service_home_ethernet: {
-            Type: 'ethernet',
-            Nameservers: '8.8.8.8,8.8.4.4'
+    {
+      property: [ 'networkType' ],
+      domain: [
+        [ 'network_config', 'service_home_ethernet' ],
+        [ 'network_config', 'service_home_wifi' ]
+      ],
+      choice: [
+        {
+          value: 'ethernet',
+          template: {
+            service_home_ethernet: {
+              Type: 'ethernet',
+              Nameservers: '8.8.8.8,8.8.4.4'
+            }
+          }
+        },
+        {
+          value: 'wifi',
+          template: {
+            service_home_ethernet: {
+              Type: 'ethernet',
+              Nameservers: '8.8.8.8,8.8.4.4'
+            },
+            service_home_wifi: {
+              Hidden: true,
+              Type: 'wifi',
+              Name: '{{networkSsid}}',
+              Passphrase: '{{networkKey}}',
+              Nameservers: '8.8.8.8,8.8.4.4'
+            }
           }
         }
-      },
-      {
-        value: 'wifi',
-        template: {
-          service_home_ethernet: {
-            Type: 'ethernet',
-            Nameservers: '8.8.8.8,8.8.4.4'
-          },
-          service_home_wifi: {
-            Hidden: true,
-            Type: 'wifi',
-            Name: '{{networkSsid}}',
-            Passphrase: '{{networkKey}}',
-            Nameservers: '8.8.8.8,8.8.4.4'
-          }
+      ]
+    }
+  ],
+  files: {
+    config_txt: {
+      type: 'ini',
+      location: {
+        path: 'config.txt',
+        partition: {
+          primary: 1
         }
       }
-    ]
-  }
-];
-
-const WET_FILES = {
-  config_txt: {
-    type: 'ini',
-    location: {
-      path: 'config.txt',
-      partition: {
-        primary: 1
+    },
+    network_config: {
+      type: 'ini',
+      location: {
+        parent: 'config_json',
+        property: [ 'files', 'network/network.config' ]
       }
-    }
-  },
-  network_config: {
-    type: 'ini',
-    location: {
-      parent: 'config_json',
-      property: [ 'files', 'network/network.config' ]
-    }
-  },
-  config_json: {
-    type: 'json',
-    location: {
-      path: 'config.json',
-      partition: {
-        primary: 4,
-        logical: 1
+    },
+    config_json: {
+      type: 'json',
+      location: {
+        path: 'config.json',
+        partition: {
+          primary: 4,
+          logical: 1
+        }
       }
     }
   }
 };
 
-filesystem.readImageConfiguration(WET_FILES, ARGV_IMAGE).then((data) => {
-  const settings = configuration.extract(WET_DRY, data);
+filesystem.readImageConfiguration(schema.files, ARGV_IMAGE).then((data) => {
+  const settings = configuration.extract(schema.mapper, data);
 
-  return visuals.run(DRY_VISUALS, settings).then((answers) => {
-    const wet = configuration.generate(WET_DRY, answers);
-    return filesystem.writeImageConfiguration(WET_FILES, ARGV_IMAGE, wet).then(() => {
+  return visuals.run(schema.questions, settings).then((answers) => {
+    const wet = configuration.generate(schema.mapper, answers);
+    return filesystem.writeImageConfiguration(schema.files, ARGV_IMAGE, wet).then(() => {
       console.log('Done!');
     });
   });

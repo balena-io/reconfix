@@ -18,12 +18,53 @@
 
 const filesystem = require('../lib/engine/filesystem');
 const configuration = require('../lib/engine/configuration');
+const visuals = require('../lib/visuals/cli');
 const ARGV_IMAGE = process.argv[2];
 
 if (!ARGV_IMAGE) {
   console.error('Usage: [image]');
   process.exit(1);
 }
+
+const DRY_VISUALS = [
+  {
+    title: 'GPU Mem',
+    name: 'gpuMem',
+    type: 'number'
+  },
+  {
+    title: 'Application Update Poll Interval',
+    name: 'appUpdatePollInterval',
+    type: 'text'
+  },
+  {
+    title: 'Network Type',
+    name: 'networkType',
+    type: 'list',
+    choices: [
+      {
+        title: 'Wifi',
+        name: 'wifi',
+        questions: [
+          {
+            title: 'Wifi SSID',
+            name: 'networkSsid',
+            type: 'text'
+          },
+          {
+            title: 'Wifi Key',
+            name: 'networkKey',
+            type: 'password'
+          }
+        ]
+      },
+      {
+        title: 'Ethernet',
+        name: 'ethernet'
+      }
+    ]
+  }
+];
 
 const WET_DRY = [
   {
@@ -43,7 +84,7 @@ const WET_DRY = [
     ]
   },
   {
-    property: [ 'network', 'type' ],
+    property: [ 'networkType' ],
     domain: [
       [ 'network_config', 'service_home_ethernet' ],
       [ 'network_config', 'service_home_wifi' ]
@@ -68,8 +109,8 @@ const WET_DRY = [
           service_home_wifi: {
             Hidden: true,
             Type: 'wifi',
-            Name: '{{network.ssid}}',
-            Passphrase: '{{network.key}}',
+            Name: '{{networkSsid}}',
+            Passphrase: '{{networkKey}}',
             Nameservers: '8.8.8.8,8.8.4.4'
           }
         }
@@ -109,5 +150,11 @@ const WET_FILES = {
 
 filesystem.readImageConfiguration(WET_FILES, ARGV_IMAGE).then((data) => {
   const settings = configuration.extract(WET_DRY, data);
-  console.log(settings);
+
+  return visuals.run(DRY_VISUALS, settings).then((answers) => {
+    const wet = configuration.generate(WET_DRY, answers);
+    return filesystem.writeImageConfiguration(WET_FILES, ARGV_IMAGE, wet).then(() => {
+      console.log('Done!');
+    });
+  });
 });

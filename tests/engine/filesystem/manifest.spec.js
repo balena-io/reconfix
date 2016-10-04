@@ -17,7 +17,6 @@
 'use strict';
 
 const ava = require('ava');
-const _ = require('lodash');
 const path = require('path');
 const filesystem = require('../../../lib/engine/filesystem');
 
@@ -30,13 +29,11 @@ const testFixture = (name) => {
   };
 
   ava.test(`.generateFilesManifest() (${name}) should generate files manifest`, (test) => {
-    const clonedFiles = _.cloneDeep(files);
-    test.deepEqual(filesystem.generateFilesManifest(clonedFiles.schema, clonedFiles.wet), clonedFiles.manifest);
+    test.deepEqual(filesystem.generateFilesManifest(files.schema, files.wet), files.manifest);
   });
 
   ava.test(`.parseFilesManifest() (${name}) should parse files manifest`, (test) => {
-    const clonedFiles = _.cloneDeep(files);
-    test.deepEqual(filesystem.parseFilesManifest(clonedFiles.schema, clonedFiles.manifest), clonedFiles.wet);
+    test.deepEqual(filesystem.parseFilesManifest(files.schema, files.manifest), files.wet);
   });
 };
 

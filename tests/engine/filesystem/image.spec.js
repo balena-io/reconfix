@@ -17,7 +17,6 @@
 'use strict';
 
 const ava = require('ava');
-const _ = require('lodash');
 const Bluebird = require('bluebird');
 const fs = require('fs');
 const rindle = require('rindle');
@@ -67,7 +66,7 @@ const testWriteFixture = (name) => {
 
   ava.test(`(${name}) should write/read settings`, (test) => {
     return createTemporaryFileFromFile(files.image).then((temporaryFilePath) => {
-      return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, _.cloneDeep(files.wet)).then(() => {
+      return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, files.wet).then(() => {
         return filesystem.readImageConfiguration(files.schema, temporaryFilePath).then((data) => {
           test.deepEqual(data, files.wet);
         });
@@ -103,7 +102,7 @@ ava.test('should extend a file instead of overriding it', (test) => {
   };
 
   return createTemporaryFileFromFile(imagePath).then((temporaryFilePath) => {
-    return filesystem.writeImageConfiguration(schema, temporaryFilePath, _.cloneDeep(wet)).then(() => {
+    return filesystem.writeImageConfiguration(schema, temporaryFilePath, wet).then(() => {
       return filesystem.readImageConfiguration(schema, temporaryFilePath).then((data) => {
         test.deepEqual(data, {
           config_txt: {

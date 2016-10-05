@@ -150,10 +150,9 @@ const schema = {
 };
 
 reconfix.readConfiguration(schema, ARGV_IMAGE).then((data) => {
-  return visuals.run(schema.questions, settings).then((answers) => {
-    const wet = configuration.generate(schema.mapper, answers);
-    return filesystem.writeImageConfiguration(schema.files, ARGV_IMAGE, wet).then(() => {
-      console.log('Done!');
-    });
+  return visuals.run(schema.questions, data).then((answers) => {
+    return reconfix.writeConfiguration(schema, answers, ARGV_IMAGE);
   });
+}).then(() => {
+  console.log('Done!');
 });

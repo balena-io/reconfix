@@ -43,3 +43,110 @@ const testFixture = (name) => {
 };
 
 testFixture('resinos-v1');
+
+ava.test('.generate() should preserve custom defaults values', (test) => {
+
+  /* eslint-disable camelcase */
+
+  test.deepEqual(configuration.generate([
+    {
+      template: {
+        gpu_mem_1024: '{{gpuMem1024}}'
+      },
+      domain: [
+        [ 'config_txt', 'gpu_mem_1024' ]
+      ]
+    }
+  ], {
+    gpuMem1024: 64
+  }, {
+    defaults: {
+      config_txt: {
+        gpu_mem_1024: 32,
+        foo: 'bar',
+        bar: 'baz'
+      }
+    }
+  }), {
+    config_txt: {
+      gpu_mem_1024: 64,
+      foo: 'bar',
+      bar: 'baz'
+    }
+  });
+
+  /* eslint-enable camelcase */
+
+});
+
+ava.test('.generate() should override custom default values in choices', (test) => {
+
+  /* eslint-disable camelcase */
+
+  test.deepEqual(configuration.generate([
+    {
+      property: [ 'network', 'type' ],
+      domain: [
+        [ 'network_config', 'service_home_ethernet' ],
+        [ 'network_config', 'service_home_wifi' ]
+      ],
+      choice: [
+        {
+          value: 'ethernet',
+          template: {
+            service_home_ethernet: {
+              type: 'ethernet',
+              nameservers: '8.8.8.8,8.8.4.4'
+            }
+          }
+        },
+        {
+          value: 'wifi',
+          template: {
+            service_home_ethernet: {
+              type: 'ethernet',
+              nameservers: '8.8.8.8,8.8.4.4'
+            },
+            service_home_wifi: {
+              hidden: true,
+              type: 'wifi',
+              name: '{{network.ssid}}',
+              passphrase: '{{network.key}}',
+              nameservers: '8.8.8.8,8.8.4.4'
+            }
+          }
+        }
+      ]
+    }
+  ], {
+    network: {
+      type: 'ethernet'
+    }
+  }, {
+    defaults: {
+      network_config: {
+        service_home_ethernet: {
+          type: 'ethernet',
+          nameservers: '8.8.8.8,8.8.4.4'
+        },
+        service_home_wifi: {
+          hidden: true,
+          type: 'wifi',
+          name: 'resin',
+          passphrase: 'secret',
+          nameservers: '8.8.8.8,8.8.4.4'
+        }
+      }
+    }
+  }), {
+    network_config: {
+      service_home_ethernet: {
+        type: 'ethernet',
+        nameservers: '8.8.8.8,8.8.4.4'
+      }
+    }
+  });
+
+  /* eslint-enable camelcase */
+
+});

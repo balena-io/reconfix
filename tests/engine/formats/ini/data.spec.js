@@ -35,7 +35,7 @@ const testFile = (filename) => {
       }).then(JSON.parse)
     }).then((contents) => {
       test.deepEqual(ini.parse(contents.ini), contents.json);
-      test.deepEqual(ini.serialise(contents.json) + '\n', contents.ini);
+      test.deepEqual(ini.serialise(contents.json) + '\n', contents.ini.replace(/\r/g, ''));
     });
   });
 };

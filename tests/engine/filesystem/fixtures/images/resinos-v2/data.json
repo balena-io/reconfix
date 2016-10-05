@@ -1,0 +1,16 @@
+{
+  "system_connections": {
+    "location": {
+      "path": "system-connections",
+      "partition": {
+        "primary": 4,
+        "logical": 1
+      }
+    },
+    "data": {
+      "cellular": "[connection]\nname=cellular\n",
+      "ethernet": "[connection]\nname=ethernet\n",
+      "wifi": "[connection]\nname=wifi\n"
+    }
+  }
+}

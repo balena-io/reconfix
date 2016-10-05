@@ -23,7 +23,8 @@ const reconfix = require('../../lib');
 
 _.each([
   'resinos-v1-ethernet',
-  'resinos-v1-wifi'
+  'resinos-v1-wifi',
+  'resinos-v2'
 ], (fixtureName) => {
 
   ava.test(`(${fixtureName}) should read settings`, (test) => {

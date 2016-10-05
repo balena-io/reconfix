@@ -47,6 +47,7 @@ const testReadFixture = (name) => {
 };
 
 testReadFixture('resinos-v1');
+testReadFixture('resinos-v2');
 
 const createTemporaryFileFromFile = (file) => {
   return tmp.fileAsync().tap((temporaryFilePath) => {

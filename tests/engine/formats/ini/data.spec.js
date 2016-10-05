@@ -43,3 +43,4 @@ const testFile = (filename) => {
 testFile('connman');
 testFile('desktop');
 testFile('sample');
+testFile('cellular');

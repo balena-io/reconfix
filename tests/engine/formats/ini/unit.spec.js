@@ -95,6 +95,18 @@ utils.testBidirectional(ini, 'a string property surrounded by numbers', [
   foo: '34bar34'
 });
 
+utils.testBidirectional(ini, 'a string property with a trailing hash', [
+  'foo=bar#'
+], {
+  foo: 'bar#'
+});
+
+utils.testBidirectional(ini, 'a string property with a leading hash', [
+  'foo=#bar'
+], {
+  foo: '#bar'
+});
+
 utils.testBidirectional(ini, 'a zero property', [
   'foo=0'
 ], {

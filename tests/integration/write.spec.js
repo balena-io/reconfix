@@ -20,6 +20,7 @@ const ava = require('ava');
 const Bluebird = require('bluebird');
 const tmp = Bluebird.promisifyAll(require('tmp'));
 const path = require('path');
+const imagefs = require('resin-image-fs');
 const fs = require('fs');
 const rindle = require('rindle');
 const filesystem = require('../../lib/engine/filesystem');
@@ -118,4 +119,102 @@ ava.test('should extend the current values instead of overwriting', (test) => {
 
   /* eslint-enable camelcase */
 
+});
+
+ava.test('should be able to modify a fileset', (test) => {
+  const fixturesPath = path.join(__dirname, 'fixtures');
+  const schema = require(path.join(fixturesPath, 'resinos-v2', 'schema.json'));
+  const fixtureImage = path.join(fixturesPath, 'resinos-v2', 'image.img');
+
+  const readFiles = (image) => {
+    return Bluebird.props({
+      cellular: imagefs.readFile({
+        image: image,
+        partition: schema.files.system_connections.location.partition,
+        path: path.join(schema.files.system_connections.location.path, 'cellular')
+      }),
+      ethernet: imagefs.readFile({
+        image: image,
+        partition: schema.files.system_connections.location.partition,
+        path: path.join(schema.files.system_connections.location.path, 'ethernet')
+      }),
+      wifi: imagefs.readFile({
+        image: image,
+        partition: schema.files.system_connections.location.partition,
+        path: path.join(schema.files.system_connections.location.path, 'wifi')
+      })
+    });
+  };
+
+  return createTemporaryFileFromFile(fixtureImage).then((imagePath) => {
+    return readFiles(imagePath).then((files) => {
+      test.deepEqual(files, {
+        cellular: '[connection]\nname=cellular\n',
+        ethernet: '[connection]\nname=ethernet\n',
+        wifi: '[connection]\nname=wifi\n'
+      });
+
+      return reconfix.writeConfiguration(schema, {
+        cellularConnectionName: 'newcellular',
+        ethernetConnectionName: 'newethernet',
+        wifiConnectionName: 'newwifi'
+      }, imagePath);
+    }).then(() => {
+      return readFiles(imagePath);
+    }).then((files) => {
+      test.deepEqual(files, {
+        cellular: '[connection]\nname=newcellular',
+        ethernet: '[connection]\nname=newethernet',
+        wifi: '[connection]\nname=newwifi'
+      });
+    });
+  });
+});
+
+ava.test('should not override custom properties inside a fileset', (test) => {
+  const fixturesPath = path.join(__dirname, 'fixtures');
+  const schema = require(path.join(fixturesPath, 'resinos-v2', 'schema.json'));
+  const fixtureImage = path.join(fixturesPath, 'resinos-v2', 'image.img');
+
+  const readFiles = (image) => {
+    return Bluebird.props({
+      cellular: imagefs.readFile({
+        image: image,
+        partition: schema.files.system_connections.location.partition,
+        path: path.join(schema.files.system_connections.location.path, 'cellular')
+      }),
+      ethernet: imagefs.readFile({
+        image: image,
+        partition: schema.files.system_connections.location.partition,
+        path: path.join(schema.files.system_connections.location.path, 'ethernet')
+      }),
+      wifi: imagefs.readFile({
+        image: image,
+        partition: schema.files.system_connections.location.partition,
+        path: path.join(schema.files.system_connections.location.path, 'wifi')
+      })
+    });
+  };
+
+  return createTemporaryFileFromFile(fixtureImage).then((imagePath) => {
+    return imagefs.writeFile({
+      image: imagePath,
+      partition: schema.files.system_connections.location.partition,
+      path: path.join(schema.files.system_connections.location.path, 'cellular')
+    }, '[connection]\nname=cellular\nfoo=bar\nbar=baz').then(() => {
+      return reconfix.writeConfiguration(schema, {
+        cellularConnectionName: 'newcellular',
+        ethernetConnectionName: 'newethernet',
+        wifiConnectionName: 'newwifi'
+      }, imagePath);
+    }).then(() => {
+      return readFiles(imagePath);
+    }).then((files) => {
+      test.deepEqual(files, {
+        cellular: '[connection]\nname=newcellular\nfoo=bar\nbar=baz',
+        ethernet: '[connection]\nname=newethernet',
+        wifi: '[connection]\nname=newwifi'
+      });
+    });
+  });
 });

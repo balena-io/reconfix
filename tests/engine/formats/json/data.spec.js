@@ -31,7 +31,7 @@ const testFile = (filename) => {
     }).then((contents) => {
       const parsedJSON = json.parse(contents);
       const serialisedJSON = json.serialise(parsedJSON);
-      test.deepEqual(serialisedJSON + '\n', contents);
+      test.deepEqual(serialisedJSON + '\n', contents.replace(/\r/g, ''));
     });
   });
 };

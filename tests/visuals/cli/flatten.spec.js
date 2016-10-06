@@ -17,7 +17,7 @@
 'use strict';
 
 const ava = require('ava');
-const cli = require('../../../lib/visuals/cli');
+const cli = require('../../../visuals/cli');
 
 ava.test('should flatten a list without nested questions', (test) => {
   test.deepEqual(cli.flatten([

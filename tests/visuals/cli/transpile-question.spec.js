@@ -18,7 +18,7 @@
 
 const ava = require('ava');
 const _ = require('lodash');
-const cli = require('../../../lib/visuals/cli');
+const cli = require('../../../visuals/cli');
 
 ava.test('should throw if type is not recognised', (test) => {
   test.throws(() => {

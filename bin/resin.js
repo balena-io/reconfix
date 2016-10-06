@@ -18,7 +18,7 @@
 
 const filesystem = require('../lib/engine/filesystem');
 const configuration = require('../lib/engine/configuration');
-const visuals = require('../lib/visuals/cli');
+const visuals = require('../visuals/cli');
 const reconfix = require('../lib');
 const ARGV_IMAGE = process.argv[2];
 

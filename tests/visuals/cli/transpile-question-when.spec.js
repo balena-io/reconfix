@@ -18,7 +18,7 @@
 
 const ava = require('ava');
 const _ = require('lodash');
-const cli = require('../../../lib/visuals/cli');
+const cli = require('../../../visuals/cli');
 
 _.attempt(() => {
   const question = cli.transpileQuestion({

@@ -38,4 +38,5 @@ const testFixture = (name) => {
 };
 
 testFixture('resinos-v1');
+testFixture('resinos-v1-network-only');
 testFixture('resinos-v2-filesets');

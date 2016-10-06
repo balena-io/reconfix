@@ -1,6 +1,6 @@
 {
   "name": "reconfix",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "(Re)Configuration toolkit",
   "main": "lib/index.js",
   "homepage": "https://github.com/resin-io/reconfix",

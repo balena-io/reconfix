@@ -1,57 +1,32 @@
 {
-  "questions": [
-    {
-      "title": "Cellular connection name",
-      "name": "cellularConnectionName",
-      "type": "text"
+  "system_connections": {
+    "fileset": true,
+    "type": "ini",
+    "location": {
+      "path": "system-connections",
+      "partition": {
+        "primary": 4,
+        "logical": 1
+      }
     },
-    {
-      "title": "Ethernet connection name",
-      "name": "ethernetConnectionName",
-      "type": "text"
-    },
-    {
-      "title": "Wifi connection name",
-      "name": "wifiConnectionName",
-      "type": "text"
-    }
-  ],
-  "mapper": [
-    {
-      "template": {
-        "name": "{{cellularConnectionName}}"
+    "properties": {
+      "cellularConnectionName": {
+        "type": [ "string" ],
+        "mapping": [
+          [ "cellular", "connection", "name" ]
+        ]
       },
-      "domain": [
-        [ "system_connections", "cellular", "connection", "name" ]
-      ]
-    },
-    {
-      "template": {
-        "name": "{{ethernetConnectionName}}"
+      "ethernetConnectionName": {
+        "type": [ "string" ],
+        "mapping": [
+          [ "ethernetConnectionName", "connection", "name" ]
+        ]
       },
-      "domain": [
-        [ "system_connections", "ethernet", "connection", "name" ]
-      ]
-    },
-    {
-      "template": {
-        "name": "{{wifiConnectionName}}"
-      },
-      "domain": [
-        [ "system_connections", "wifi", "connection", "name" ]
-      ]
-    }
-  ],
-  "files": {
-    "system_connections": {
-      "fileset": true,
-      "type": "ini",
-      "location": {
-        "path": "system-connections",
-        "partition": {
-          "primary": 4,
-          "logical": 1
-        }
+      "wifiConnectionName": {
+        "type": [ "string" ],
+        "mapping": [
+          [ "wifi", "connection", "name" ]
+        ]
       }
     }
   }

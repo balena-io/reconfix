@@ -9,8 +9,9 @@
     "url": "git://github.com/resin-io/reconfix.git"
   },
   "scripts": {
-    "test": "npm run lint && npm run unit",
-    "unit": "ava tests",
+    "test": "npm run lint && npm run unit:mocha && npm run unit:ava",
+    "unit:ava": "ava tests/integration",
+    "unit:mocha": "mocha -R spec tests/*.spec.js",
     "lint": "eslint lib tests"
   },
   "keywords": [
@@ -28,7 +29,9 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "ava": "^0.16.0",
+    "chai": "^3.5.0",
     "eslint": "^3.6.1",
+    "mocha": "^3.2.0",
     "tmp": "0.0.29"
   },
   "dependencies": {

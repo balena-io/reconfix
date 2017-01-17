@@ -180,7 +180,7 @@ rules:
   no-useless-concat:
     - error
   no-useless-escape:
-    - error
+    - off
   no-void:
     - error
   no-warning-comments:

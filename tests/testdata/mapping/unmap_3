@@ -1,0 +1,4 @@
+error if no match
+[{"value":1,"template":{"foo":1}},{"value":2,"template":{"foo":2}}]
+{"foo":3}
+#error

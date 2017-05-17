@@ -1,0 +1,4 @@
+return true if a boolean wildcard matches
+{"foo":{"bar":false}}
+{"foo":{"bar":"[[boolean]]"}}
+true

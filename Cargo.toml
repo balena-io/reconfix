@@ -1,0 +1,8 @@
+[package]
+name = "bidixfrm"
+description = "bidirectional data transformation engine"
+version = "0.1.0"
+authors = ["Corey Richardson <corey@resin.io>"]
+
+[dependencies]
+serde_json = "1.0"

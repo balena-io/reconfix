@@ -1,0 +1,4 @@
+multiple simple mappings
+[["foo"], ["bar"]]
+{ "foo": "baz", "bar": "baz"}
+"baz"

@@ -1,0 +1,4 @@
+throw if multiple templates match
+[{"value":1,"template":{"foo":1}},{"value:1","template":{"foo":5}}]
+1
+#error

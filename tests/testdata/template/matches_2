@@ -1,0 +1,4 @@
+return false if the template is a superset of the data
+{"foo":{"bar":2}}
+{"foo":{"bar":2},"baz":{"qux":5}}
+false

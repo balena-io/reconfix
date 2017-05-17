@@ -1,0 +1,4 @@
+empty if everything is tainted
+{"foo":{"properties":{"bar":{"type":["number"],"mapping":[["xxx"]]}}},"bar":{"properties":{"baz":{"type":["string"],"mapping":[["yyy"],["zzz"]]}}}}
+{"foo":{"xxx":"foo"},"bar":{"yyy":"bar","zzz":"qux"}}
+{"tainted":["foo","bar"],"result":{}}

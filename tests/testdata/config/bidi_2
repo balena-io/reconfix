@@ -1,0 +1,5 @@
+multiple simple mappings on multiple files
+{"foo":{"properties":{"name":{"type":["string"],"mapping":[["fullname"]]},"job":{"type":["string"],"mapping":[["job","title"]]}}},"bar":{"properties":{"age":{"type":["number"],"mapping":[["person","age"]]}}}}
+{"name":"John Doe","job":"Software Engineer","age":35}
+{"foo":{"fullname":"John Doe","job":{"title":"Software
+    Engineer"}},"bar":{"person":{"age":35}}}

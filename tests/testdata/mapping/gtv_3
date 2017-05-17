@@ -1,0 +1,4 @@
+error if the mapping is ambiguous
+[{"value":"foo","template":{"foo":1}},{"value":"bar","template":{"foo":1}}]"
+{"foo":1}
+#error

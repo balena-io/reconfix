@@ -1,0 +1,4 @@
+error if there is an unmapping ambiguity
+[["foo", "bar"]]
+{"foo":3,"bar":5}
+#error

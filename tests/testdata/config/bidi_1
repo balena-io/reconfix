@@ -1,0 +1,4 @@
+single simple mapping on single file
+{"foo":{"properties":{"bar":{"type":["number"],"mapping":[["baz"]]}}}}
+{"bar":3}
+{"foo":{"baz":3}}

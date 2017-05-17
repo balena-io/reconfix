@@ -1,0 +1,4 @@
+return null if mapping path leads to undefined
+[["foo"]]
+{"foo":undefined}
+null

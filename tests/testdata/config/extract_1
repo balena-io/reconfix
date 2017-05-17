@@ -1,0 +1,4 @@
+add a file to the tainted list if something failed
+{"foo":{"properties":{"bar":{"type":["number"],"mapping":[["xxx"]]}}},"bar":{"properties":{"baz":{"type":["string"],"mapping":[["yyy"]]}}}}
+{"foo":{"xxx":"foo"},"bar":{"yyy":"bar"}}
+{"tainted":["foo"],"result":{"baz":"bar"}}

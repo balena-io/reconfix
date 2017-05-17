@@ -1,0 +1,4 @@
+get the value of ambiguous but compatible templates
+    [{"value":"foo","template":{"foo":1}},{"value":"foo","template":{"foo":1}}]
+{"foo":1}
+"foo"

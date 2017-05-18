@@ -17,6 +17,7 @@ rust:
     - nightly
     - beta
     - stable
+
 install:
     - (cargo install rustfmt || true)
     - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo install clippy) || true)

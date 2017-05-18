@@ -1,0 +1,31 @@
+dist: trusty
+sudo: false
+language: rust
+cache: cargo
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - binutils-dev
+      - cmake
+    sources:
+      - kalakris-cmake
+
+rust:
+    - nightly
+    - beta
+    - stable
+install:
+    - (cargo install rustfmt || true)
+    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo install clippy) || true)
+    - cargo install cargo-travis
+    - export PATH=$PATH:$HOME/.cargo/bin
+script:
+    - cargo clean
+    - cargo fmt -- --write-mode=diff
+    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo clippy) || true)
+    - cargo build --verbose
+after_success:
+    - cargo coveralls

@@ -18,6 +18,11 @@ rust:
     - beta
     - stable
 
+matrix:
+    - include:
+        - os: linux
+        - os: osx
+
 install:
     - (cargo install rustfmt || true)
     - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo install clippy) || true)

@@ -117,10 +117,10 @@ mod tests {
     }
 
     macro_rules! template_matches_gen {
-        ($($name:ident),*) => ( $( 
+        ($($name:ident),*) => ( $(
             #[test]
             fn $name() {
-                let file_contents = include_str!(concat!("../tests/testdata/template/", 
+                let file_contents = include_str!(concat!("../tests/testdata/template/",
                                                          stringify!($name)));
                 match template_matches(file_contents.split('\n').map(String::from).collect()) {
                     None => { },

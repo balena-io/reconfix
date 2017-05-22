@@ -43,47 +43,48 @@ This is a complete example of a configuration schema:
     "properties": [
       {
         "definition": {
-          "networkSsid": {
-            "type": [ "string" ],
-            "mapping": [
-              [ "service_home_wifi", "Name" ]
-            ]
-          },
-          "networkKey": {
-            "type": [ "string" ],
-            "mapping": [
-              [ "service_home_wifi", "Passphrase" ]
-            ]
-          },
-          "networkType": {
-            "type": [ "string" ],
-            "mapping": [
-              {
-                "value": "ethernet",
-                "template": {
-                  "service_home_ethernet": {
-                    "Type": "ethernet",
-                    "Nameservers": "8.8.8.8,8.8.4.4"
+          "network": {
+            "ssid": {
+              "type": [ "string" ],
+              "mapping": [
+                [ "service_home_wifi", "Name" ]
+              ]
+            },
+            "key": {
+              "type": [ "string" ],
+              "mapping": [
+                [ "service_home_wifi", "Passphrase" ]
+              ]
+            },
+            "type": {
+              "mapping": [
+                {
+                  "value": "ethernet",
+                  "template": {
+                    "service_home_ethernet": {
+                      "Type": "ethernet",
+                      "Nameservers": "8.8.8.8,8.8.4.4"
+                    }
+                  }
+                },
+                {
+                  "value": "wifi",
+                  "template": {
+                    "service_home_ethernet": {
+                      "Type": "ethernet",
+                      "Nameservers": "8.8.8.8,8.8.4.4"
+                    },
+                    "service_home_wifi": {
+                      "Hidden": true,
+                      "Type": "wifi",
+                      "Name": "[[string]]",
+                      "Passphrase": "[[string]]",
+                      "Nameservers": "8.8.8.8,8.8.4.4"
+                    }
                   }
                 }
-              },
-              {
-                "value": "wifi",
-                "template": {
-                  "service_home_ethernet": {
-                    "Type": "ethernet",
-                    "Nameservers": "8.8.8.8,8.8.4.4"
-                  },
-                  "service_home_wifi": {
-                    "Hidden": true,
-                    "Type": "wifi",
-                    "Name": "[[string]]",
-                    "Passphrase": "[[string]]",
-                    "Nameservers": "8.8.8.8,8.8.4.4"
-                  }
-                }
-              }
-            ]
+              ]
+            }
           }
         }
       }
@@ -312,6 +313,24 @@ For example:
       },
       "myBarProperty", {
         ...
+      }
+    }
+  }
+]
+```
+
+Property names may be nested by describing them with the following notation:
+
+```js
+"properties": [
+  {
+    "definition": {
+      "my": {
+        "nested": {
+          "property": {
+            ...
+          }
+        }
       }
     }
   }

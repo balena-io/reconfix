@@ -13,11 +13,86 @@ This is a complete example of a configuration schema:
 
 ```json
 {
-  "system_connections": {
-    "fileset": true,
+  "config_txt": {
     "type": "ini",
     "location": {
-      "path": [ "system-connections" ],
+      "path": "config.txt",
+      "partition": {
+        "primary": 1
+      }
+    },
+    "properties": [
+      {
+        "definition": {
+          "gpuMem": {
+            "type": [ "number" ],
+            "mapping": [
+              [ "gpu_mem" ]
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "network_config": {
+    "type": "ini",
+    "location": {
+      "parent": "config_json",
+      "property": [ "files", "network/network.config" ]
+    },
+    "properties": [
+      {
+        "definition": {
+          "networkSsid": {
+            "type": [ "string" ],
+            "mapping": [
+              [ "service_home_wifi", "Name" ]
+            ]
+          },
+          "networkKey": {
+            "type": [ "string" ],
+            "mapping": [
+              [ "service_home_wifi", "Passphrase" ]
+            ]
+          },
+          "networkType": {
+            "type": [ "string" ],
+            "mapping": [
+              {
+                "value": "ethernet",
+                "template": {
+                  "service_home_ethernet": {
+                    "Type": "ethernet",
+                    "Nameservers": "8.8.8.8,8.8.4.4"
+                  }
+                }
+              },
+              {
+                "value": "wifi",
+                "template": {
+                  "service_home_ethernet": {
+                    "Type": "ethernet",
+                    "Nameservers": "8.8.8.8,8.8.4.4"
+                  },
+                  "service_home_wifi": {
+                    "Hidden": true,
+                    "Type": "wifi",
+                    "Name": "[[string]]",
+                    "Passphrase": "[[string]]",
+                    "Nameservers": "8.8.8.8,8.8.4.4"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "config_json": {
+    "type": "json",
+    "location": {
+      "path": "config.json",
       "partition": {
         "primary": 4,
         "logical": 1
@@ -26,22 +101,10 @@ This is a complete example of a configuration schema:
     "properties": [
       {
         "definition": {
-          "cellularConnectionName": {
+          "appUpdatePollInterval": {
             "type": [ "string" ],
             "mapping": [
-              [ "cellular", "connection", "name" ]
-            ]
-          },
-          "ethernetConnectionName": {
-            "type": [ "string" ],
-            "mapping": [
-              [ "ethernetConnectionName", "connection", "name" ]
-            ]
-          },
-          "wifiConnectionName": {
-            "type": [ "string" ],
-            "mapping": [
-              [ "wifi", "connection", "name" ]
+              [ "appUpdatePollInterval" ]
             ]
           }
         }

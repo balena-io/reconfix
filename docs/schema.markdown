@@ -17,7 +17,7 @@ This is a complete example of a configuration schema:
     "fileset": true,
     "type": "ini",
     "location": {
-      "path": "system-connections",
+      "path": [ "system-connections" ],
       "partition": {
         "primary": 4,
         "logical": 1
@@ -221,7 +221,7 @@ For example:
 This means that `nested_file` will be serialised, and will be stored as a
 string inside the `foo` property of the `top_level_file` file.
 
-### `Object properties`
+### `(Object|Object[]) properties`
 
 This is the crux of schemas, and describes how to map dry and wet properties.
 The top level keys consists of unique user defined property names.
@@ -243,6 +243,57 @@ For example:
   }
 }
 ```
+
+If `properties` is an array of objects, then each object item may include the
+following properties:
+
+#### `Object definition`
+
+The actual property objects, as defined previously.
+
+#### `Object when` (optional)
+
+An object describing when this particular properties object should be applied.
+This object can refer to any dry property.
+
+For example:
+
+```
+"properties": [
+  {
+    "when": {
+      "wifi": true
+    },
+    "definition": {
+      "myFooProperty": {
+        ...
+      },
+      "myBarProperty": {
+        ...
+      }
+    }
+  },
+  {
+    "when": {
+      "wifi": false
+    },
+    "definition": {
+      "myFooProperty": {
+        ...
+      },
+      "myBarProperty": {
+        ...
+      }
+    }
+  }
+]
+```
+
+If the `when` property is not defined, then the properties in the object item
+in question always applies.
+
+Note that many object items can be true at the same time unless they disagree
+in one or more properties.
 
 Property Objects
 ----------------
@@ -275,7 +326,7 @@ For example:
 ### `(Array|Object)[] mapping`
 
 - **This propery can't be an empty array**
- 
+
 This property defines the mapping between the dry and wet states. Schemas
 support two types of mappings:
 
@@ -284,7 +335,7 @@ support two types of mappings:
 
 #### Direct Mappings
 
-Direct mappings are describes as array of strings.  
+Direct mappings are describes as array of strings.
 
 For example:
 

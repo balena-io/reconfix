@@ -4,6 +4,10 @@
 
 #![deny(missing_docs)]
 
+mod adaptor;
+
+#[macro_use]
+extern crate nom;
 extern crate serde_json;
 
 use serde_json::Value;

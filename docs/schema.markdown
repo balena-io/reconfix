@@ -23,26 +23,30 @@ This is a complete example of a configuration schema:
         "logical": 1
       }
     },
-    "properties": {
-      "cellularConnectionName": {
-        "type": [ "string" ],
-        "mapping": [
-          [ "cellular", "connection", "name" ]
-        ]
-      },
-      "ethernetConnectionName": {
-        "type": [ "string" ],
-        "mapping": [
-          [ "ethernetConnectionName", "connection", "name" ]
-        ]
-      },
-      "wifiConnectionName": {
-        "type": [ "string" ],
-        "mapping": [
-          [ "wifi", "connection", "name" ]
-        ]
+    "properties": [
+      {
+        "definition": {
+          "cellularConnectionName": {
+            "type": [ "string" ],
+            "mapping": [
+              [ "cellular", "connection", "name" ]
+            ]
+          },
+          "ethernetConnectionName": {
+            "type": [ "string" ],
+            "mapping": [
+              [ "ethernetConnectionName", "connection", "name" ]
+            ]
+          },
+          "wifiConnectionName": {
+            "type": [ "string" ],
+            "mapping": [
+              [ "wifi", "connection", "name" ]
+            ]
+          }
+        }
       }
-    }
+    ]
   }
 }
 ```
@@ -221,12 +225,15 @@ For example:
 This means that `nested_file` will be serialised, and will be stored as a
 string inside the `foo` property of the `top_level_file` file.
 
-### `(Object|Object[]) properties`
+### `Object[] properties`
 
 This is the crux of schemas, and describes how to map dry and wet properties.
-The top level keys consists of unique user defined property names.
 
-The property names:
+The array contains items that include the following properties:
+
+#### `Object definition`
+
+The property definition, which contains top level objects whose property names:
 
 - Must be unique in the described file
 - Must consist of alphanumeric characters and underscores only
@@ -234,22 +241,19 @@ The property names:
 For example:
 
 ```js
-"properties": {
-  "myFooProperty", {
-    ...
-  },
-  "myBarProperty", {
-    ...
+"properties": [
+  {
+    "definition": {
+      "myFooProperty", {
+        ...
+      },
+      "myBarProperty", {
+        ...
+      }
+    }
   }
-}
+]
 ```
-
-If `properties` is an array of objects, then each object item may include the
-following properties:
-
-#### `Object definition`
-
-The actual property objects, as defined previously.
 
 #### `Object when` (optional)
 

@@ -3,19 +3,133 @@ use nom::{IResult, space, alphanumeric, multispace};
 
 use super::{Adaptor, Config};
 
+use std::collections::{HashMap, hash_map};
 use std::fmt::Debug;
 use std::io::{Read, Write};
 use std::str;
 
-// pub struct IniAdaptor {
+/// The adaptor struct for INI files
+/// Later, this might contain parameters for the myriad INI quirks
+pub struct IniAdaptor {
     
-// }
+}
 
-// impl Adaptor for IniAdaptor {
-//     fn read<R>(reader: R) -> Result<Config> {
+impl IniAdaptor {
+    /// Constructs a new `IniAdaptor`
+    pub fn new() -> IniAdaptor {
+        IniAdaptor { }
+    }
+}
 
-//     }
-// }
+impl<'a> Adaptor<'a> for IniAdaptor {
+    /// Deserialize the INI data into the `Config` AST
+    fn deserialize<R>(&self, mut reader: R) -> Result<Config, String> 
+        where R: Read 
+    {
+        let mut buffer = Vec::new();
+        reader.read_to_end(&mut buffer);
+
+        // parse the basic INI structure
+        let (_, output) = sections(&buffer).unwrap();
+
+        let mut combined = HashMap::new();
+
+        // Here we convert the INI into our configuration AST,
+        // performing section and key de-duplication as necessary
+        for (name, pairs) in output {
+            // fetch existing entry or create a new one, deduplicating sections
+            let mut entry = combined.entry(name.into()).or_insert_with(|| HashMap::new());
+            // later, we will need schema data in order to encode type information into the AST
+            // for now, just assume everything is a string
+            let converted = pairs.iter().map(|&(key,value)| (key.to_string(), Config::Text(value.to_string())));
+            insert_all(entry, converted);
+        }
+
+        // wrap it all up in an object
+        let objects = combined.into_iter().map(|(key, value)| (key, Config::Object(value))).collect();
+        Ok(Config::Object(objects))
+    }
+
+    /// Serialize the `Config` AST into INI format
+    fn serialize<W>(&self, config: Config, writer: W) -> Result<(), String> {
+        unimplemented!();
+    }
+}
+
+#[test]
+fn deserialize_ini_section() {
+    let adaptor = IniAdaptor::new();
+    let mut ini = b"[section]
+key = value";
+
+    let config = adaptor.deserialize(&ini[..]).unwrap();
+    let mut pairs = HashMap::new();
+    pairs.insert("key".to_string(), Config::Text("value".to_string()));
+    let mut sections = HashMap::new();
+    sections.insert("section".to_string(), Config::Object(pairs));
+    assert_eq!(config, Config::Object(sections));
+
+}
+
+#[test]
+fn deserialize_ini_duplicate_keys() {
+    let adaptor = IniAdaptor::new();
+    let mut ini = b"[section]
+key = value1
+key = value2";
+
+    let config = adaptor.deserialize(&ini[..]).unwrap();
+    let mut pairs = HashMap::new();
+    pairs.insert("key".to_string(), Config::Array(
+        vec![
+            Config::Text("value1".to_string()),
+            Config::Text("value2".to_string()),
+        ]
+    ));
+    let mut sections = HashMap::new();
+    sections.insert("section".to_string(), Config::Object(pairs));
+    assert_eq!(config, Config::Object(sections));
+
+}
+
+/// Iterate through all key value pairs, and insert them into the map
+fn insert_all<I>(map: &mut HashMap<String, Config>, values: I) 
+    where I: IntoIterator<Item=(String, Config)> 
+{
+    for (key, value) in values.into_iter() {
+        insert_or_expand(map, key, value);
+    }
+}
+
+/// Insert a new value or create an array if there are duplicates
+fn insert_or_expand(map: &mut HashMap<String, Config>, key: String, value: Config) {
+    match map.entry(key) {
+        hash_map::Entry::Vacant(e) => {
+            e.insert(value);
+        },
+        hash_map::Entry::Occupied(mut e) => {
+            // we use a dummy value here so we can replace it with
+            // the modified value later. If we remove the value,
+            // we lose ownership of the Entry.
+            let mut current = e.insert(Config::Bool(false));
+            let modified = match current {
+                Config::Array(mut a) => {
+                    a.push(value);
+                    a
+                },
+                x @ _ => {
+                    let mut array = Vec::new();
+                    array.push(x);
+                    array.push(value);
+                    array
+                }
+            };
+
+            // add back the modified vector, droping the dummy value
+            e.insert(Config::Array(modified));
+        }
+    }
+}
 
 named!(section_name<&str>, map_res!(
     delimited!(
@@ -26,7 +140,12 @@ named!(section_name<&str>, map_res!(
     str::from_utf8
 ));
 
-named!(comment, preceded!(char!('#'), take_until!("\n")));
+named!(comment, delimited!(
+        tag!(b"#"),
+        take_while!(call!(|c| c != '\n' as u8)),
+        opt!(complete!(tag!("\n")))
+    )
+);
 
 named!(blanks, 
     map!(
@@ -42,6 +161,8 @@ named!(key_value_pair <&[u8],(&str,&str)>,
         >> char!('=')
         >> opt!(space)
         >> value: map_res!(
+            // There may be more elegant parsers, but this is the only one
+            // I've tested that doesn't choke on EOF. Needs more investigation.
             take_while!(call!(|c| c != '\n' as u8 && c != '#' as u8)),
             str::from_utf8
         )
@@ -99,7 +220,15 @@ fn parse_key_value_comment_test() {
 
     let res = key_value_pair(pair);
     print_output(&res);
-    assert_eq!(res, IResult::Done(&b"# a helpful comment"[..], ("parameter", "value")));
+    assert_eq!(res, IResult::Done(&b""[..], ("parameter", "value")));
+}
+
+#[test]
+fn parse_comment_test() {
+    let ini = &b"# a comment"[..];
+    let res = comment(ini);
+    print_output(&res);
+    assert_eq!(res, IResult::Done(&b""[..], &b" a comment"[..]));
 }
 
 #[test]

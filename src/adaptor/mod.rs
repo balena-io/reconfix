@@ -1,16 +1,18 @@
 mod ini;
 
+use std::collections::HashMap;
 use std::io::{Read, Write};
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Config {
     Bool(bool),
-    Number(f64),
+    Number(String),
     Text(String),
     Array(Vec<Config>),
-    Object(Vec<(String, Config)>),
+    Object(HashMap<String, Config>),
 }
 
-pub trait Adaptor {
-    fn read<R: Read>(reader: Read) -> Result<Config, String>;
-    fn write<W: Write>(conf: Config, writer: W) -> Result<(), String>;
+pub trait Adaptor<'a> {
+    fn serialize<W: Write>(&self, conf: Config, writer: W) -> Result<(), String>;
+    fn deserialize<R: Read>(&self, reader: R) -> Result<Config, String>;
 }

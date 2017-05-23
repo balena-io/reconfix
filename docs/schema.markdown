@@ -409,6 +409,10 @@ For example:
 }
 ```
 
+### `Object[] properties`
+
+Recursive properties definitions.
+
 ### `(Array|Object)[] mapping`
 
 - **This propery can't be an empty array**

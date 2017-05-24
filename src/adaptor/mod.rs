@@ -12,7 +12,10 @@ pub enum Config {
     Object(HashMap<String, Config>),
 }
 
+type AdaptorError = &'static str;
+
 pub trait Adaptor<'a> {
-    fn serialize<W: Write>(&self, conf: Config, writer: W) -> Result<(), String>;
-    fn deserialize<R: Read>(&self, reader: R) -> Result<Config, String>;
+    fn serialize<W: Write>(&self, conf: Config, writer: W) -> Result<(), AdaptorError>;
+    fn deserialize<R: Read>(&self, reader: R) -> Result<Config, AdaptorError>;
 }
+

@@ -1,11 +1,12 @@
 
 use nom::{IResult, space, alphanumeric, multispace};
 
-use super::{Adaptor, Config};
+use super::{Adaptor, Config, AdaptorError};
 
 use std::collections::{HashMap, hash_map};
 use std::fmt::Debug;
 use std::io::{Read, Write};
+use std::iter::FromIterator;
 use std::str;
 
 /// The adaptor struct for INI files
@@ -23,14 +24,17 @@ impl IniAdaptor {
 
 impl<'a> Adaptor<'a> for IniAdaptor {
     /// Deserialize the INI data into the `Config` AST
-    fn deserialize<R>(&self, mut reader: R) -> Result<Config, String> 
+    fn deserialize<R>(&self, mut reader: R) -> Result<Config, AdaptorError> 
         where R: Read 
     {
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer);
 
         // parse the basic INI structure
-        let (_, output) = sections(&buffer).unwrap();
+        let output = match sections(&buffer) {
+            IResult::Done(_, o) => o,
+            _ => return Err("unable to parse INI data"),
+        };
 
         let mut combined = HashMap::new();
 
@@ -51,8 +55,20 @@ impl<'a> Adaptor<'a> for IniAdaptor {
     }
 
     /// Serialize the `Config` AST into INI format
-    fn serialize<W>(&self, config: Config, writer: W) -> Result<(), String> {
-        unimplemented!();
+    fn serialize<W>(&self, config: Config, mut writer: W) -> Result<(), AdaptorError> 
+        where W: Write 
+    {
+        let ini_model = try!(convert_model(config));
+
+        for (header, props) in ini_model {
+            writeln!(writer, "[{}]", header);
+            for (key, value) in props {
+                writeln!(writer, "{} = {}", key, value);
+            }
+            writeln!(writer, "");
+        }
+
+        Ok(())
     }
 }
 
@@ -90,6 +106,46 @@ key = value2";
     sections.insert("section".to_string(), Config::Object(pairs));
     assert_eq!(config, Config::Object(sections));
 
+}
+
+#[test]
+fn serialize_ini_section() {
+    let adaptor = IniAdaptor::new();
+
+    let mut pairs = HashMap::new();
+    pairs.insert("key".to_string(), Config::Text("value".to_string()));
+    let mut section = HashMap::new();
+    section.insert("section".to_string(), Config::Object(pairs));
+
+    let mut buffer = Vec::new();
+    adaptor.serialize(Config::Object(section), &mut buffer);
+
+    let expected = &b"[section]\nkey = value\n\n"[..];
+
+    assert_eq!(buffer, expected);
+}
+
+#[test]
+fn serialize_ini_array_value() {
+    let adaptor = IniAdaptor::new();
+
+    let mut pairs = HashMap::new();
+    pairs.insert("key".to_string(), Config::Array(vec![
+        Config::Text("value1".to_string()),
+        Config::Text("value2".to_string()),
+    ]));
+
+    let mut section = HashMap::new();
+    section.insert("section".to_string(), Config::Object(pairs));
+
+    let mut buffer = Vec::new();
+    adaptor.serialize(Config::Object(section), &mut buffer);
+
+    let expected = &b"[section]
+key = value1
+key = value2\n\n"[..];
+
+    assert_eq!(buffer, expected);
 }
 
 /// Iterate through all key value pairs, and insert them into the map
@@ -131,6 +187,77 @@ fn insert_or_expand(map: &mut HashMap<String, Config>, key: String, value: Confi
     }
 }
 
+/// Convert a property value into a representative `String`
+/// Returns an `Error` if the value is not representable as a `String`
+fn flatten_value(value: &Config) -> Result<String, AdaptorError> {
+    let string = match *value {
+        Config::Bool(ref x) => x.to_string(),
+        Config::Text(ref x) => x.to_string(),
+        Config::Number(ref x) => x.to_string(),
+        _ => return Err("invalid element"),
+    };
+
+    Ok(string)
+}
+
+/// Emits a vector of key-value pairs representing the specified
+/// property and value. This will stringify primitive values and
+/// convert an array into multiple key-value pairs. Object values
+/// are not allowed.
+fn emit_values(key: &str, value: &Config) -> Result<Vec<(String, String)>, AdaptorError> {
+    let result = match (flatten_value(value), value)  {
+        (Ok(x), _)                      => Ok(vec![x]),
+        (_, &Config::Array(ref elems))   => {
+            elems.iter()
+                .map(flatten_value)
+                .collect::<Result<Vec<_>, AdaptorError>>()
+        },
+        _                               => Err("invalid value"),
+    };
+
+    let tuples = try!(result).into_iter()
+        .map(|x| (key.to_string(), x))
+        .collect::<Vec<_>>();
+
+    Ok(tuples)
+}
+
+/// Convert a root configuration object into a list of named
+/// sections with key-value pairs in each. This converts
+/// the internal configuration model to the INI data model.
+fn convert_model(model: Config) -> Result<Vec<(String, Vec<(String, String)>)>, AdaptorError> {
+    // extract the root object, else error
+    let section_map = match model {
+        Config::Object(o) => o,
+        _ => return Err("invalid root element"),
+    };
+
+    // convert each section, collecting the results
+    let converted_map = section_map.iter().map(|(key, config)| {
+        // extract the section object
+        let pairs = match *config {
+            Config::Object(ref o) => o,
+            _ => return Err("invalid section element"),
+        };
+
+         // get one or more key-value pairs for each property
+         // then flatten them into the section
+        let flattened = pairs.iter()
+            .map(|(key, value)| emit_values(key, value))
+            // converts a list of results into a result with a list
+            .collect::<Result<Vec<_>, AdaptorError>>() 
+            // flatten the list of lists
+            .map(|pairs| pairs.into_iter().flat_map(|x| x).collect::<Vec<_>>());
+
+        // tuplize with section name
+        flattened.map(|result| (key.to_string(), result))
+    });
+    
+    //convert list of results to result with a list
+    converted_map.collect::<Result<Vec<_>, _>>()
+}
+
+/// Parses the section name from the `[header]`
 named!(section_name<&str>, map_res!(
     delimited!(
         char!('['),
@@ -140,6 +267,7 @@ named!(section_name<&str>, map_res!(
     str::from_utf8
 ));
 
+/// Parses a `# comment` value
 named!(comment, delimited!(
         tag!(b"#"),
         take_while!(call!(|c| c != '\n' as u8)),
@@ -147,6 +275,7 @@ named!(comment, delimited!(
     )
 );
 
+/// Parses and swallows any whitespace or comments
 named!(blanks, 
     map!(
         many0!(alt!(comment | multispace)),
@@ -154,6 +283,7 @@ named!(blanks,
     )
 );
 
+/// Parses a `key = value` pair and returns a tuple
 named!(key_value_pair <&[u8],(&str,&str)>,
     do_parse!(
         key: map_res!(alphanumeric, str::from_utf8)
@@ -171,10 +301,12 @@ named!(key_value_pair <&[u8],(&str,&str)>,
     )
 );
 
+/// Parses a group of key value pairs
 named!(key_value_group<&[u8], Vec<(&str, &str)>>,
     many0!(terminated!(key_value_pair, opt!(complete!(blanks))))
 );
 
+/// Parses a section header and all included key value pairs
 named!(section<&[u8], (&str, Vec<(&str, &str)>)>,
     do_parse!(
         opt!(complete!(blanks))
@@ -185,6 +317,7 @@ named!(section<&[u8], (&str, Vec<(&str, &str)>)>,
     )
 );
 
+/// Parses multiple sections
 named!(sections<&[u8], Vec<(&str, Vec<(&str, &str)>)>>, 
     many0!(section)
 );

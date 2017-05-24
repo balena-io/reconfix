@@ -72,81 +72,7 @@ impl<'a> Adaptor<'a> for IniAdaptor {
     }
 }
 
-#[test]
-fn deserialize_ini_section() {
-    let adaptor = IniAdaptor::new();
-    let mut ini = b"[section]
-key = value";
 
-    let config = adaptor.deserialize(&ini[..]).unwrap();
-    let mut pairs = HashMap::new();
-    pairs.insert("key".to_string(), Config::Text("value".to_string()));
-    let mut sections = HashMap::new();
-    sections.insert("section".to_string(), Config::Object(pairs));
-    assert_eq!(config, Config::Object(sections));
-
-}
-
-#[test]
-fn deserialize_ini_duplicate_keys() {
-    let adaptor = IniAdaptor::new();
-    let mut ini = b"[section]
-key = value1
-key = value2";
-
-    let config = adaptor.deserialize(&ini[..]).unwrap();
-    let mut pairs = HashMap::new();
-    pairs.insert("key".to_string(), Config::Array(
-        vec![
-            Config::Text("value1".to_string()),
-            Config::Text("value2".to_string()),
-        ]
-    ));
-    let mut sections = HashMap::new();
-    sections.insert("section".to_string(), Config::Object(pairs));
-    assert_eq!(config, Config::Object(sections));
-
-}
-
-#[test]
-fn serialize_ini_section() {
-    let adaptor = IniAdaptor::new();
-
-    let mut pairs = HashMap::new();
-    pairs.insert("key".to_string(), Config::Text("value".to_string()));
-    let mut section = HashMap::new();
-    section.insert("section".to_string(), Config::Object(pairs));
-
-    let mut buffer = Vec::new();
-    adaptor.serialize(Config::Object(section), &mut buffer);
-
-    let expected = &b"[section]\nkey = value\n\n"[..];
-
-    assert_eq!(buffer, expected);
-}
-
-#[test]
-fn serialize_ini_array_value() {
-    let adaptor = IniAdaptor::new();
-
-    let mut pairs = HashMap::new();
-    pairs.insert("key".to_string(), Config::Array(vec![
-        Config::Text("value1".to_string()),
-        Config::Text("value2".to_string()),
-    ]));
-
-    let mut section = HashMap::new();
-    section.insert("section".to_string(), Config::Object(pairs));
-
-    let mut buffer = Vec::new();
-    adaptor.serialize(Config::Object(section), &mut buffer);
-
-    let expected = &b"[section]
-key = value1
-key = value2\n\n"[..];
-
-    assert_eq!(buffer, expected);
-}
 
 /// Iterate through all key value pairs, and insert them into the map
 fn insert_all<I>(map: &mut HashMap<String, Config>, values: I) 
@@ -322,181 +248,259 @@ named!(sections<&[u8], Vec<(&str, Vec<(&str, &str)>)>>,
     many0!(section)
 );
 
-fn print_output<T: Debug>(res: &IResult<&[u8], T>) {
-    match *res {
-        IResult::Done(ref i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-        _ => println!("error"),
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_ini_section() {
+        let adaptor = IniAdaptor::new();
+        let ini = b"[section]\nkey = value";
+
+        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let mut pairs = HashMap::new();
+        pairs.insert("key".to_string(), Config::Text("value".to_string()));
+        let mut sections = HashMap::new();
+        sections.insert("section".to_string(), Config::Object(pairs));
+        assert_eq!(config, Config::Object(sections));
+
     }
-}
 
-#[test]
-fn parse_key_value_pair_test() {
-    let pair = &b"parameter=value"[..];
+    #[test]
+    fn deserialize_ini_duplicate_keys() {
+        let adaptor = IniAdaptor::new();
+        let ini = b"[section]\nkey = value1\nkey = value2";
 
-    let res = key_value_pair(pair);
-    print_output(&res);
-    assert_eq!(res, IResult::Done(&b""[..], ("parameter", "value")));
-}
+        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let mut pairs = HashMap::new();
+        pairs.insert("key".to_string(), Config::Array(
+            vec![
+                Config::Text("value1".to_string()),
+                Config::Text("value2".to_string()),
+            ]
+        ));
+        let mut sections = HashMap::new();
+        sections.insert("section".to_string(), Config::Object(pairs));
+        assert_eq!(config, Config::Object(sections));
 
-#[test]
-fn parse_key_value_newline_test() {
-    let pair = &b"parameter=value\n"[..];
+    }
 
-    let res = key_value_pair(pair);
-    print_output(&res);
-    assert_eq!(res, IResult::Done(&b"\n"[..], ("parameter", "value")));
-}
+    #[test]
+    fn serialize_ini_section() {
+        let adaptor = IniAdaptor::new();
 
-#[test]
-fn parse_key_value_comment_test() {
-    let pair = &b"parameter=value# a helpful comment"[..];
+        let mut pairs = HashMap::new();
+        pairs.insert("key".to_string(), Config::Text("value".to_string()));
+        let mut section = HashMap::new();
+        section.insert("section".to_string(), Config::Object(pairs));
 
-    let res = key_value_pair(pair);
-    print_output(&res);
-    assert_eq!(res, IResult::Done(&b""[..], ("parameter", "value")));
-}
+        let mut buffer = Vec::new();
+        adaptor.serialize(Config::Object(section), &mut buffer).unwrap();
 
-#[test]
-fn parse_comment_test() {
-    let ini = &b"# a comment"[..];
-    let res = comment(ini);
-    print_output(&res);
-    assert_eq!(res, IResult::Done(&b""[..], &b" a comment"[..]));
-}
+        let expected = &b"[section]\nkey = value\n\n"[..];
 
-#[test]
-fn parse_multi_key_value_test() {
-    let ini = &b"param1 = value1# a helpful comment\n\nparam2 = value2"[..];
+        assert_eq!(buffer, expected);
+    }
 
-    let res = key_value_group(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("param1", "value1"));
-    expected.push(("param2", "value2"));
-    assert_eq!(res, IResult::Done(&b""[..], expected));
-}
+    #[test]
+    fn serialize_ini_array_value() {
+        let adaptor = IniAdaptor::new();
 
-#[test]
-fn parse_duplicate_key_value_test() {
-    let ini = &b"param1 = value1\nparam1 = value2"[..];
+        let mut pairs = HashMap::new();
+        pairs.insert("key".to_string(), Config::Array(vec![
+            Config::Text("value1".to_string()),
+            Config::Text("value2".to_string()),
+        ]));
 
-    let res = key_value_group(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("param1", "value1"));
-    expected.push(("param1", "value2"));
-    assert_eq!(res, IResult::Done(&b""[..], expected));
-}
+        let mut section = HashMap::new();
+        section.insert("section".to_string(), Config::Object(pairs));
 
-#[test]
-fn parse_section_test() {
-    let ini = &b"[section_name]\nparam1 = value1\nparam2 = value2"[..];
+        let mut buffer = Vec::new();
+        adaptor.serialize(Config::Object(section), &mut buffer).unwrap();
 
-    let res = section(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("param1", "value1"));
-    expected.push(("param2", "value2"));
-    let sec = ("section_name", expected);
-    assert_eq!(res, IResult::Done(&b""[..], sec));
-}
+        let expected = &b"[section]\nkey = value1\nkey = value2\n\n"[..];
 
-#[test]
-fn parse_section_newline_test() {
-    let ini = &b"[section_name]\n\nparam1 = value1\n\n\nparam2 = value2\n\n"[..];
+        assert_eq!(buffer, expected);
+    }
 
-    let res = section(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("param1", "value1"));
-    expected.push(("param2", "value2"));
-    let sec = ("section_name", expected);
-    assert_eq!(res, IResult::Done(&b""[..], sec));
-}
+    fn print_output<T: Debug>(res: &IResult<&[u8], T>) {
+        match *res {
+            IResult::Done(ref i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+            _ => println!("error"),
+        }
+    }
 
-#[test]
-fn parse_section_comment_test() {
-    let ini = &b"[section_name]
+    #[test]
+    fn parse_key_value_pair_test() {
+        let pair = &b"parameter=value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Done(&b""[..], ("parameter", "value")));
+    }
+
+    #[test]
+    fn parse_key_value_newline_test() {
+        let pair = &b"parameter=value\n"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Done(&b"\n"[..], ("parameter", "value")));
+    }
+
+    #[test]
+    fn parse_key_value_comment_test() {
+        let pair = &b"parameter=value# a helpful comment"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Done(&b""[..], ("parameter", "value")));
+    }
+
+    #[test]
+    fn parse_comment_test() {
+        let ini = &b"# a comment"[..];
+        let res = comment(ini);
+        print_output(&res);
+        assert_eq!(res, IResult::Done(&b""[..], &b" a comment"[..]));
+    }
+
+    #[test]
+    fn parse_multi_key_value_test() {
+        let ini = &b"param1 = value1# a helpful comment\n\nparam2 = value2"[..];
+
+        let res = key_value_group(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("param1", "value1"));
+        expected.push(("param2", "value2"));
+        assert_eq!(res, IResult::Done(&b""[..], expected));
+    }
+
+    #[test]
+    fn parse_duplicate_key_value_test() {
+        let ini = &b"param1 = value1\nparam1 = value2"[..];
+
+        let res = key_value_group(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("param1", "value1"));
+        expected.push(("param1", "value2"));
+        assert_eq!(res, IResult::Done(&b""[..], expected));
+    }
+
+    #[test]
+    fn parse_section_test() {
+        let ini = &b"[section_name]\nparam1 = value1\nparam2 = value2"[..];
+
+        let res = section(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("param1", "value1"));
+        expected.push(("param2", "value2"));
+        let sec = ("section_name", expected);
+        assert_eq!(res, IResult::Done(&b""[..], sec));
+    }
+
+    #[test]
+    fn parse_section_newline_test() {
+        let ini = &b"[section_name]\n\nparam1 = value1\n\n\nparam2 = value2\n\n"[..];
+
+        let res = section(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("param1", "value1"));
+        expected.push(("param2", "value2"));
+        let sec = ("section_name", expected);
+        assert_eq!(res, IResult::Done(&b""[..], sec));
+    }
+
+    #[test]
+    fn parse_section_comment_test() {
+        let ini = &b"[section_name]
 param1 = value1
 # a helpful comment
 param2 = value2"[..];
 
-    let res = section(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("param1", "value1"));
-    expected.push(("param2", "value2"));
-    let sec = ("section_name", expected);
-    assert_eq!(res, IResult::Done(&b""[..], sec));
-}
+        let res = section(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("param1", "value1"));
+        expected.push(("param2", "value2"));
+        let sec = ("section_name", expected);
+        assert_eq!(res, IResult::Done(&b""[..], sec));
+    }
 
-#[test]
-fn parse_section_comment_after_header_test() {
-    let ini = &b"[section_name]
+    #[test]
+    fn parse_section_comment_after_header_test() {
+        let ini = &b"[section_name]
 # a helpful comment
 param1 = value1
 param2 = value2"[..];
 
-    let res = section(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("param1", "value1"));
-    expected.push(("param2", "value2"));
-    let sec = ("section_name", expected);
-    assert_eq!(res, IResult::Done(&b""[..], sec));
-}
+        let res = section(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("param1", "value1"));
+        expected.push(("param2", "value2"));
+        let sec = ("section_name", expected);
+        assert_eq!(res, IResult::Done(&b""[..], sec));
+    }
 
-#[test]
-fn parse_section_comment_before_header_test() {
-    let ini = &b"# a helpful comment
+    #[test]
+    fn parse_section_comment_before_header_test() {
+        let ini = &b"# a helpful comment
 [section_name]
 param1 = value1
 param2 = value2"[..];
 
-    let res = section(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("param1", "value1"));
-    expected.push(("param2", "value2"));
-    let sec = ("section_name", expected);
-    assert_eq!(res, IResult::Done(&b""[..], sec));
-}
+        let res = section(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("param1", "value1"));
+        expected.push(("param2", "value2"));
+        let sec = ("section_name", expected);
+        assert_eq!(res, IResult::Done(&b""[..], sec));
+    }
 
-#[test]
-fn parse_section_no_values() {
-    let ini = &b"[section_name]"[..];
+    #[test]
+    fn parse_section_no_values() {
+        let ini = &b"[section_name]"[..];
 
-    let res = section(ini);
-    print_output(&res);
-    let expected = Vec::new();
-    let sec = ("section_name", expected);
-    assert_eq!(res, IResult::Done(&b""[..], sec));
-}
+        let res = section(ini);
+        print_output(&res);
+        let expected = Vec::new();
+        let sec = ("section_name", expected);
+        assert_eq!(res, IResult::Done(&b""[..], sec));
+    }
 
-#[test]
-fn parse_section_blank_lines_prefix() {
-    let ini = &b"\n\n[section_name]"[..];
+    #[test]
+    fn parse_section_blank_lines_prefix() {
+        let ini = &b"\n\n[section_name]"[..];
 
-    let res = section(ini);
-    print_output(&res);
-    let expected = Vec::new();
-    let sec = ("section_name", expected);
-    assert_eq!(res, IResult::Done(&b""[..], sec));
-}
+        let res = section(ini);
+        print_output(&res);
+        let expected = Vec::new();
+        let sec = ("section_name", expected);
+        assert_eq!(res, IResult::Done(&b""[..], sec));
+    }
 
-#[test]
-fn parse_multi_section() {
-    let ini = &b"[section1]
+    #[test]
+    fn parse_multi_section() {
+        let ini = &b"[section1]
 param1 = val1
 
 # some documentation
 [section2]
 param2 = val2"[..];
 
-    let res = sections(ini);
-    print_output(&res);
-    let mut expected = Vec::new();
-    expected.push(("section1", vec![("param1", "val1")]));
-    expected.push(("section2", vec![("param2", "val2")]));
-    assert_eq!(res, IResult::Done(&b""[..], expected));
+        let res = sections(ini);
+        print_output(&res);
+        let mut expected = Vec::new();
+        expected.push(("section1", vec![("param1", "val1")]));
+        expected.push(("section2", vec![("param2", "val2")]));
+        assert_eq!(res, IResult::Done(&b""[..], expected));
+    }
+
 }
+

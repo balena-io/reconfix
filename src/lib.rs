@@ -9,6 +9,7 @@ mod adaptor;
 #[macro_use]
 extern crate nom;
 extern crate serde_json;
+extern crate regex;
 
 use serde_json::Value;
 use serde_json::Value::*;

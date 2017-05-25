@@ -1,13 +1,15 @@
 
-use nom::{IResult, space, alphanumeric, multispace};
-
-use super::{Adaptor, Config, AdaptorError};
-
 use std::collections::{HashMap, hash_map};
 use std::fmt::Debug;
 use std::io::{Read, Write};
 use std::iter::FromIterator;
 use std::str;
+
+use super::{Adaptor, Config, AdaptorError};
+
+use nom::{IResult, space, alphanumeric, multispace};
+
+use regex::Regex;
 
 /// The adaptor struct for INI files
 /// Later, this might contain parameters for the myriad INI quirks
@@ -45,7 +47,7 @@ impl<'a> Adaptor<'a> for IniAdaptor {
             let mut entry = combined.entry(name.into()).or_insert_with(|| HashMap::new());
             // later, we will need schema data in order to encode type information into the AST
             // for now, just assume everything is a string
-            let converted = pairs.iter().map(|&(key,value)| (key.to_string(), Config::Text(value.to_string())));
+            let converted = pairs.iter().map(|&(key,value)| (key.to_string(), infer_type(value)));
             insert_all(entry, converted);
         }
 
@@ -72,7 +74,23 @@ impl<'a> Adaptor<'a> for IniAdaptor {
     }
 }
 
+/// Use heurisitics to determine a values' type
+fn infer_type(value: &str) -> Config {
+    value.parse::<bool>().map(|x| Config::Bool(x))
+        .unwrap_or_else(|_| {
+            if is_number(value) { 
+                Config::Number(value.to_string())
+            } else { 
+                Config::Text(value.to_string())
+            }
+        })
+}
 
+/// Determine if a string is likely a number
+fn is_number(value: &str) -> bool {
+    let regex = Regex::new(r"^[+-]?\d*\.?\d+$").unwrap();
+    regex.is_match(value)
+}
 
 /// Iterate through all key value pairs, and insert them into the map
 fn insert_all<I>(map: &mut HashMap<String, Config>, values: I) 
@@ -243,14 +261,93 @@ named!(section<&[u8], (&str, Vec<(&str, &str)>)>,
     )
 );
 
-/// Parses multiple sections
-named!(sections<&[u8], Vec<(&str, Vec<(&str, &str)>)>>, 
-    many0!(section)
+/// Parses a full INI file
+named!(ini_file<&[u8], (Vec<(&str, &str)>, Vec<(&str, Vec<(&str, &str)>)>)>, 
+    do_parse!(
+        no_section: key_value_group
+        >> section: many0!(section)
+        >> (no_section, section)
+    )
 );
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn infer_type_boolean_true() {
+        assert_eq!(infer_type("true"), Config::Bool(true));
+    }
+
+    #[test]
+    fn infer_type_boolean_false() {
+        assert_eq!(infer_type("false"), Config::Bool(false));
+    }
+
+    #[test]
+    fn infer_type_boolean_incorrect() {
+        assert_eq!(infer_type("True"), Config::Text("True".to_string()));
+    }
+
+    #[test]
+    fn infer_type_number_integer() {
+        assert_eq!(infer_type("1234"), Config::Number("1234".to_string()));
+    }
+
+    #[test]
+    fn infer_type_number_decimal() {
+        assert_eq!(infer_type("1234"), Config::Number("1234".to_string()));
+    }
+
+    #[test]
+    fn is_number_integer() {
+        assert_eq!(is_number("1234"), true);
+    }
+
+    #[test]
+    fn is_number_decimal() {
+        assert_eq!(is_number("12.34"), true);
+    }
+
+    #[test]
+    fn is_number_leading_decimal() {
+        assert_eq!(is_number(".1234"), true);
+    }
+
+    #[test]
+    fn is_number_zero_leading_decimal() {
+        assert_eq!(is_number("0.1234"), true);
+    }
+
+    #[test]
+    fn is_number_leading_double_zero() {
+        assert_eq!(is_number("00.1234"), true);
+    }
+
+    #[test]
+    fn is_number_positive_integer() {
+        assert_eq!(is_number("+1234"), true);
+    }
+
+    #[test]
+    fn is_number_double_positive() {
+        assert_eq!(is_number("++1234"), false);
+    }  
+
+    #[test]
+    fn is_number_negative_integer() {
+        assert_eq!(is_number("-1234"), true);
+    }
+
+    #[test]
+    fn is_number_double_negative() {
+        assert_eq!(is_number("--1234"), false);
+    }
+
+    #[test]
+    fn is_number_alphanumeric() {
+        assert_eq!(is_number("1a2b3c4d"), false);
+    }
 
     #[test]
     fn deserialize_ini_section() {

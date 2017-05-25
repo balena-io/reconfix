@@ -1,6 +1,6 @@
 mod ini;
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::io::{Read, Write};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -9,7 +9,7 @@ pub enum Value {
     Number(String),
     Text(String),
     Array(Vec<Value>),
-    Object(HashMap<String, Value>),
+    Object(BTreeMap<String, Value>),
 }
 
 type AdaptorError = &'static str;

@@ -1,5 +1,6 @@
 
-use std::collections::{HashMap, hash_map};
+use std::collections::BTreeMap;
+use std::collections::btree_map::Entry;
 use std::fmt::Debug;
 use std::io::{Read, Write};
 use std::iter::FromIterator;
@@ -10,6 +11,8 @@ use super::{Adaptor, Value, AResult, AdaptorError};
 use nom::{IResult, space, alphanumeric, multispace};
 
 use regex::Regex;
+
+type Map<K, V> = BTreeMap<K, V>;
 
 /// The adaptor struct for INI files
 /// Later, this might contain parameters for the myriad INI quirks
@@ -38,20 +41,20 @@ impl<'a> Adaptor<'a> for IniAdaptor {
             _ => return Err("unable to parse INI data"),
         };
 
-        let mut section_map = HashMap::new();
+        let mut section_map = Map::new();
 
         // Here we convert the INI into our Valueuration AST,
         // performing section and key de-duplication as necessary
         for (name, pairs) in sections {
             // fetch existing entry or create a new one, deduplicating sections
-            let mut entry = section_map.entry(name.into()).or_insert_with(|| HashMap::new());
+            let mut entry = section_map.entry(name.into()).or_insert_with(|| Map::new());
             // later, we will need schema data in order to encode type information into the AST
             // for now, just assume everything is a string
             let converted = pairs.iter().map(|&(key,value)| (key.to_string(), infer_type(value)));
             insert_all(entry, converted);
         }
 
-        let mut full_map = HashMap::new();
+        let mut full_map = Map::new();
 
         // Insert the key-value pairs with no section header as top level properties
         let converted = no_section.iter().map(|&(key, value)| (key.to_string(), infer_type(value)));
@@ -105,7 +108,7 @@ fn is_number(value: &str) -> bool {
 }
 
 /// Iterate through all key value pairs, and insert them into the map
-fn insert_all<I>(map: &mut HashMap<String, Value>, values: I) 
+fn insert_all<I>(map: &mut Map<String, Value>, values: I) 
     where I: IntoIterator<Item=(String, Value)> 
 {
     for (key, value) in values.into_iter() {
@@ -114,12 +117,12 @@ fn insert_all<I>(map: &mut HashMap<String, Value>, values: I)
 }
 
 /// Insert a new value or create an array if there are duplicates
-fn insert_or_expand(map: &mut HashMap<String, Value>, key: String, value: Value) {
+fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
     match map.entry(key) {
-        hash_map::Entry::Vacant(e) => {
+        Entry::Vacant(e) => {
             e.insert(value);
         },
-        hash_map::Entry::Occupied(mut e) => {
+        Entry::Occupied(mut e) => {
             // we use a dummy value here so we can replace it with
             // the modified value later. If we remove the value,
             // we lose ownership of the Entry.
@@ -367,9 +370,9 @@ mod tests {
         let ini = b"[section]\nkey = value";
 
         let Value = adaptor.deserialize(&ini[..]).unwrap();
-        let mut pairs = HashMap::new();
+        let mut pairs = Map::new();
         pairs.insert("key".to_string(), Value::Text("value".to_string()));
-        let mut sections = HashMap::new();
+        let mut sections = Map::new();
         sections.insert("section".to_string(), Value::Object(pairs));
         assert_eq!(Value, Value::Object(sections));
 
@@ -381,14 +384,14 @@ mod tests {
         let ini = b"[section]\nkey = value1\nkey = value2";
 
         let Value = adaptor.deserialize(&ini[..]).unwrap();
-        let mut pairs = HashMap::new();
+        let mut pairs = Map::new();
         pairs.insert("key".to_string(), Value::Array(
             vec![
                 Value::Text("value1".to_string()),
                 Value::Text("value2".to_string()),
             ]
         ));
-        let mut sections = HashMap::new();
+        let mut sections = Map::new();
         sections.insert("section".to_string(), Value::Object(pairs));
         assert_eq!(Value, Value::Object(sections));
     }
@@ -399,7 +402,7 @@ mod tests {
         let ini = b"key1 = value1\nkey2 = value2";
 
         let Value = adaptor.deserialize(&ini[..]).unwrap();
-        let mut pairs = HashMap::new();
+        let mut pairs = Map::new();
         pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
         pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
         assert_eq!(Value, Value::Object(pairs));
@@ -411,7 +414,7 @@ mod tests {
         let ini = b"key1 = value1\nkey2 = value2";
 
         let Value = adaptor.deserialize(&ini[..]).unwrap();
-        let mut pairs = HashMap::new();
+        let mut pairs = Map::new();
         pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
         pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
         assert_eq!(Value, Value::Object(pairs));
@@ -421,9 +424,9 @@ mod tests {
     fn serialize_ini_section() {
         let adaptor = IniAdaptor::new();
 
-        let mut pairs = HashMap::new();
+        let mut pairs = Map::new();
         pairs.insert("key".to_string(), Value::Text("value".to_string()));
-        let mut section = HashMap::new();
+        let mut section = Map::new();
         section.insert("section".to_string(), Value::Object(pairs));
 
         let mut buffer = Vec::new();
@@ -438,13 +441,13 @@ mod tests {
     fn serialize_ini_array_value() {
         let adaptor = IniAdaptor::new();
 
-        let mut pairs = HashMap::new();
+        let mut pairs = Map::new();
         pairs.insert("key".to_string(), Value::Array(vec![
             Value::Text("value1".to_string()),
             Value::Text("value2".to_string()),
         ]));
 
-        let mut section = HashMap::new();
+        let mut section = Map::new();
         section.insert("section".to_string(), Value::Object(pairs));
 
         let mut buffer = Vec::new();

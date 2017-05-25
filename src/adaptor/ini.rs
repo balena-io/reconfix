@@ -5,7 +5,7 @@ use std::io::{Read, Write};
 use std::iter::FromIterator;
 use std::str;
 
-use super::{Adaptor, Config, AdaptorError};
+use super::{Adaptor, Value, AResult, AdaptorError};
 
 use nom::{IResult, space, alphanumeric, multispace};
 
@@ -25,8 +25,8 @@ impl IniAdaptor {
 }
 
 impl<'a> Adaptor<'a> for IniAdaptor {
-    /// Deserialize the INI data into the `Config` AST
-    fn deserialize<R>(&self, mut reader: R) -> Result<Config, AdaptorError> 
+    /// Deserialize the INI data into the `Value` AST
+    fn deserialize<R>(&self, mut reader: R) -> AResult<Value> 
         where R: Read 
     {
         let mut buffer = Vec::new();
@@ -40,7 +40,7 @@ impl<'a> Adaptor<'a> for IniAdaptor {
 
         let mut section_map = HashMap::new();
 
-        // Here we convert the INI into our configuration AST,
+        // Here we convert the INI into our Valueuration AST,
         // performing section and key de-duplication as necessary
         for (name, pairs) in sections {
             // fetch existing entry or create a new one, deduplicating sections
@@ -59,20 +59,20 @@ impl<'a> Adaptor<'a> for IniAdaptor {
 
         // insert the sections
         for (section, pairs) in section_map {
-            if let Some(_) = full_map.insert(section, Config::Object(pairs)) {
+            if let Some(_) = full_map.insert(section, Value::Object(pairs)) {
                 return Err("section name collision");
             }
         }
 
         // Return the combined object
-        Ok(Config::Object(full_map))
+        Ok(Value::Object(full_map))
     }
 
-    /// Serialize the `Config` AST into INI format
-    fn serialize<W>(&self, config: Config, mut writer: W) -> Result<(), AdaptorError> 
+    /// Serialize the `Value` AST into INI format
+    fn serialize<W>(&self, Value: Value, mut writer: W) -> AResult<()> 
         where W: Write 
     {
-        let ini_model = try!(convert_model(config));
+        let ini_model = try!(convert_model(Value));
 
         for (header, props) in ini_model {
             writeln!(writer, "[{}]", header);
@@ -87,13 +87,13 @@ impl<'a> Adaptor<'a> for IniAdaptor {
 }
 
 /// Use heurisitics to determine a values' type
-fn infer_type(value: &str) -> Config {
-    value.parse::<bool>().map(|x| Config::Bool(x))
+fn infer_type(value: &str) -> Value {
+    value.parse::<bool>().map(|x| Value::Bool(x))
         .unwrap_or_else(|_| {
             if is_number(value) { 
-                Config::Number(value.to_string())
+                Value::Number(value.to_string())
             } else { 
-                Config::Text(value.to_string())
+                Value::Text(value.to_string())
             }
         })
 }
@@ -105,8 +105,8 @@ fn is_number(value: &str) -> bool {
 }
 
 /// Iterate through all key value pairs, and insert them into the map
-fn insert_all<I>(map: &mut HashMap<String, Config>, values: I) 
-    where I: IntoIterator<Item=(String, Config)> 
+fn insert_all<I>(map: &mut HashMap<String, Value>, values: I) 
+    where I: IntoIterator<Item=(String, Value)> 
 {
     for (key, value) in values.into_iter() {
         insert_or_expand(map, key, value);
@@ -114,7 +114,7 @@ fn insert_all<I>(map: &mut HashMap<String, Config>, values: I)
 }
 
 /// Insert a new value or create an array if there are duplicates
-fn insert_or_expand(map: &mut HashMap<String, Config>, key: String, value: Config) {
+fn insert_or_expand(map: &mut HashMap<String, Value>, key: String, value: Value) {
     match map.entry(key) {
         hash_map::Entry::Vacant(e) => {
             e.insert(value);
@@ -123,9 +123,9 @@ fn insert_or_expand(map: &mut HashMap<String, Config>, key: String, value: Confi
             // we use a dummy value here so we can replace it with
             // the modified value later. If we remove the value,
             // we lose ownership of the Entry.
-            let current = e.insert(Config::Bool(false));
+            let current = e.insert(Value::Bool(false));
             let modified = match current {
-                Config::Array(mut a) => {
+                Value::Array(mut a) => {
                     a.push(value);
                     a
                 },
@@ -138,18 +138,18 @@ fn insert_or_expand(map: &mut HashMap<String, Config>, key: String, value: Confi
             };
 
             // add back the modified vector, droping the dummy value
-            e.insert(Config::Array(modified));
+            e.insert(Value::Array(modified));
         }
     }
 }
 
 /// Convert a property value into a representative `String`
 /// Returns an `Error` if the value is not representable as a `String`
-fn flatten_value(value: &Config) -> Result<String, AdaptorError> {
+fn flatten_value(value: &Value) -> AResult<String> {
     let string = match *value {
-        Config::Bool(ref x) => x.to_string(),
-        Config::Text(ref x) => x.to_string(),
-        Config::Number(ref x) => x.to_string(),
+        Value::Bool(ref x) => x.to_string(),
+        Value::Text(ref x) => x.to_string(),
+        Value::Number(ref x) => x.to_string(),
         _ => return Err("invalid element"),
     };
 
@@ -160,13 +160,13 @@ fn flatten_value(value: &Config) -> Result<String, AdaptorError> {
 /// property and value. This will stringify primitive values and
 /// convert an array into multiple key-value pairs. Object values
 /// are not allowed.
-fn emit_values(key: &str, value: &Config) -> Result<Vec<(String, String)>, AdaptorError> {
+fn emit_values(key: &str, value: &Value) -> AResult<Vec<(String, String)>> {
     let result = match (flatten_value(value), value)  {
         (Ok(x), _)                      => Ok(vec![x]),
-        (_, &Config::Array(ref elems))   => {
+        (_, &Value::Array(ref elems))   => {
             elems.iter()
                 .map(flatten_value)
-                .collect::<Result<Vec<_>, AdaptorError>>()
+                .collect::<AResult<Vec<_>>>()
         },
         _                               => Err("invalid value"),
     };
@@ -178,21 +178,21 @@ fn emit_values(key: &str, value: &Config) -> Result<Vec<(String, String)>, Adapt
     Ok(tuples)
 }
 
-/// Convert a root configuration object into a list of named
+/// Convert a root Valueuration object into a list of named
 /// sections with key-value pairs in each. This converts
-/// the internal configuration model to the INI data model.
-fn convert_model(model: Config) -> Result<Vec<(String, Vec<(String, String)>)>, AdaptorError> {
+/// the internal Valueuration model to the INI data model.
+fn convert_model(model: Value) -> AResult<Vec<(String, Vec<(String, String)>)>> {
     // extract the root object, else error
     let section_map = match model {
-        Config::Object(o) => o,
+        Value::Object(o) => o,
         _ => return Err("invalid root element"),
     };
 
     // convert each section, collecting the results
-    let converted_map = section_map.iter().map(|(key, config)| {
+    let converted_map = section_map.iter().map(|(key, Value)| {
         // extract the section object
-        let pairs = match *config {
-            Config::Object(ref o) => o,
+        let pairs = match *Value {
+            Value::Object(ref o) => o,
             _ => return Err("invalid section element"),
         };
 
@@ -201,7 +201,7 @@ fn convert_model(model: Config) -> Result<Vec<(String, Vec<(String, String)>)>, 
         let flattened = pairs.iter()
             .map(|(key, value)| emit_values(key, value))
             // converts a list of results into a result with a list
-            .collect::<Result<Vec<_>, AdaptorError>>() 
+            .collect::<AResult<Vec<_>>>() 
             // flatten the list of lists
             .map(|pairs| pairs.into_iter().flat_map(|x| x).collect::<Vec<_>>());
 
@@ -210,7 +210,7 @@ fn convert_model(model: Config) -> Result<Vec<(String, Vec<(String, String)>)>, 
     });
     
     //convert list of results to result with a list
-    converted_map.collect::<Result<Vec<_>, _>>()
+    converted_map.collect::<AResult<Vec<_>>>()
 }
 
 /// Parses the section name from the `[header]`
@@ -288,27 +288,27 @@ mod tests {
 
     #[test]
     fn infer_type_boolean_true() {
-        assert_eq!(infer_type("true"), Config::Bool(true));
+        assert_eq!(infer_type("true"), Value::Bool(true));
     }
 
     #[test]
     fn infer_type_boolean_false() {
-        assert_eq!(infer_type("false"), Config::Bool(false));
+        assert_eq!(infer_type("false"), Value::Bool(false));
     }
 
     #[test]
     fn infer_type_boolean_incorrect() {
-        assert_eq!(infer_type("True"), Config::Text("True".to_string()));
+        assert_eq!(infer_type("True"), Value::Text("True".to_string()));
     }
 
     #[test]
     fn infer_type_number_integer() {
-        assert_eq!(infer_type("1234"), Config::Number("1234".to_string()));
+        assert_eq!(infer_type("1234"), Value::Number("1234".to_string()));
     }
 
     #[test]
     fn infer_type_number_decimal() {
-        assert_eq!(infer_type("1234"), Config::Number("1234".to_string()));
+        assert_eq!(infer_type("1234"), Value::Number("1234".to_string()));
     }
 
     #[test]
@@ -366,12 +366,12 @@ mod tests {
         let adaptor = IniAdaptor::new();
         let ini = b"[section]\nkey = value";
 
-        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let Value = adaptor.deserialize(&ini[..]).unwrap();
         let mut pairs = HashMap::new();
-        pairs.insert("key".to_string(), Config::Text("value".to_string()));
+        pairs.insert("key".to_string(), Value::Text("value".to_string()));
         let mut sections = HashMap::new();
-        sections.insert("section".to_string(), Config::Object(pairs));
-        assert_eq!(config, Config::Object(sections));
+        sections.insert("section".to_string(), Value::Object(pairs));
+        assert_eq!(Value, Value::Object(sections));
 
     }
 
@@ -380,17 +380,17 @@ mod tests {
         let adaptor = IniAdaptor::new();
         let ini = b"[section]\nkey = value1\nkey = value2";
 
-        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let Value = adaptor.deserialize(&ini[..]).unwrap();
         let mut pairs = HashMap::new();
-        pairs.insert("key".to_string(), Config::Array(
+        pairs.insert("key".to_string(), Value::Array(
             vec![
-                Config::Text("value1".to_string()),
-                Config::Text("value2".to_string()),
+                Value::Text("value1".to_string()),
+                Value::Text("value2".to_string()),
             ]
         ));
         let mut sections = HashMap::new();
-        sections.insert("section".to_string(), Config::Object(pairs));
-        assert_eq!(config, Config::Object(sections));
+        sections.insert("section".to_string(), Value::Object(pairs));
+        assert_eq!(Value, Value::Object(sections));
     }
 
     #[test]
@@ -398,11 +398,11 @@ mod tests {
         let adaptor = IniAdaptor::new();
         let ini = b"key1 = value1\nkey2 = value2";
 
-        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let Value = adaptor.deserialize(&ini[..]).unwrap();
         let mut pairs = HashMap::new();
-        pairs.insert("key1".to_string(), Config::Text("value1".to_string()));
-        pairs.insert("key2".to_string(), Config::Text("value2".to_string()));
-        assert_eq!(config, Config::Object(pairs));
+        pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
+        pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
+        assert_eq!(Value, Value::Object(pairs));
     }
 
     #[test]
@@ -410,11 +410,11 @@ mod tests {
         let adaptor = IniAdaptor::new();
         let ini = b"key1 = value1\nkey2 = value2";
 
-        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let Value = adaptor.deserialize(&ini[..]).unwrap();
         let mut pairs = HashMap::new();
-        pairs.insert("key1".to_string(), Config::Text("value1".to_string()));
-        pairs.insert("key2".to_string(), Config::Text("value2".to_string()));
-        assert_eq!(config, Config::Object(pairs));
+        pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
+        pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
+        assert_eq!(Value, Value::Object(pairs));
     }
 
     #[test]
@@ -422,12 +422,12 @@ mod tests {
         let adaptor = IniAdaptor::new();
 
         let mut pairs = HashMap::new();
-        pairs.insert("key".to_string(), Config::Text("value".to_string()));
+        pairs.insert("key".to_string(), Value::Text("value".to_string()));
         let mut section = HashMap::new();
-        section.insert("section".to_string(), Config::Object(pairs));
+        section.insert("section".to_string(), Value::Object(pairs));
 
         let mut buffer = Vec::new();
-        adaptor.serialize(Config::Object(section), &mut buffer).unwrap();
+        adaptor.serialize(Value::Object(section), &mut buffer).unwrap();
 
         let expected = &b"[section]\nkey = value\n\n"[..];
 
@@ -439,16 +439,16 @@ mod tests {
         let adaptor = IniAdaptor::new();
 
         let mut pairs = HashMap::new();
-        pairs.insert("key".to_string(), Config::Array(vec![
-            Config::Text("value1".to_string()),
-            Config::Text("value2".to_string()),
+        pairs.insert("key".to_string(), Value::Array(vec![
+            Value::Text("value1".to_string()),
+            Value::Text("value2".to_string()),
         ]));
 
         let mut section = HashMap::new();
-        section.insert("section".to_string(), Config::Object(pairs));
+        section.insert("section".to_string(), Value::Object(pairs));
 
         let mut buffer = Vec::new();
-        adaptor.serialize(Config::Object(section), &mut buffer).unwrap();
+        adaptor.serialize(Value::Object(section), &mut buffer).unwrap();
 
         let expected = &b"[section]\nkey = value1\nkey = value2\n\n"[..];
 

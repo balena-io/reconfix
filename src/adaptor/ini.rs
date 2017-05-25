@@ -38,22 +38,34 @@ impl<'a> Adaptor<'a> for IniAdaptor {
             _ => return Err("unable to parse INI data"),
         };
 
-        let mut combined = HashMap::new();
+        let mut section_map = HashMap::new();
 
         // Here we convert the INI into our configuration AST,
         // performing section and key de-duplication as necessary
         for (name, pairs) in sections {
             // fetch existing entry or create a new one, deduplicating sections
-            let mut entry = combined.entry(name.into()).or_insert_with(|| HashMap::new());
+            let mut entry = section_map.entry(name.into()).or_insert_with(|| HashMap::new());
             // later, we will need schema data in order to encode type information into the AST
             // for now, just assume everything is a string
             let converted = pairs.iter().map(|&(key,value)| (key.to_string(), infer_type(value)));
             insert_all(entry, converted);
         }
 
-        // wrap it all up in an object
-        let objects = combined.into_iter().map(|(key, value)| (key, Config::Object(value))).collect();
-        Ok(Config::Object(objects))
+        let mut full_map = HashMap::new();
+
+        // Insert the key-value pairs with no section header as top level properties
+        let converted = no_section.iter().map(|&(key, value)| (key.to_string(), infer_type(value)));
+        insert_all(&mut full_map, converted);
+
+        // insert the sections
+        for (section, pairs) in section_map {
+            if let Some(_) = full_map.insert(section, Config::Object(pairs)) {
+                return Err("section name collision");
+            }
+        }
+
+        // Return the combined object
+        Ok(Config::Object(full_map))
     }
 
     /// Serialize the `Config` AST into INI format
@@ -111,7 +123,7 @@ fn insert_or_expand(map: &mut HashMap<String, Config>, key: String, value: Confi
             // we use a dummy value here so we can replace it with
             // the modified value later. If we remove the value,
             // we lose ownership of the Entry.
-            let mut current = e.insert(Config::Bool(false));
+            let current = e.insert(Config::Bool(false));
             let modified = match current {
                 Config::Array(mut a) => {
                     a.push(value);
@@ -379,7 +391,30 @@ mod tests {
         let mut sections = HashMap::new();
         sections.insert("section".to_string(), Config::Object(pairs));
         assert_eq!(config, Config::Object(sections));
+    }
 
+    #[test]
+    fn deserialize_ini_no_header() {
+        let adaptor = IniAdaptor::new();
+        let ini = b"key1 = value1\nkey2 = value2";
+
+        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let mut pairs = HashMap::new();
+        pairs.insert("key1".to_string(), Config::Text("value1".to_string()));
+        pairs.insert("key2".to_string(), Config::Text("value2".to_string()));
+        assert_eq!(config, Config::Object(pairs));
+    }
+
+    #[test]
+    fn deserialize_ini_no_header_duplicate_keys() {
+        let adaptor = IniAdaptor::new();
+        let ini = b"key1 = value1\nkey2 = value2";
+
+        let config = adaptor.deserialize(&ini[..]).unwrap();
+        let mut pairs = HashMap::new();
+        pairs.insert("key1".to_string(), Config::Text("value1".to_string()));
+        pairs.insert("key2".to_string(), Config::Text("value2".to_string()));
+        assert_eq!(config, Config::Object(pairs));
     }
 
     #[test]
@@ -597,6 +632,48 @@ param2 = val2"[..];
         expected.push(("section1", vec![("param1", "val1")]));
         expected.push(("section2", vec![("param2", "val2")]));
         assert_eq!(res, IResult::Done(&b""[..], (vec![], expected)));
+    }
+
+    #[test]
+    fn parse_section_no_header() {
+        let ini = &b"param1 = val1
+# some documentation
+param2 = val2"[..];
+
+        let res = ini_file(ini);
+        print_output(&res);
+        let expected = vec![
+            ("param1", "val1"),
+            ("param2", "val2")
+        ];
+        assert_eq!(res, IResult::Done(&b""[..], (expected, vec![])));
+    }
+
+    #[test]
+    fn parse_multi_section_no_header_and_header() {
+        let ini = &b"param1 = val1
+# some documentation
+param2 = val2
+
+[section]
+param3 = val3
+param4 = val4"[..];
+
+        let res = ini_file(ini);
+        print_output(&res);
+        let expected = vec![
+            ("param1", "val1"),
+            ("param2", "val2")
+        ];
+
+        let sections = vec![
+            ("section", vec![
+                ("param3", "val3"),
+                ("param4", "val4"),
+            ])
+        ];
+
+        assert_eq!(res, IResult::Done(&b""[..], (expected, sections)));
     }
 
 }

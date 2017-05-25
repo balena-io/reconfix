@@ -31,7 +31,7 @@ impl<'a> Adaptor<'a> for IniAdaptor {
         reader.read_to_end(&mut buffer);
 
         // parse the basic INI structure
-        let output = match sections(&buffer) {
+        let (no_section, sections) = match ini_file(&buffer) {
             IResult::Done(_, o) => o,
             _ => return Err("unable to parse INI data"),
         };
@@ -40,7 +40,7 @@ impl<'a> Adaptor<'a> for IniAdaptor {
 
         // Here we convert the INI into our configuration AST,
         // performing section and key de-duplication as necessary
-        for (name, pairs) in output {
+        for (name, pairs) in sections {
             // fetch existing entry or create a new one, deduplicating sections
             let mut entry = combined.entry(name.into()).or_insert_with(|| HashMap::new());
             // later, we will need schema data in order to encode type information into the AST
@@ -494,12 +494,12 @@ param1 = val1
 [section2]
 param2 = val2"[..];
 
-        let res = sections(ini);
+        let res = ini_file(ini);
         print_output(&res);
         let mut expected = Vec::new();
         expected.push(("section1", vec![("param1", "val1")]));
         expected.push(("section2", vec![("param2", "val2")]));
-        assert_eq!(res, IResult::Done(&b""[..], expected));
+        assert_eq!(res, IResult::Done(&b""[..], (vec![], expected)));
     }
 
 }

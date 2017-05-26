@@ -3,14 +3,16 @@ mod ini;
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum Value {
-    Bool(bool),
-    Number(String),
-    Text(String),
-    Array(Vec<Value>),
-    Object(BTreeMap<String, Value>),
-}
+use serde_json::Value;
+
+// #[derive(Debug, Eq, PartialEq)]
+// pub enum Value {
+//     Bool(bool),
+//     Number(String),
+//     Text(String),
+//     Array(Vec<Value>),
+//     Object(BTreeMap<String, Value>),
+// }
 
 type AdaptorError = &'static str;
 type AResult<T> = Result<T, AdaptorError>;

@@ -1,18 +1,18 @@
 
-use std::collections::BTreeMap;
-use std::collections::btree_map::Entry;
 use std::fmt::Debug;
 use std::io::{Read, Write};
 use std::iter::FromIterator;
 use std::str;
 
-use super::{Adaptor, Value, AResult, AdaptorError};
+use super::{Adaptor, AResult, AdaptorError};
 
 use nom::{IResult, space, alphanumeric, multispace};
 
 use regex::Regex;
 
-type Map<K, V> = BTreeMap<K, V>;
+use serde_json::{Value, Map, Number};
+use serde_json::map::Entry;
+
 type Pair = (String, String);
 type Section = (String, Vec<Pair>);
 
@@ -49,11 +49,17 @@ impl<'a> Adaptor<'a> for IniAdaptor {
         // performing section and key de-duplication as necessary
         for (name, pairs) in sections {
             // fetch existing entry or create a new one, deduplicating sections
-            let mut entry = section_map.entry(name.into()).or_insert_with(|| Map::new());
+            let mut entry = section_map.entry(name.to_string()).or_insert_with(|| Value::Object(Map::new()));
+
+            let mut object = match *entry {
+                Value::Object(ref mut o) => o,
+                _ => return Err("section name collision"),
+            };
+
             // later, we will need schema data in order to encode type information into the AST
             // for now, just assume everything is a string
             let converted = pairs.iter().map(|&(key,value)| (key.to_string(), infer_type(value)));
-            insert_all(entry, converted);
+            insert_all(&mut object, converted);
         }
 
         let mut full_map = Map::new();
@@ -64,7 +70,7 @@ impl<'a> Adaptor<'a> for IniAdaptor {
 
         // insert the sections
         for (section, pairs) in section_map {
-            if let Some(_) = full_map.insert(section, Value::Object(pairs)) {
+            if let Some(_) = full_map.insert(section, pairs) {
                 return Err("section name collision");
             }
         }
@@ -101,16 +107,14 @@ impl<'a> Adaptor<'a> for IniAdaptor {
     }
 }
 
-/// Use heurisitics to determine a values' type
+/// Use heurisitics to determine a value's type
 fn infer_type(value: &str) -> Value {
-    value.parse::<bool>().map(|x| Value::Bool(x))
-        .unwrap_or_else(|_| {
-            if is_number(value) { 
-                Value::Number(value.to_string())
-            } else { 
-                Value::Text(value.to_string())
-            }
-        })
+    value.parse::<u64>().map(|x| Value::Number(x.into()))
+        .or_else(|_| value.parse::<i64>().map(|x| Value::Number(x.into())))
+        // will fix this unwrap once we add error_chain, for now not very dangerous
+        .or_else(|_| value.parse::<f64>().map(|x| Value::Number(Number::from_f64(x.into()).unwrap())))
+        .or_else(|_| value.parse::<bool>().map(|x| Value::Bool(x.into())))
+        .unwrap_or_else(|_| Value::String(value.into()))
 }
 
 /// Determine if a string is likely a number
@@ -163,7 +167,7 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
 fn flatten_value(value: &Value) -> AResult<String> {
     let string = match *value {
         Value::Bool(ref x) => x.to_string(),
-        Value::Text(ref x) => x.to_string(),
+        Value::String(ref x) => x.to_string(),
         Value::Number(ref x) => x.to_string(),
         _ => return Err("invalid element"),
     };
@@ -321,17 +325,17 @@ mod tests {
 
     #[test]
     fn infer_type_boolean_incorrect() {
-        assert_eq!(infer_type("True"), Value::Text("True".to_string()));
+        assert_eq!(infer_type("True"), Value::String("True".to_string()));
     }
 
     #[test]
     fn infer_type_number_integer() {
-        assert_eq!(infer_type("1234"), Value::Number("1234".to_string()));
+        assert_eq!(infer_type("1234"), Value::Number(1234.into()));
     }
 
     #[test]
     fn infer_type_number_decimal() {
-        assert_eq!(infer_type("1234"), Value::Number("1234".to_string()));
+        assert_eq!(infer_type("12.34"), Value::Number(Number::from_f64(12.34).unwrap()));
     }
 
     #[test]
@@ -391,7 +395,7 @@ mod tests {
 
         let value = adaptor.deserialize(&ini[..]).unwrap();
         let mut pairs = Map::new();
-        pairs.insert("key".to_string(), Value::Text("value".to_string()));
+        pairs.insert("key".to_string(), Value::String("value".to_string()));
         let mut sections = Map::new();
         sections.insert("section".to_string(), Value::Object(pairs));
         assert_eq!(value, Value::Object(sections));
@@ -407,8 +411,8 @@ mod tests {
         let mut pairs = Map::new();
         pairs.insert("key".to_string(), Value::Array(
             vec![
-                Value::Text("value1".to_string()),
-                Value::Text("value2".to_string()),
+                Value::String("value1".to_string()),
+                Value::String("value2".to_string()),
             ]
         ));
         let mut sections = Map::new();
@@ -423,8 +427,8 @@ mod tests {
 
         let value = adaptor.deserialize(&ini[..]).unwrap();
         let mut pairs = Map::new();
-        pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
-        pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
+        pairs.insert("key1".to_string(), Value::String("value1".to_string()));
+        pairs.insert("key2".to_string(), Value::String("value2".to_string()));
         assert_eq!(value, Value::Object(pairs));
     }
 
@@ -435,8 +439,8 @@ mod tests {
 
         let value = adaptor.deserialize(&ini[..]).unwrap();
         let mut pairs = Map::new();
-        pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
-        pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
+        pairs.insert("key1".to_string(), Value::String("value1".to_string()));
+        pairs.insert("key2".to_string(), Value::String("value2".to_string()));
         assert_eq!(value, Value::Object(pairs));
     }
 
@@ -445,7 +449,7 @@ mod tests {
         let adaptor = IniAdaptor::new();
 
         let mut pairs = Map::new();
-        pairs.insert("key".to_string(), Value::Text("value".to_string()));
+        pairs.insert("key".to_string(), Value::String("value".to_string()));
         let mut section = Map::new();
         section.insert("section".to_string(), Value::Object(pairs));
 
@@ -463,8 +467,8 @@ mod tests {
 
         let mut pairs = Map::new();
         pairs.insert("key".to_string(), Value::Array(vec![
-            Value::Text("value1".to_string()),
-            Value::Text("value2".to_string()),
+            Value::String("value1".to_string()),
+            Value::String("value2".to_string()),
         ]));
 
         let mut section = Map::new();
@@ -483,12 +487,12 @@ mod tests {
         let adaptor = IniAdaptor::new();
 
         let mut pairs = Map::new();
-        pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
-        pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
+        pairs.insert("key1".to_string(), Value::String("value1".to_string()));
+        pairs.insert("key2".to_string(), Value::String("value2".to_string()));
 
         let mut section_pairs = Map::new();
-        section_pairs.insert("key3".to_string(), Value::Text("value3".to_string()));
-        section_pairs.insert("key4".to_string(), Value::Text("value4".to_string()));
+        section_pairs.insert("key3".to_string(), Value::String("value3".to_string()));
+        section_pairs.insert("key4".to_string(), Value::String("value4".to_string()));
         pairs.insert("section".to_string(), Value::Object(section_pairs));
 
         let mut buffer = Vec::new();
@@ -509,8 +513,8 @@ key4 = value4\n\n"[..];
         let adaptor = IniAdaptor::new();
 
         let mut pairs = Map::new();
-        pairs.insert("key1".to_string(), Value::Text("value1".to_string()));
-        pairs.insert("key2".to_string(), Value::Text("value2".to_string()));
+        pairs.insert("key1".to_string(), Value::String("value1".to_string()));
+        pairs.insert("key2".to_string(), Value::String("value2".to_string()));
 
         let mut buffer = Vec::new();
         adaptor.serialize(Value::Object(pairs), &mut buffer).unwrap();

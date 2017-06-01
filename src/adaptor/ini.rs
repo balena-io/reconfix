@@ -1,14 +1,11 @@
 
-use std::fmt::Debug;
+
 use std::io::{Read, Write};
-use std::iter::FromIterator;
 use std::str;
 
-use super::{Adaptor, AResult, AdaptorError};
+use super::{Adaptor, AResult};
 
 use nom::{IResult, space, alphanumeric, multispace};
-
-use regex::Regex;
 
 use serde_json::{Value, Map, Number};
 use serde_json::map::Entry;
@@ -35,7 +32,7 @@ impl<'a> Adaptor<'a> for IniAdaptor {
         where R: Read 
     {
         let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer);
+        reader.read_to_end(&mut buffer).unwrap();
 
         // parse the basic INI structure
         let (no_section, sections) = match ini_file(&buffer) {
@@ -88,19 +85,19 @@ impl<'a> Adaptor<'a> for IniAdaptor {
         let extra_line = !pairs.is_empty();
 
         for (key, value) in pairs {
-            writeln!(writer, "{} = {}", key, value);
+            writeln!(writer, "{} = {}", key, value).unwrap();
         }
 
         if extra_line {
-            writeln!(writer, "");
+            writeln!(writer, "").unwrap();
         }
 
         for (header, props) in sections {
-            writeln!(writer, "[{}]", header);
+            writeln!(writer, "[{}]", header).unwrap();
             for (key, value) in props {
-                writeln!(writer, "{} = {}", key, value);
+                writeln!(writer, "{} = {}", key, value).unwrap();
             }
-            writeln!(writer, "");
+            writeln!(writer, "").unwrap();
         }
 
         Ok(())
@@ -115,12 +112,6 @@ fn infer_type(value: &str) -> Value {
         .or_else(|_| value.parse::<f64>().map(|x| Value::Number(Number::from_f64(x.into()).unwrap())))
         .or_else(|_| value.parse::<bool>().map(|x| Value::Bool(x.into())))
         .unwrap_or_else(|_| Value::String(value.into()))
-}
-
-/// Determine if a string is likely a number
-fn is_number(value: &str) -> bool {
-    let regex = Regex::new(r"^[+-]?\d*\.?\d+$").unwrap();
-    regex.is_match(value)
 }
 
 /// Iterate through all key value pairs, and insert them into the map
@@ -197,9 +188,9 @@ fn emit_values(key: &str, value: &Value) -> AResult<Vec<Pair>> {
     Ok(tuples)
 }
 
-/// Convert a root Valueuration object into a list of named
+/// Convert a root `Value` object into a list of named
 /// sections with key-value pairs in each. This converts
-/// the internal Valueuration model to the INI data model.
+/// the internal `Value` model to the INI data model.
 fn convert_model(model: Value) -> AResult<(Vec<Pair>, Vec<Section>)> {
     // extract the root object, else error
     let top_level = match model {
@@ -272,6 +263,7 @@ named!(key_value_pair <&[u8],(&str,&str)>,
         key: map_res!(alphanumeric, str::from_utf8)
         >> opt!(space)
         >> char!('=')
+        >> not!(char!('='))
         >> opt!(space)
         >> value: map_res!(
             // There may be more elegant parsers, but this is the only one
@@ -313,6 +305,10 @@ named!(ini_file<&[u8], (Vec<(&str, &str)>, Vec<(&str, Vec<(&str, &str)>)>)>,
 mod tests {
     use super::*;
 
+    use std::fmt::Debug;
+
+    use nom::ErrorKind;
+
     #[test]
     fn infer_type_boolean_true() {
         assert_eq!(infer_type("true"), Value::Bool(true));
@@ -336,56 +332,6 @@ mod tests {
     #[test]
     fn infer_type_number_decimal() {
         assert_eq!(infer_type("12.34"), Value::Number(Number::from_f64(12.34).unwrap()));
-    }
-
-    #[test]
-    fn is_number_integer() {
-        assert_eq!(is_number("1234"), true);
-    }
-
-    #[test]
-    fn is_number_decimal() {
-        assert_eq!(is_number("12.34"), true);
-    }
-
-    #[test]
-    fn is_number_leading_decimal() {
-        assert_eq!(is_number(".1234"), true);
-    }
-
-    #[test]
-    fn is_number_zero_leading_decimal() {
-        assert_eq!(is_number("0.1234"), true);
-    }
-
-    #[test]
-    fn is_number_leading_double_zero() {
-        assert_eq!(is_number("00.1234"), true);
-    }
-
-    #[test]
-    fn is_number_positive_integer() {
-        assert_eq!(is_number("+1234"), true);
-    }
-
-    #[test]
-    fn is_number_double_positive() {
-        assert_eq!(is_number("++1234"), false);
-    }  
-
-    #[test]
-    fn is_number_negative_integer() {
-        assert_eq!(is_number("-1234"), true);
-    }
-
-    #[test]
-    fn is_number_double_negative() {
-        assert_eq!(is_number("--1234"), false);
-    }
-
-    #[test]
-    fn is_number_alphanumeric() {
-        assert_eq!(is_number("1a2b3c4d"), false);
     }
 
     #[test]
@@ -542,6 +488,51 @@ key4 = value4\n\n"[..];
     }
 
     #[test]
+    fn parse_key_value_pair_duplicate_equals_test() {
+        let pair = &b"parameter==value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Error(ErrorKind::Not));
+    }
+
+    #[test]
+    fn parse_key_value_pair_no_key_test() {
+        let pair = &b"=value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Error(ErrorKind::AlphaNumeric));
+    }
+
+    #[test]
+    fn parse_key_value_pair_no_value_test() {
+        let pair = &b"=value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Error(ErrorKind::AlphaNumeric));
+    }
+
+    #[test]
+    fn parse_key_value_pair_leading_space_test() {
+        let pair = &b"   key=value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Error(ErrorKind::AlphaNumeric));
+    }
+
+    #[test]
+    fn parse_key_value_pair_unbalanced_space_test() {
+        let pair = &b"key= value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Done(&b""[..], ("key", "value")));
+    }
+
+    #[test]
     fn parse_key_value_newline_test() {
         let pair = &b"parameter=value\n"[..];
 
@@ -573,9 +564,10 @@ key4 = value4\n\n"[..];
 
         let res = key_value_group(ini);
         print_output(&res);
-        let mut expected = Vec::new();
-        expected.push(("param1", "value1"));
-        expected.push(("param2", "value2"));
+        let expected = vec![
+            ("param1", "value1"),
+            ("param2", "value2"),
+        ];
         assert_eq!(res, IResult::Done(&b""[..], expected));
     }
 
@@ -585,9 +577,10 @@ key4 = value4\n\n"[..];
 
         let res = key_value_group(ini);
         print_output(&res);
-        let mut expected = Vec::new();
-        expected.push(("param1", "value1"));
-        expected.push(("param1", "value2"));
+        let expected = vec![
+            ("param1", "value1"),
+            ("param1", "value2"),
+        ];
         assert_eq!(res, IResult::Done(&b""[..], expected));
     }
 

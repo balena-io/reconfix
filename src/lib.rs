@@ -3,15 +3,29 @@
 //! This crate implements the core of reconfix schema handling and bidirectional transformation.
 
 #![deny(missing_docs)]
+#![recursion_limit = "1024"]
 
 mod adaptor;
 
 #[macro_use]
+extern crate error_chain;
+#[macro_use]
 extern crate nom;
 extern crate serde_json;
 
+mod errors {
+    error_chain! {
+        errors {
+            /// Indicates a parsing error
+            Parse
+        }
+    }
+}
+
 use serde_json::Value;
 use serde_json::Value::*;
+
+pub use errors::*;
 
 /// The types of wildcard patterns in a schema
 pub enum Wildcard {

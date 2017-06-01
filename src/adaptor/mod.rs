@@ -11,4 +11,3 @@ pub trait Adaptor<'a> {
     fn serialize<W: Write>(&self, conf: Value, writer: W) -> AResult<()>;
     fn deserialize<R: Read>(&self, reader: R) -> AResult<Value>;
 }
-

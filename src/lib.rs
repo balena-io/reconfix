@@ -67,7 +67,7 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
                 Some(Wildcard::Array) => data.is_array(),
                 Some(Wildcard::Null) => data == &Value::Null,
             }
-        }
+        },
         Array(ref a) => {
             match data.as_array() {
                 Some(d) => {
@@ -76,19 +76,19 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
                     } else {
                         false
                     }
-                }
+                },
                 None => false,
             }
-        }
+        },
         Object(ref o) => {
             match data.as_object() {
                 Some(d) => {
                     o.iter()
                         .all(|(k, pattern)| d.get(k).map_or(false, |data| matches(data, pattern)))
-                }
+                },
                 None => false,
             }
-        }
+        },
         _ => data == pattern,
     }
 }
@@ -98,10 +98,10 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
 /// The degree is the total number of fields in a value.
 pub fn degree(pattern: &Value) -> u64 {
     1 +
-    match *pattern {
-        Object(ref o) => o.values().map(degree).sum(),
-        _ => 0,
-    }
+        match *pattern {
+            Object(ref o) => o.values().map(degree).sum(),
+            _ => 0,
+        }
 }
 
 #[cfg(test)]

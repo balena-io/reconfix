@@ -11,15 +11,21 @@ use nom::{IResult, space, alphanumeric, multispace};
 use serde_json::{Value, Map, Number};
 use serde_json::map::Entry;
 
+/// The `Property` enum is used to represent a heirarchichal data
+/// structure. It is required to properly sort the data for
+/// serialization.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
 enum Property {
     Value(String),
     Section(Vec<Pair>),
 }
 
+/// The `Pair` struct is used to represent a key and either a section or value.
 #[derive(Eq, PartialEq, Debug)]
 struct Pair(String, Property);
 
+
+/// This ordering is used to correctly sort sections before serialization.
 impl Ord for Pair {
     fn cmp(&self, other: &Pair) -> Ordering {
         match (&self.1, &other.1) {
@@ -30,6 +36,7 @@ impl Ord for Pair {
     }
 }
 
+/// A simple passthrough implementation.
 impl PartialOrd for Pair {
     fn partial_cmp(&self, other: &Pair) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -118,19 +125,14 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
         Entry::Occupied(mut e) => {
             // we use a dummy value here so we can replace it with
             // the modified value later. If we remove the value,
-            // we lose ownership of the Entry.
+            // we lose ownership of the `Entry`.
             let current = e.insert(Value::Bool(false));
             let modified = match current {
                 Value::Array(mut a) => {
                     a.push(value);
                     a
                 },
-                x @ _ => {
-                    let mut array = Vec::new();
-                    array.push(x);
-                    array.push(value);
-                    array
-                },
+                x @ _ => vec![x, value],
             };
 
             // add back the modified vector, droping the dummy value
@@ -229,10 +231,12 @@ fn write_section<W>(name: Option<&str>, mut data: Vec<Pair>, writer: &mut W) -> 
 {
     data.sort();
 
+    // don't output a header for top-level values
     if let Some(txt) = name {
         writeln!(writer, "[{}]", txt).unwrap();
     }
 
+    // chain names together for subsections
     let parent_name = name.map(|x| x.to_string() + ".").unwrap_or("".to_string());
 
     for Pair(mut key, value) in data {

@@ -111,7 +111,7 @@ fn infer_type(value: &str) -> Value {
 
 /// Iterate through all key value pairs, and insert them into the map
 fn insert_all(map: &mut Map<String, Value>, values: Vec<(&str, &str)>) {
-    for (key, value) in values.into_iter() {
+    for (key, value) in values {
         insert_or_expand(map, key.to_string(), infer_type(value));
     }
 }
@@ -132,7 +132,7 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
                     a.push(value);
                     a
                 },
-                x @ _ => vec![x, value],
+                x => vec![x, value],
             };
 
             // add back the modified vector, droping the dummy value
@@ -146,16 +146,14 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
 fn insert_section(root: &mut Map<String, Value>, section_name: &str, pairs: Vec<(&str, &str)>) {
     // recursively query the object using the split section name
     let mut insert_map = section_name
-        .split(".")
+        .split('.')
         .fold(
             root, |map, key| {
                 let entry = map.entry(key).or_insert_with(|| Value::Object(Map::new()));
-                let sub = match *entry {
+                match *entry {
                     Value::Object(ref mut sub) => sub,
                     _ => panic!("name collision"),
-                };
-
-                sub
+                }
             }
         );
 
@@ -209,20 +207,19 @@ fn convert_model(object: Map<String, Value>) -> Result<Vec<Pair>> {
                 Value::Object(o) => {
                     convert_model(o).map(|props| vec![Pair(key, Property::Section(props))])
                 },
-                x @ _ => emit_values(&key, &x),
+                x => emit_values(&key, &x),
             }
         );
 
     // perform some flattening
     let flat_result = section_map.collect::<Result<Vec<_>>>();
-    let flat_vec = flat_result.map(
+    flat_result.map(
         |x| {
             x.into_iter()
                 .flat_map(|y| y.into_iter())
                 .collect::<Vec<_>>()
         }
-    );
-    flat_vec
+    )
 }
 
 /// Recursively serialize section data
@@ -237,7 +234,9 @@ fn write_section<W>(name: Option<&str>, mut data: Vec<Pair>, writer: &mut W) -> 
     }
 
     // chain names together for subsections
-    let parent_name = name.map(|x| x.to_string() + ".").unwrap_or("".to_string());
+    let parent_name = name
+        .map(|x| x.to_string() + ".")
+        .unwrap_or_else(|| "".to_string());
 
     for Pair(mut key, value) in data {
         match value {
@@ -268,7 +267,7 @@ named!(section_name<&str>, map_res!(
 /// Parses a `# comment` value
 named!(comment, delimited!(
         tag!(b"#"),
-        take_while!(call!(|c| c != '\n' as u8)),
+        take_while!(call!(|c| c != b'\n')),
         opt!(complete!(tag!("\n")))
     )
 );
@@ -292,7 +291,7 @@ named!(key_value_pair <&[u8],(&str,&str)>,
         >> value: map_res!(
             // There may be more elegant parsers, but this is the only one
             // I've tested that doesn't choke on EOF. Needs more investigation.
-            take_while!(call!(|c| c != '\n' as u8 && c != '#' as u8)),
+            take_while!(call!(|c| c != b'\n' && c != b'#')),
             str::from_utf8
         )
         >> opt!(complete!(comment))

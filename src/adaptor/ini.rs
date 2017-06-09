@@ -149,7 +149,7 @@ fn insert_section(root: &mut Map<String, Value>, section_name: &str, pairs: Vec<
         .split('.')
         .fold(
             root, |map, key| {
-                let entry = map.entry(key).or_insert_with(|| Value::Object(Map::new()));
+                let entry = map.entry(key.trim()).or_insert_with(|| Value::Object(Map::new()));
                 match *entry {
                     Value::Object(ref mut sub) => sub,
                     _ => panic!("name collision"),
@@ -429,6 +429,22 @@ mod tests {
         parent.insert("child".to_string(), Value::Object(child));
         let mut root = Map::new();
         root.insert("parent".to_string(), Value::Object(parent));
+        assert_eq!(value, Value::Object(root));
+    }
+
+    #[test]
+    fn deserialize_ini_section_name_whitespace() {
+        let adaptor = IniAdaptor::new();
+        let ini = b"[ foo bar . baz ]\nkey1 = value1\nkey2 = value2";
+
+        let value = adaptor.deserialize(&ini[..]).unwrap();
+        let mut child = Map::new();
+        child.insert("key1".to_string(), Value::String("value1".to_string()));
+        child.insert("key2".to_string(), Value::String("value2".to_string()));
+        let mut parent = Map::new();
+        parent.insert("baz".to_string(), Value::Object(child));
+        let mut root = Map::new();
+        root.insert("foo bar".to_string(), Value::Object(parent));
         assert_eq!(value, Value::Object(root));
     }
 

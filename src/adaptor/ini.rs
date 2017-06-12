@@ -145,17 +145,15 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
 /// Performs recursive lookups on the `Map` until the correct object is found
 fn insert_section(root: &mut Map<String, Value>, section_name: &str, pairs: Vec<(&str, &str)>) {
     // recursively query the object using the split section name
-    let mut insert_map = section_name
-        .split('.')
-        .fold(
-            root, |map, key| {
-                let entry = map.entry(key.trim()).or_insert_with(|| Value::Object(Map::new()));
-                match *entry {
-                    Value::Object(ref mut sub) => sub,
-                    _ => panic!("name collision"),
-                }
-            }
+    let mut insert_map = section_name.split('.').fold(root, |map, key| {
+        let entry = map.entry(key.trim()).or_insert_with(
+            || Value::Object(Map::new()),
         );
+        match *entry {
+            Value::Object(ref mut sub) => sub,
+            _ => panic!("name collision"),
+        }
+    });
 
     // insert the values
     insert_all(&mut insert_map, pairs);
@@ -200,26 +198,18 @@ fn emit_values(key: &str, value: &Value) -> Result<Vec<Pair>> {
 /// the internal configuration model to the INI data model.
 fn convert_model(object: Map<String, Value>) -> Result<Vec<Pair>> {
     // filter out top-level key-value pairs and only use sections
-    let section_map = object
-        .into_iter()
-        .map(
-            |(key, value)| match value {
-                Value::Object(o) => {
-                    convert_model(o).map(|props| vec![Pair(key, Property::Section(props))])
-                },
-                x => emit_values(&key, &x),
-            }
-        );
+    let section_map = object.into_iter().map(|(key, value)| match value {
+        Value::Object(o) => convert_model(o).map(|props| vec![Pair(key, Property::Section(props))]),
+        x => emit_values(&key, &x),
+    });
 
     // perform some flattening
     let flat_result = section_map.collect::<Result<Vec<_>>>();
-    flat_result.map(
-        |x| {
-            x.into_iter()
-                .flat_map(|y| y.into_iter())
-                .collect::<Vec<_>>()
-        }
-    )
+    flat_result.map(|x| {
+        x.into_iter()
+            .flat_map(|y| y.into_iter())
+            .collect::<Vec<_>>()
+    })
 }
 
 /// Recursively serialize section data
@@ -234,9 +224,9 @@ fn write_section<W>(name: Option<&str>, mut data: Vec<Pair>, writer: &mut W) -> 
     }
 
     // chain names together for subsections
-    let parent_name = name
-        .map(|x| x.to_string() + ".")
-        .unwrap_or_else(|| "".to_string());
+    let parent_name = name.map(|x| x.to_string() + ".").unwrap_or_else(
+        || "".to_string(),
+    );
 
     for Pair(mut key, value) in data {
         match value {
@@ -380,12 +370,10 @@ mod tests {
         let mut pairs = Map::new();
         pairs.insert(
             "key".to_string(),
-            Value::Array(
-                vec![
+            Value::Array(vec![
                 Value::String("value1".to_string()),
                 Value::String("value2".to_string()),
-            ]
-            ),
+            ]),
         );
         let mut sections = Map::new();
         sections.insert("section".to_string(), Value::Object(pairs));
@@ -476,12 +464,10 @@ mod tests {
         let mut pairs = Map::new();
         pairs.insert(
             "key".to_string(),
-            Value::Array(
-                vec![
+            Value::Array(vec![
             Value::String("value1".to_string()),
             Value::String("value2".to_string()),
-        ]
-            ),
+        ]),
         );
 
         let mut section = Map::new();
@@ -828,7 +814,7 @@ param2 = val2
 [section]
 param3 = val3
 param4 = val4"
-                       [..];
+            [..];
 
         let res = ini_file(ini);
         print_output(&res);

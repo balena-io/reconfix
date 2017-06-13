@@ -1,17 +1,47 @@
 
-
+use std::cmp::Ordering;
 use std::io::{Read, Write};
 use std::str;
 
-use super::{Adaptor, AResult};
+use adaptor::Adaptor;
+use errors::*;
 
 use nom::{IResult, space, alphanumeric, multispace};
 
 use serde_json::{Value, Map, Number};
 use serde_json::map::Entry;
 
-type Pair = (String, String);
-type Section = (String, Vec<Pair>);
+/// The `Property` enum is used to represent a heirarchichal data
+/// structure. It is required to properly sort the data for
+/// serialization.
+#[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
+enum Property {
+    Value(String),
+    Section(Vec<Pair>),
+}
+
+/// The `Pair` struct is used to represent a key and either a section or value.
+#[derive(Eq, PartialEq, Debug)]
+struct Pair(String, Property);
+
+
+/// This ordering is used to correctly sort sections before serialization.
+impl Ord for Pair {
+    fn cmp(&self, other: &Pair) -> Ordering {
+        match (&self.1, &other.1) {
+            (&Property::Value(_), &Property::Section(_)) => Ordering::Less,
+            (&Property::Section(_), &Property::Value(_)) => Ordering::Greater,
+            _ => self.0.cmp(&other.0),
+        }
+    }
+}
+
+/// A simple passthrough implementation.
+impl PartialOrd for Pair {
+    fn partial_cmp(&self, other: &Pair) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 /// The adaptor struct for INI files
 /// Later, this might contain parameters for the myriad INI quirks
@@ -26,7 +56,7 @@ impl IniAdaptor {
 
 impl<'a> Adaptor<'a> for IniAdaptor {
     /// Deserialize the INI data into the `Value` AST
-    fn deserialize<R>(&self, mut reader: R) -> AResult<Value>
+    fn deserialize<R>(&self, mut reader: R) -> Result<Value>
         where R: Read
     {
         let mut buffer = Vec::new();
@@ -35,76 +65,35 @@ impl<'a> Adaptor<'a> for IniAdaptor {
         // parse the basic INI structure
         let (no_section, sections) = match ini_file(&buffer) {
             IResult::Done(_, o) => o,
-            _ => return Err("unable to parse INI data"),
+            _ => return Err("unable to parse INI data".into()),
         };
-
-        let mut section_map = Map::new();
-
-        // Here we convert the INI into our Valueuration AST,
-        // performing section and key de-duplication as necessary
-        for (name, pairs) in sections {
-            // fetch existing entry or create a new one, deduplicating sections
-            let mut entry = section_map
-                .entry(name.to_string())
-                .or_insert_with(|| Value::Object(Map::new()));
-
-            let mut object = match *entry {
-                Value::Object(ref mut o) => o,
-                _ => return Err("section name collision"),
-            };
-
-            // later, we will need schema data in order to encode type information into the AST
-            // for now, just assume everything is a string
-            let converted = pairs
-                .iter()
-                .map(|&(key, value)| (key.to_string(), infer_type(value)));
-            insert_all(&mut object, converted);
-        }
 
         let mut full_map = Map::new();
 
-        // Insert the key-value pairs with no section header as top level properties
-        let converted = no_section
-            .iter()
-            .map(|&(key, value)| (key.to_string(), infer_type(value)));
-        insert_all(&mut full_map, converted);
+        // insert headerless values
+        insert_all(&mut full_map, no_section);
 
         // insert the sections
-        for (section, pairs) in section_map {
-            if let Some(_) = full_map.insert(section, pairs) {
-                return Err("section name collision");
-            }
+        for (name, pairs) in sections {
+            insert_section(&mut full_map, name, pairs);
         }
 
-        // Return the combined object
         Ok(Value::Object(full_map))
     }
 
     /// Serialize the `Value` AST into INI format
-    fn serialize<W>(&self, value: Value, mut writer: W) -> AResult<()>
+    fn serialize<W>(&self, value: Value, mut writer: W) -> Result<()>
         where W: Write
     {
-        let (pairs, sections) = convert_model(value)?;
+        // extract the root object, else error
+        let top_level = match value {
+            Value::Object(o) => o,
+            _ => return Err("invalid root element".into()),
+        };
 
-        let extra_line = !pairs.is_empty();
+        let properties = convert_model(top_level)?;
 
-        for (key, value) in pairs {
-            writeln!(writer, "{} = {}", key, value).unwrap();
-        }
-
-        if extra_line {
-            writeln!(writer, "").unwrap();
-        }
-
-        for (header, props) in sections {
-            writeln!(writer, "[{}]", header).unwrap();
-            for (key, value) in props {
-                writeln!(writer, "{} = {}", key, value).unwrap();
-            }
-            writeln!(writer, "").unwrap();
-        }
-
-        Ok(())
+        write_section(None, properties, &mut writer)
     }
 }
 
@@ -121,11 +110,9 @@ fn infer_type(value: &str) -> Value {
 }
 
 /// Iterate through all key value pairs, and insert them into the map
-fn insert_all<I>(map: &mut Map<String, Value>, values: I)
-    where I: IntoIterator<Item = (String, Value)>
-{
-    for (key, value) in values.into_iter() {
-        insert_or_expand(map, key, value);
+fn insert_all(map: &mut Map<String, Value>, values: Vec<(&str, &str)>) {
+    for (key, value) in values {
+        insert_or_expand(map, key.to_string(), infer_type(value));
     }
 }
 
@@ -138,19 +125,14 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
         Entry::Occupied(mut e) => {
             // we use a dummy value here so we can replace it with
             // the modified value later. If we remove the value,
-            // we lose ownership of the Entry.
+            // we lose ownership of the `Entry`.
             let current = e.insert(Value::Bool(false));
             let modified = match current {
                 Value::Array(mut a) => {
                     a.push(value);
                     a
                 },
-                x @ _ => {
-                    let mut array = Vec::new();
-                    array.push(x);
-                    array.push(value);
-                    array
-                },
+                x => vec![x, value],
             };
 
             // add back the modified vector, droping the dummy value
@@ -159,14 +141,32 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
     }
 }
 
+/// Inserts all the values of a section into the configuration heirarchy
+/// Performs recursive lookups on the `Map` until the correct object is found
+fn insert_section(root: &mut Map<String, Value>, section_name: &str, pairs: Vec<(&str, &str)>) {
+    // recursively query the object using the split section name
+    let mut insert_map = section_name.split('.').fold(root, |map, key| {
+        let entry = map.entry(key.trim()).or_insert_with(
+            || Value::Object(Map::new()),
+        );
+        match *entry {
+            Value::Object(ref mut sub) => sub,
+            _ => panic!("name collision"),
+        }
+    });
+
+    // insert the values
+    insert_all(&mut insert_map, pairs);
+}
+
 /// Convert a property value into a representative `String`
 /// Returns an `Error` if the value is not representable as a `String`
-fn flatten_value(value: &Value) -> AResult<String> {
+fn flatten_value(value: &Value) -> Result<String> {
     let string = match *value {
         Value::Bool(ref x) => x.to_string(),
         Value::String(ref x) => x.to_string(),
         Value::Number(ref x) => x.to_string(),
-        _ => return Err("invalid element"),
+        _ => return Err("invalid element".into()),
     };
 
     Ok(string)
@@ -176,18 +176,18 @@ fn flatten_value(value: &Value) -> AResult<String> {
 /// property and value. This will stringify primitive values and
 /// convert an array into multiple key-value pairs. Object values
 /// are not allowed.
-fn emit_values(key: &str, value: &Value) -> AResult<Vec<Pair>> {
+fn emit_values(key: &str, value: &Value) -> Result<Vec<Pair>> {
     let result = match (flatten_value(value), value) {
         (Ok(x), _) => Ok(vec![x]),
         (_, &Value::Array(ref elems)) => {
-            elems.iter().map(flatten_value).collect::<AResult<Vec<_>>>()
+            elems.iter().map(flatten_value).collect::<Result<Vec<_>>>()
         },
-        _ => Err("invalid value"),
+        _ => Err("invalid value".into()),
     };
 
     let tuples = result?
         .into_iter()
-        .map(|x| (key.to_string(), x))
+        .map(|x| Pair(key.to_string(), Property::Value(x)))
         .collect::<Vec<_>>();
 
     Ok(tuples)
@@ -195,51 +195,53 @@ fn emit_values(key: &str, value: &Value) -> AResult<Vec<Pair>> {
 
 /// Convert a root `Value` object into a list of named
 /// sections with key-value pairs in each. This converts
-/// the internal `Value` model to the INI data model.
-fn convert_model(model: Value) -> AResult<(Vec<Pair>, Vec<Section>)> {
-    // extract the root object, else error
-    let top_level = match model {
-        Value::Object(o) => o,
-        _ => return Err("invalid root element"),
-    };
-
+/// the internal configuration model to the INI data model.
+fn convert_model(object: Map<String, Value>) -> Result<Vec<Pair>> {
     // filter out top-level key-value pairs and only use sections
-    let section_map = top_level
-        .iter()
-        .filter_map(
-            |(key, value)| match *value {
-                Value::Object(ref o) => Some((key, o)),
-                _ => None,
-            }
-        );
+    let section_map = object.into_iter().map(|(key, value)| match value {
+        Value::Object(o) => convert_model(o).map(|props| vec![Pair(key, Property::Section(props))]),
+        x => emit_values(&key, &x),
+    });
 
-    // convert each section, collecting the results
-    let converted_map = section_map.map(
-        |(key, pairs)| {
-            // get one or more key-value pairs for each property
-            // then flatten them into the section
-            let flattened = pairs.iter()
-            .map(|(key, value)| emit_values(key, value))
-            // converts a list of results into a result with a list
-            .collect::<AResult<Vec<_>>>()
-            // flatten the list of lists
-            .map(|pairs| pairs.into_iter().flat_map(|x| x).collect::<Vec<_>>());
+    // perform some flattening
+    let flat_result = section_map.collect::<Result<Vec<_>>>();
+    flat_result.map(|x| {
+        x.into_iter()
+            .flat_map(|y| y.into_iter())
+            .collect::<Vec<_>>()
+    })
+}
 
-            // tuplize with section name
-            flattened.map(|result| (key.to_string(), result))
-        }
+/// Recursively serialize section data
+fn write_section<W>(name: Option<&str>, mut data: Vec<Pair>, writer: &mut W) -> Result<()>
+    where W: Write
+{
+    data.sort();
+
+    // don't output a header for top-level values
+    if let Some(txt) = name {
+        writeln!(writer, "[{}]", txt).unwrap();
+    }
+
+    // chain names together for subsections
+    let parent_name = name.map(|x| x.to_string() + ".").unwrap_or_else(
+        || "".to_string(),
     );
 
-    let pairs = top_level
-        .iter()
-        .filter_map(|(key, value)| emit_values(key, value).ok())
-        .flat_map(|x| x)
-        .collect::<Vec<_>>();
+    for Pair(mut key, value) in data {
+        match value {
+            Property::Value(v) => {
+                writeln!(writer, "{} = {}", key, v).unwrap();
+            },
+            Property::Section(s) => {
+                writeln!(writer, "").unwrap();
+                key.insert_str(0, &parent_name);
+                write_section(Some(&key), s, writer)?;
+            },
+        };
+    }
 
-    //convert list of results to result with a list
-    let result = converted_map.collect::<AResult<Vec<_>>>();
-
-    result.map(|sections| (pairs, sections))
+    Ok(())
 }
 
 /// Parses the section name from the `[header]`
@@ -255,7 +257,7 @@ named!(section_name<&str>, map_res!(
 /// Parses a `# comment` value
 named!(comment, delimited!(
         tag!(b"#"),
-        take_while!(call!(|c| c != '\n' as u8)),
+        take_while!(call!(|c| c != b'\n')),
         opt!(complete!(tag!("\n")))
     )
 );
@@ -279,7 +281,7 @@ named!(key_value_pair <&[u8],(&str,&str)>,
         >> value: map_res!(
             // There may be more elegant parsers, but this is the only one
             // I've tested that doesn't choke on EOF. Needs more investigation.
-            take_while!(call!(|c| c != '\n' as u8 && c != '#' as u8)),
+            take_while!(call!(|c| c != b'\n' && c != b'#')),
             str::from_utf8
         )
         >> opt!(complete!(comment))
@@ -368,12 +370,10 @@ mod tests {
         let mut pairs = Map::new();
         pairs.insert(
             "key".to_string(),
-            Value::Array(
-                vec![
+            Value::Array(vec![
                 Value::String("value1".to_string()),
                 Value::String("value2".to_string()),
-            ]
-            ),
+            ]),
         );
         let mut sections = Map::new();
         sections.insert("section".to_string(), Value::Object(pairs));
@@ -405,6 +405,38 @@ mod tests {
     }
 
     #[test]
+    fn deserialize_ini_nested_sections() {
+        let adaptor = IniAdaptor::new();
+        let ini = b"[parent.child]\nkey1 = value1\nkey2 = value2";
+
+        let value = adaptor.deserialize(&ini[..]).unwrap();
+        let mut child = Map::new();
+        child.insert("key1".to_string(), Value::String("value1".to_string()));
+        child.insert("key2".to_string(), Value::String("value2".to_string()));
+        let mut parent = Map::new();
+        parent.insert("child".to_string(), Value::Object(child));
+        let mut root = Map::new();
+        root.insert("parent".to_string(), Value::Object(parent));
+        assert_eq!(value, Value::Object(root));
+    }
+
+    #[test]
+    fn deserialize_ini_section_name_whitespace() {
+        let adaptor = IniAdaptor::new();
+        let ini = b"[ foo bar . baz ]\nkey1 = value1\nkey2 = value2";
+
+        let value = adaptor.deserialize(&ini[..]).unwrap();
+        let mut child = Map::new();
+        child.insert("key1".to_string(), Value::String("value1".to_string()));
+        child.insert("key2".to_string(), Value::String("value2".to_string()));
+        let mut parent = Map::new();
+        parent.insert("baz".to_string(), Value::Object(child));
+        let mut root = Map::new();
+        root.insert("foo bar".to_string(), Value::Object(parent));
+        assert_eq!(value, Value::Object(root));
+    }
+
+    #[test]
     fn serialize_ini_section() {
         let adaptor = IniAdaptor::new();
 
@@ -418,7 +450,9 @@ mod tests {
             .serialize(Value::Object(section), &mut buffer)
             .unwrap();
 
-        let expected = &b"[section]\nkey = value\n\n"[..];
+        let expected = &b"\n[section]\nkey = value\n"[..];
+
+        println!("{}", str::from_utf8(&buffer[..]).unwrap());
 
         assert_eq!(buffer, expected);
     }
@@ -430,12 +464,10 @@ mod tests {
         let mut pairs = Map::new();
         pairs.insert(
             "key".to_string(),
-            Value::Array(
-                vec![
+            Value::Array(vec![
             Value::String("value1".to_string()),
             Value::String("value2".to_string()),
-        ]
-            ),
+        ]),
         );
 
         let mut section = Map::new();
@@ -446,7 +478,9 @@ mod tests {
             .serialize(Value::Object(section), &mut buffer)
             .unwrap();
 
-        let expected = &b"[section]\nkey = value1\nkey = value2\n\n"[..];
+        let expected = &b"\n[section]\nkey = value1\nkey = value2\n"[..];
+
+        println!("{}", str::from_utf8(&buffer[..]).unwrap());
 
         assert_eq!(buffer, expected);
     }
@@ -474,8 +508,9 @@ key2 = value2
 
 [section]
 key3 = value3
-key4 = value4\n\n"
-                            [..];
+key4 = value4\n"[..];
+
+        println!("{}", str::from_utf8(&buffer[..]).unwrap());
 
         assert_eq!(buffer, expected);
     }
@@ -493,7 +528,37 @@ key4 = value4\n\n"
             .serialize(Value::Object(pairs), &mut buffer)
             .unwrap();
 
-        let expected = &b"key1 = value1\nkey2 = value2\n\n"[..];
+        let expected = &b"key1 = value1\nkey2 = value2\n"[..];
+
+        println!("{}", str::from_utf8(&buffer[..]).unwrap());
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn serialize_ini_nested_section() {
+        let adaptor = IniAdaptor::new();
+
+        let mut child = Map::new();
+        child.insert("key1".to_string(), Value::String("value1".to_string()));
+        child.insert("key2".to_string(), Value::String("value2".to_string()));
+
+        let mut parent = Map::new();
+        parent.insert("child".to_string(), Value::Object(child));
+
+        let mut root = Map::new();
+        root.insert("parent".to_string(), Value::Object(parent));
+
+        let mut buffer = Vec::new();
+        adaptor.serialize(Value::Object(root), &mut buffer).unwrap();
+
+        let expected = &b"\n[parent]
+
+[parent.child]
+key1 = value1
+key2 = value2\n"[..];
+
+        println!("{}", str::from_utf8(&buffer[..]).unwrap());
 
         assert_eq!(buffer, expected);
     }
@@ -749,7 +814,7 @@ param2 = val2
 [section]
 param3 = val3
 param4 = val4"
-                       [..];
+            [..];
 
         let res = ini_file(ini);
         print_output(&res);
@@ -766,6 +831,23 @@ param4 = val4"
         ];
 
         assert_eq!(res, IResult::Done(&b""[..], (expected, sections)));
+    }
+
+    #[test]
+    fn parse_nested_section() {
+        let ini = &b"[parent.child]
+param1 = val1
+param2 = val2"[..];
+
+        let res = ini_file(ini);
+        print_output(&res);
+        let expected = vec![
+            ("parent.child", vec![
+                ("param1", "val1"),
+                ("param2", "val2"),
+            ])
+        ];
+        assert_eq!(res, IResult::Done(&b""[..], (vec![], expected)));
     }
 
 }

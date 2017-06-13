@@ -3,15 +3,29 @@
 //! This crate implements the core of reconfix schema handling and bidirectional transformation.
 
 #![deny(missing_docs)]
+#![recursion_limit = "1024"]
 
 mod adaptor;
 
 #[macro_use]
+extern crate error_chain;
+#[macro_use]
 extern crate nom;
 extern crate serde_json;
 
+mod errors {
+    error_chain! {
+        errors {
+            /// Indicates a parsing error
+            Parse
+        }
+    }
+}
+
 use serde_json::Value;
 use serde_json::Value::*;
+
+pub use errors::*;
 
 /// The types of wildcard patterns in a schema
 pub enum Wildcard {
@@ -83,8 +97,9 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
         Object(ref o) => {
             match data.as_object() {
                 Some(d) => {
-                    o.iter()
-                        .all(|(k, pattern)| d.get(k).map_or(false, |data| matches(data, pattern)))
+                    o.iter().all(|(k, pattern)| {
+                        d.get(k).map_or(false, |data| matches(data, pattern))
+                    })
                 },
                 None => false,
             }
@@ -134,20 +149,22 @@ mod tests {
         )* )
     }
 
-    template_matches_gen!(matches_1,
-                          matches_2,
-                          matches_3,
-                          matches_4,
-                          matches_5,
-                          matches_6,
-                          /* FIXME: invalid wildcards matches_7 , */
-                          matches_8,
-                          matches_9,
-                          matches_10,
-                          matches_11,
-                          matches_12,
-                          matches_13,
-                          matches_14,
-                          matches_15,
-                          matches_16);
+    template_matches_gen!(
+        matches_1,
+        matches_2,
+        matches_3,
+        matches_4,
+        matches_5,
+        matches_6,
+        /* FIXME: invalid wildcards matches_7 , */
+        matches_8,
+        matches_9,
+        matches_10,
+        matches_11,
+        matches_12,
+        matches_13,
+        matches_14,
+        matches_15,
+        matches_16
+    );
 }

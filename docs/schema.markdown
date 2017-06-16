@@ -169,7 +169,7 @@ For example:
 If the referenced connector doesn't exist, then the schema is considered
 invalid.
 
-### `Boolean fileset` (default to `false`)
+### `Boolean fileset` (optional, default to `false`)
 
 This property determines whether the selected connector should behave in
 "fileset" mode.
@@ -271,7 +271,7 @@ If the referenced file doesn't exist, then the schema is considered invalid.
 
 The path of the property of the parent file where this file should be inlined.
 
-- **This propery can't be an empty array**
+- **This property can't be an empty array**
 
 For example:
 
@@ -308,10 +308,10 @@ For example:
 "properties": [
   {
     "definition": {
-      "myFooProperty", {
+      "myFooProperty": {
         ...
       },
-      "myBarProperty", {
+      "myBarProperty": {
         ...
       }
     }

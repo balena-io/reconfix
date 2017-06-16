@@ -7,6 +7,9 @@
 
 mod adaptor;
 
+mod schema;
+mod template;
+
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
@@ -45,17 +48,33 @@ pub enum Wildcard {
     Null,
 }
 
+impl Wildcard {
+    /// Check whether this wildcard matches some JSON value
+    pub fn matches(&self, data: &Value) -> bool {
+        match *self {
+            Wildcard::String => data.is_string(),
+            Wildcard::Number => data.is_number(),
+            Wildcard::Object => data.is_object(),
+            Wildcard::Boolean => data.is_boolean(),
+            Wildcard::Array => data.is_array(),
+            Wildcard::Null => data == &Value::Null,
+        }
+    }
+}
+
 /// Determine if a string represents a wildcard.
 ///
 /// If so, returns Some. Otherwise, returns None.
-pub fn type_wildcard(s: &str) -> Option<Wildcard> {
+pub fn type_wildcards(s: &str) -> Option<Vec<Wildcard>> {
+    // FIXME: Result with error messages
+    // FIXME: parse multiple wildcards
     match s {
-        "[[string]]" => Some(Wildcard::String),
-        "[[number]]" => Some(Wildcard::Number),
-        "[[object]]" => Some(Wildcard::Object),
-        "[[boolean]]" => Some(Wildcard::Boolean),
-        "[[array]]" => Some(Wildcard::Array),
-        "[[null]]" => Some(Wildcard::Null),
+        "[[string]]" => Some(vec![Wildcard::String]),
+        "[[number]]" => Some(vec![Wildcard::Number]),
+        "[[object]]" => Some(vec![Wildcard::Object]),
+        "[[boolean]]" => Some(vec![Wildcard::Boolean]),
+        "[[array]]" => Some(vec![Wildcard::Array]),
+        "[[null]]" => Some(vec![Wildcard::Null]),
         _ => None,
     }
 }
@@ -72,14 +91,9 @@ pub fn type_wildcard(s: &str) -> Option<Wildcard> {
 pub fn matches(data: &Value, pattern: &Value) -> bool {
     match *pattern {
         String(ref s) => {
-            match type_wildcard(s) {
+            match type_wildcards(s) {
                 None => data == pattern,
-                Some(Wildcard::String) => data.is_string(),
-                Some(Wildcard::Number) => data.is_number(),
-                Some(Wildcard::Object) => data.is_object(),
-                Some(Wildcard::Boolean) => data.is_boolean(),
-                Some(Wildcard::Array) => data.is_array(),
-                Some(Wildcard::Null) => data == &Value::Null,
+                Some(wildcards) => wildcards.iter().any(|v| v.matches(data)),
             }
         },
         Array(ref a) => {
@@ -97,9 +111,8 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
         Object(ref o) => {
             match data.as_object() {
                 Some(d) => {
-                    o.iter().all(|(k, pattern)| {
-                        d.get(k).map_or(false, |data| matches(data, pattern))
-                    })
+                    o.iter()
+                        .all(|(k, pattern)| d.get(k).map_or(false, |data| matches(data, pattern)))
                 },
                 None => false,
             }

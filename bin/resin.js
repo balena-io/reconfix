@@ -124,9 +124,7 @@ const schema = {
       type: 'ini',
       location: {
         path: 'config.txt',
-        partition: {
-          primary: 1
-        }
+        partition: 1
       }
     },
     network_config: {
@@ -140,19 +138,19 @@ const schema = {
       type: 'json',
       location: {
         path: 'config.json',
-        partition: {
-          primary: 4,
-          logical: 1
-        }
+        partition: 5
       }
     }
   }
 };
 
-reconfix.readConfiguration(schema, ARGV_IMAGE).then((data) => {
-  return visuals.run(schema.questions, data).then((answers) => {
-    return reconfix.writeConfiguration(schema, answers, ARGV_IMAGE);
-  });
-}).then(() => {
+reconfix.readConfiguration(schema, ARGV_IMAGE)
+.then((data) => {
+  return visuals.run(schema.questions, data);
+})
+.then((answers) => {
+  return reconfix.writeConfiguration(schema, answers, ARGV_IMAGE);
+})
+.then(() => {
   console.log('Done!');
 });

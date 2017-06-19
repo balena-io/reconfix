@@ -17,11 +17,9 @@
 'use strict';
 
 const ava = require('ava');
-const Bluebird = require('bluebird');
-const fs = require('fs');
-const rindle = require('rindle');
 const path = require('path');
-const tmp = Bluebird.promisifyAll(require('tmp'));
+
+const utils = require('../../../lib/test-utils');
 const filesystem = require('../../../lib/engine/filesystem');
 
 const testReadFixture = (name) => {
@@ -34,14 +32,20 @@ const testReadFixture = (name) => {
   };
 
   ava.test(`.readImageData() (${name}) should read files`, (test) => {
-    return filesystem.readImageData(files.schema, files.image).then((data) => {
-      test.deepEqual(data, files.data);
+    return utils.testBoth(files.image, (imagePath) => {
+      return filesystem.readImageData(files.schema, imagePath)
+      .then((data) => {
+        test.deepEqual(data, files.data);
+      });
     });
   });
 
   ava.test(`.readImageConfiguration() (${name}) should read configuration`, (test) => {
-    return filesystem.readImageConfiguration(files.schema, files.image).then((data) => {
-      test.deepEqual(data, files.wet);
+    return utils.testBoth(files.image, (imagePath) => {
+      return filesystem.readImageConfiguration(files.schema, imagePath)
+      .then((data) => {
+        test.deepEqual(data, files.wet);
+      });
     });
   });
 };
@@ -49,31 +53,32 @@ const testReadFixture = (name) => {
 testReadFixture('resinos-v1');
 testReadFixture('resinos-v2');
 
-const createTemporaryFileFromFile = (file) => {
-  return tmp.fileAsync().tap((temporaryFilePath) => {
-    const stream = fs.createReadStream(file)
-      .pipe(fs.createWriteStream(temporaryFilePath));
-    return rindle.wait(stream);
-  });
-};
-
-const testWriteFixture = (name) => {
+const testWriteFixture = (name, partition) => {
   const fixturePath = path.join(__dirname, 'fixtures', 'images', name);
   const files = {
     image: path.join(fixturePath, 'image.img'),
     schema: require(path.join(fixturePath, 'schema.json')),
     wet: require(path.join(fixturePath, 'wet.json'))
   };
+  if (partition !== undefined) {
+    files.schema.config_txt.location.partition = partition;
+    files.schema.config_txt.location.path = '/' + files.schema.config_txt.location.path;
+  }
 
   ava.test(`(${name}) should write/read settings`, (test) => {
-    return createTemporaryFileFromFile(files.image).then((temporaryFilePath) => {
-      return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, files.wet).then(() => {
-        return filesystem.readImageConfiguration(files.schema, temporaryFilePath).then((data) => {
-          test.deepEqual(data, files.wet);
-        });
+    return utils.testBoth(files.image, (temporaryFilePath) => {
+      return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, files.wet)
+      .then(() => {
+        return filesystem.readImageConfiguration(files.schema, temporaryFilePath);
+      })
+      .then((data) => {
+        test.deepEqual(data, files.wet);
       });
     });
   });
 };
 
 testWriteFixture('resinos-v1-empty');
+
+// Test writing on a ext2 partition.
+testWriteFixture('resinos-v1-empty', 6);

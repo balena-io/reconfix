@@ -33,10 +33,11 @@
   },
   "dependencies": {
     "bluebird": "^3.4.6",
+    "file-disk": "^1.0.1",
     "ini": "^1.3.4",
     "inquirer": "^1.1.3",
     "lodash": "^4.16.2",
-    "resin-image-fs": "^2.3.0",
+    "resin-image-fs": "^4.0.1",
     "rindle": "^1.3.0"
   }
 }

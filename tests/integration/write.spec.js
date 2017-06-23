@@ -18,21 +18,12 @@
 
 const ava = require('ava');
 const Bluebird = require('bluebird');
-const tmp = Bluebird.promisifyAll(require('tmp'));
 const path = require('path');
 const imagefs = require('resin-image-fs');
-const fs = require('fs');
-const rindle = require('rindle');
+
+const utils = require('../../lib/test-utils');
 const filesystem = require('../../lib/engine/filesystem');
 const reconfix = require('../../lib');
-
-const createTemporaryFileFromFile = (file) => {
-  return tmp.fileAsync().tap((temporaryFilePath) => {
-    const stream = fs.createReadStream(file)
-      .pipe(fs.createWriteStream(temporaryFilePath));
-    return rindle.wait(stream);
-  });
-};
 
 ava.test('should switch an ethernet resin image into a wifi one', (test) => {
   const fixturesPath = path.join(__dirname, 'fixtures');
@@ -48,13 +39,16 @@ ava.test('should switch an ethernet resin image into a wifi one', (test) => {
     }
   };
 
-  return createTemporaryFileFromFile(files.ethernet.image).then((imagePath) => {
-    return reconfix.readConfiguration(files.ethernet.schema, imagePath).then((settings) => {
+  return utils.testBoth(files.ethernet.image, (imagePath) => {
+    return reconfix.readConfiguration(files.ethernet.schema, imagePath)
+    .then((settings) => {
       test.deepEqual(settings, files.ethernet.data);
       return reconfix.writeConfiguration(files.ethernet.schema, files.wifi.data, imagePath);
-    }).then(() => {
+    })
+    .then(() => {
       return reconfix.readConfiguration(files.ethernet.schema, imagePath);
-    }).then((settings) => {
+    })
+    .then((settings) => {
       test.deepEqual(settings, files.wifi.data);
     });
   });
@@ -74,13 +68,16 @@ ava.test('should switch a wifi resin image into an ethernet one', (test) => {
     }
   };
 
-  return createTemporaryFileFromFile(files.wifi.image).then((imagePath) => {
-    return reconfix.readConfiguration(files.wifi.schema, imagePath).then((settings) => {
+  return utils.testBoth(files.wifi.image, (imagePath) => {
+    return reconfix.readConfiguration(files.wifi.schema, imagePath)
+    .then((settings) => {
       test.deepEqual(settings, files.wifi.data);
       return reconfix.writeConfiguration(files.wifi.schema, files.ethernet.data, imagePath);
-    }).then(() => {
+    })
+    .then(() => {
       return reconfix.readConfiguration(files.wifi.schema, imagePath);
-    }).then((settings) => {
+    })
+    .then((settings) => {
       test.deepEqual(settings, files.ethernet.data);
     });
   });
@@ -93,8 +90,9 @@ ava.test('should extend the current values instead of overwriting', (test) => {
 
   /* eslint-disable camelcase */
 
-  return createTemporaryFileFromFile(fixtureImage).then((imagePath) => {
-    return filesystem.readImageConfiguration(schema.files, imagePath).then((data) => {
+  return utils.testBoth(fixtureImage, (imagePath) => {
+    return filesystem.readImageConfiguration(schema.files, imagePath)
+    .then((data) => {
       test.deepEqual(data.config_txt, {
         gpu_mem: 16,
         dtparam: 'spi=on',
@@ -106,9 +104,11 @@ ava.test('should extend the current values instead of overwriting', (test) => {
         appUpdatePollInterval: '60000',
         networkType: 'ethernet'
       }, imagePath);
-    }).then(() => {
+    })
+    .then(() => {
       return filesystem.readImageConfiguration(schema.files, imagePath);
-    }).then((data) => {
+    })
+    .then((data) => {
       test.deepEqual(data.config_txt, {
         gpu_mem: 64,
         dtparam: 'spi=on',
@@ -146,7 +146,7 @@ ava.test('should be able to modify a fileset', (test) => {
     });
   };
 
-  return createTemporaryFileFromFile(fixtureImage).then((imagePath) => {
+  return utils.testBoth(fixtureImage, (imagePath) => {
     return readFiles(imagePath).then((files) => {
       test.deepEqual(files, {
         cellular: '[connection]\nname=cellular\n',
@@ -159,9 +159,11 @@ ava.test('should be able to modify a fileset', (test) => {
         ethernetConnectionName: 'newethernet',
         wifiConnectionName: 'newwifi'
       }, imagePath);
-    }).then(() => {
+    })
+    .then(() => {
       return readFiles(imagePath);
-    }).then((files) => {
+    })
+    .then((files) => {
       test.deepEqual(files, {
         cellular: '[connection]\nname=newcellular',
         ethernet: '[connection]\nname=newethernet',
@@ -196,20 +198,23 @@ ava.test('should not override custom properties inside a fileset', (test) => {
     });
   };
 
-  return createTemporaryFileFromFile(fixtureImage).then((imagePath) => {
+  return utils.testBoth(fixtureImage, (imagePath) => {
     return imagefs.writeFile({
       image: imagePath,
       partition: schema.files.system_connections.location.partition,
       path: path.join(schema.files.system_connections.location.path, 'cellular')
-    }, '[connection]\nname=cellular\nfoo=bar\nbar=baz').then(() => {
+    }, '[connection]\nname=cellular\nfoo=bar\nbar=baz')
+    .then(() => {
       return reconfix.writeConfiguration(schema, {
         cellularConnectionName: 'newcellular',
         ethernetConnectionName: 'newethernet',
         wifiConnectionName: 'newwifi'
       }, imagePath);
-    }).then(() => {
+    })
+    .then(() => {
       return readFiles(imagePath);
-    }).then((files) => {
+    })
+    .then((files) => {
       test.deepEqual(files, {
         cellular: '[connection]\nname=newcellular\nfoo=bar\nbar=baz',
         ethernet: '[connection]\nname=newethernet',

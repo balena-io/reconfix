@@ -19,7 +19,9 @@
 const ava = require('ava');
 const _ = require('lodash');
 const path = require('path');
+
 const reconfix = require('../../lib');
+const utils = require('../../lib/test-utils');
 
 _.each([
   'resinos-v1-ethernet',
@@ -33,8 +35,11 @@ _.each([
     const schema = require(path.join(fixturePath, 'schema.json'));
     const data = require(path.join(fixturePath, 'data.json'));
 
-    return reconfix.readConfiguration(schema, imagePath).then((configuration) => {
-      test.deepEqual(configuration, data);
+    return utils.testBoth(imagePath, (imagePath_) => {
+      return reconfix.readConfiguration(schema, imagePath_)
+      .then((configuration) => {
+        test.deepEqual(configuration, data);
+      });
     });
   });
 

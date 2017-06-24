@@ -15,6 +15,9 @@ extern crate error_chain;
 #[macro_use]
 extern crate nom;
 extern crate serde_json;
+extern crate regex;
+#[macro_use]
+extern crate lazy_static;
 
 mod errors {
     error_chain! {

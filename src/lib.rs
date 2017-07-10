@@ -6,18 +6,21 @@
 #![recursion_limit = "1024"]
 
 mod adaptor;
-
 mod schema;
-mod template;
+mod transform;
 
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
 extern crate nom;
+extern crate serde;
+#[macro_use]
 extern crate serde_json;
 extern crate regex;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate maplit;
 
 mod errors {
     error_chain! {

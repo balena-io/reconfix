@@ -59,6 +59,7 @@ impl Schema {
 }
 
 /// Supported output file formats
+#[derive(Eq, PartialEq, Clone)]
 pub enum FileFormat {
     Ini,
     Json,

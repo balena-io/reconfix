@@ -83,8 +83,9 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
         Object(ref o) => {
             match data.as_object() {
                 Some(d) => {
-                    o.iter()
-                        .all(|(k, pattern)| d.get(k).map_or(false, |data| matches(data, pattern)))
+                    o.iter().all(|(k, pattern)| {
+                        d.get(k).map_or(false, |data| matches(data, pattern))
+                    })
                 },
                 None => false,
             }

@@ -28,11 +28,11 @@ pub trait Adaptor<'a> {
     fn deserialize<R: Read>(&self, reader: R) -> Result<Value>;
 }
 
-pub struct JsonAdaptor { }
+pub struct JsonAdaptor {}
 
 impl JsonAdaptor {
     pub fn new() -> JsonAdaptor {
-        JsonAdaptor { }
+        JsonAdaptor {}
     }
 }
 

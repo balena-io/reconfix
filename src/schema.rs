@@ -30,7 +30,8 @@ pub struct Schema {
 
 fn filename_is_valid(s: &str) -> bool {
     lazy_static !{
-        static ref RE: Regex = Regex::new("([[:alnum:]]|_)+").expect("failed compiling regex!".into());
+        static ref RE: Regex = Regex::new("([[:alnum:]]|_)+")
+            .expect("failed compiling regex!".into());
     }
 
     RE.is_match(s)
@@ -50,11 +51,9 @@ impl Schema {
             },
             None => bail!(InvalidSchema("schema is not an object".into())),
         }
-        Ok(
-            Schema {
-                files: files,
-            }
-        )
+        Ok(Schema {
+            files: files,
+        })
     }
 }
 
@@ -151,14 +150,12 @@ impl File {
             properties.push(Property::from_json(prop)?);
         }
 
-        Ok(
-            File {
-                format: format,
-                fileset: fileset,
-                location: location,
-                properties: properties,
-            }
-        )
+        Ok(File {
+            format: format,
+            fileset: fileset,
+            location: location,
+            properties: properties,
+        })
     }
 }
 
@@ -186,12 +183,10 @@ impl Partition {
         let primary = primary as u8;
         if o.contains_key("logical") {
             let logical = get_u64(v, "logical")?;
-            Ok(
-                Partition::Logical {
-                    on_primary: primary,
-                    logical_number: logical,
-                }
-            )
+            Ok(Partition::Logical {
+                on_primary: primary,
+                logical_number: logical,
+            })
         } else {
             Ok(Partition::Primary(primary))
         }
@@ -221,12 +216,10 @@ impl Location {
         match o.get("parent") {
             Some(p) => {
                 let json_path = o.get("path").ok_or("path missing")?;
-                Ok(
-                    Location::Dependent {
-                        parent: expect_string(p)?.to_owned(),
-                        location: expect_string(json_path)?.to_owned(),
-                    }
-                )
+                Ok(Location::Dependent {
+                    parent: expect_string(p)?.to_owned(),
+                    location: expect_string(json_path)?.to_owned(),
+                })
             },
             None => {
                 let json_path = get_array(v, "path")?;
@@ -235,12 +228,10 @@ impl Location {
                     path.push(expect_string(p)?.to_owned());
                 }
                 let partition = Partition::from_json(get(v, "partition")?)?;
-                Ok(
-                    Location::Independent {
-                        path: path,
-                        partition: partition,
-                    }
-                )
+                Ok(Location::Independent {
+                    path: path,
+                    partition: partition,
+                })
             },
         }
     }
@@ -249,8 +240,18 @@ impl Location {
 impl Ord for Location {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
-            (&Location::Independent{ .. }, &Location::Dependent { .. }) => Ordering::Less,
-            (&Location::Dependent { .. }, &Location::Independent { .. }) => Ordering::Greater,
+            (&Location::Independent {
+                 ..
+             },
+             &Location::Dependent {
+                 ..
+             }) => Ordering::Less,
+            (&Location::Dependent {
+                 ..
+             },
+             &Location::Independent {
+                 ..
+             }) => Ordering::Greater,
             _ => Ordering::Equal,
         }
     }
@@ -277,12 +278,10 @@ impl Property {
         for (k, v) in json_definition {
             definition.insert(k.to_owned(), PropertyDefinition::from_json(v)?);
         }
-        Ok(
-            Property {
-                definition: definition,
-                when: when,
-            }
-        )
+        Ok(Property {
+            definition: definition,
+            when: when,
+        })
     }
 }
 
@@ -300,7 +299,11 @@ impl PropertyType {
             "string" => PropertyType::String,
             "number" => PropertyType::Number,
             "boolean" => PropertyType::Boolean,
-            _ => bail!(InvalidSchema("property types must be either string, number, or boolean".into())),
+            _ => {
+                bail!(
+                    InvalidSchema("property types must be either string, number, or boolean".into())
+                )
+            },
         };
 
         Ok(prop_type)
@@ -319,7 +322,10 @@ impl Mapping {
             // Value::Array(ref elems) => {
             //     let map = elems.iter()
             //         .map(|elem| {
-            //             elem.as_str().map(String::from).ok_or(InvalidSchema("direct mapping elements must be strings".into()).into())
+            //             elem.as_str().map(String::from)
+            //                 .ok_or(InvalidSchema(
+            //                     "direct mapping elements must be strings".into()).into()
+            //                  )
             //         })
             //         .collect::<Vec<_>>()
             //         .into_iter()
@@ -328,9 +334,18 @@ impl Mapping {
             // },
             Value::String(ref s) => Mapping::Direct(s.to_owned()),
             Value::Object(ref obj) => {
-                let value = obj.get("value").ok_or(InvalidSchema("template object must contain a value property".into()))?;
-                let template = obj.get("template").ok_or(InvalidSchema("template must contain a template property".into()))?;
-                Mapping::Template { value: value.to_owned(), template: template.to_owned() }
+                let value = obj.get("value").ok_or(InvalidSchema(
+                    "template object must contain a value property"
+                        .into(),
+                ))?;
+                let template = obj.get("template").ok_or(InvalidSchema(
+                    "template must contain a template property"
+                        .into(),
+                ))?;
+                Mapping::Template {
+                    value: value.to_owned(),
+                    template: template.to_owned(),
+                }
             },
             _ => bail!(InvalidSchema("mapping must be a string or object".into())),
         };
@@ -367,19 +382,15 @@ impl PropertyDefinition {
 
         let mapping = match *get(v, "mapping")? {
             // Value::String(ref s) => vec![Mapping::Direct(vec![s.to_owned()])],
-            Value::Array(ref a) => {
-                a.iter().map(Mapping::from_json).collect::<Result<Vec<_>>>()?
-            },
+            Value::Array(ref a) => a.iter().map(Mapping::from_json).collect::<Result<Vec<_>>>()?,
             _ => bail!(InvalidSchema("mapping must be an array".into())),
         };
 
-        Ok(
-            PropertyDefinition {
-                types: types,
-                properties: properties,
-                mapping: mapping,
-            }
-        )
+        Ok(PropertyDefinition {
+            types: types,
+            properties: properties,
+            mapping: mapping,
+        })
     }
 }
 

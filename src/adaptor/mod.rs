@@ -6,7 +6,7 @@ use errors::*;
 
 use serde::Deserialize;
 use serde::Serialize;
-use serde_json::{from_reader, to_writer, to_string_pretty};
+use serde_json::{from_reader, to_string_pretty, to_writer};
 use serde_json::Value;
 
 // #[derive(Debug, Eq, PartialEq)]
@@ -38,13 +38,15 @@ impl JsonAdaptor {
 
 impl<'a> Adaptor<'a> for JsonAdaptor {
     fn deserialize<R>(&self, reader: R) -> Result<Value>
-        where R: Read
+    where
+        R: Read,
     {
         from_reader(reader).chain_err(|| "unable to deserialize JSON")
     }
 
     fn serialize<W>(&self, value: Value, writer: W) -> Result<()>
-        where W: Write
+    where
+        W: Write,
     {
         to_writer(writer, &value).chain_err(|| "unable to serialize JSON")
     }

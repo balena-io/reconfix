@@ -6,9 +6,9 @@ use std::str;
 use adaptor::Adaptor;
 use errors::*;
 
-use nom::{IResult, space, alphanumeric, multispace};
+use nom::{alphanumeric, multispace, space, IResult};
 
-use serde_json::{Value, Map, Number};
+use serde_json::{Map, Number, Value};
 use serde_json::map::Entry;
 
 /// The `Property` enum is used to represent a heirarchichal data
@@ -57,7 +57,8 @@ impl IniAdaptor {
 impl<'a> Adaptor<'a> for IniAdaptor {
     /// Deserialize the INI data into the `Value` AST
     fn deserialize<R>(&self, mut reader: R) -> Result<Value>
-        where R: Read
+    where
+        R: Read,
     {
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer).unwrap();
@@ -83,7 +84,8 @@ impl<'a> Adaptor<'a> for IniAdaptor {
 
     /// Serialize the `Value` AST into INI format
     fn serialize<W>(&self, value: Value, mut writer: W) -> Result<()>
-        where W: Write
+    where
+        W: Write,
     {
         // extract the root object, else error
         let top_level = match value {
@@ -214,7 +216,8 @@ fn convert_model(object: Map<String, Value>) -> Result<Vec<Pair>> {
 
 /// Recursively serialize section data
 fn write_section<W>(name: Option<&str>, mut data: Vec<Pair>, writer: &mut W) -> Result<()>
-    where W: Write
+where
+    W: Write,
 {
     data.sort();
 

@@ -1,7 +1,6 @@
 //! # `reconfix-core`
 //!
 //! This crate implements the core of reconfix schema handling and bidirectional transformation.
-
 #![deny(missing_docs)]
 #![recursion_limit = "1024"]
 

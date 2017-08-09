@@ -308,6 +308,15 @@ impl PropertyType {
 
         Ok(prop_type)
     }
+
+    pub fn is_type(&self, v: &Value) -> bool {
+        match (self, v) {
+            (&PropertyType::String, &Value::String(_)) => true,
+            (&PropertyType::Number, &Value::Number(_)) => true,
+            (&PropertyType::Boolean, &Value::Bool(_)) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(PartialEq, Debug)]

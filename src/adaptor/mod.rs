@@ -4,9 +4,7 @@ use std::io::{Read, Write};
 
 use errors::*;
 
-use serde::Deserialize;
-use serde::Serialize;
-use serde_json::{from_reader, to_string_pretty, to_writer};
+use serde_json::{from_reader, to_writer};
 use serde_json::Value;
 
 // #[derive(Debug, Eq, PartialEq)]

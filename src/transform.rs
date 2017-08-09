@@ -296,7 +296,9 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
             new_value => {
                 let new_wild = parse_wildcard(new_value);
                 match tree.entry(key.clone()) {
-                    MapEntry::Vacant(v) => { v.insert(new_value.clone()); },
+                    MapEntry::Vacant(v) => {
+                        v.insert(new_value.clone());
+                    },
                     MapEntry::Occupied(mut o) => {
                         let old_value = o.insert(Value::Bool(false));
                         let old_wild = parse_wildcard(&old_value);
@@ -305,17 +307,29 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                 if wildcard_matches(&new, &old_value) {
                                     Ok(old_value)
                                 } else {
-                                    Err(format!("wildcard value '{}' does not match original value '{}'", new_value, old_value))
+                                    Err(format!(
+                                        "wildcard value '{}' does not match original value '{}'",
+                                        new_value,
+                                        old_value
+                                    ))
                                 }
                             },
                             (None, Some(old)) => {
                                 if wildcard_matches(&old, new_value) {
                                     Ok(new_value.clone())
                                 } else {
-                                    Err(format!("wildcard value '{}' does not match new value '{}'", old_value, new_value))
+                                    Err(format!(
+                                        "wildcard value '{}' does not match new value '{}'",
+                                        old_value,
+                                        new_value
+                                    ))
                                 }
                             },
-                            (None, None) => Err(format!("cannot replace value '{}' with '{}'", old_value, new_value)),
+                            (None, None) => Err(format!(
+                                "cannot replace value '{}' with '{}'",
+                                old_value,
+                                new_value
+                            )),
                             (Some(new), Some(old)) => {
                                 if new.eq(&old) {
                                     Ok(old_value)
@@ -326,7 +340,7 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                         };
 
                         o.insert(insert?);
-                    }
+                    },
                 }
             },
         }

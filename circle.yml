@@ -1,7 +1,12 @@
+machine:
+  environment:
+    PATH: "${HOME}/.cargo/bin:${PATH}"
+
 dependencies:
   override:
-    - curl https://sh.rustup.rs -sSf | sh
+    - curl https://sh.rustup.rs -sSf | sh -s -- -y
     - rustup update stable
+    - rm ~/.gitconfig
     - cargo install rustfmt
 test:
   override:

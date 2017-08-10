@@ -12,4 +12,4 @@ test:
   override:
     - cargo clean
     - cargo fmt -- --write-mode=diff
-    - cargo build --verbose
+    - cargo test --color=never --verbose

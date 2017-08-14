@@ -3,6 +3,7 @@ use serde_json::Value;
 use serde_json::Value::*;
 
 /// The types of wildcard patterns in a schema
+#[derive(Debug, Eq, PartialEq)]
 pub enum Wildcard {
     /// Match any string
     String,

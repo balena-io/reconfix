@@ -1,4 +1,4 @@
 multiple tainted files
-{"foo":{"properties":{"bar":{"type":["number"],"mapping":[["xxx"]]}}},"bar":{"properties":{"baz":{"type":["string"],"mapping":[["yyy"],["zzz"]]}}},"success":{"properties":{"value":{"type":["string"],"mapping":[["the","value"]]}}}}
-{"foo":{"xxx":"foo"},"bar":{"yyy":"bar","zzz":"qux"},"success":{"the":{"value":"success"}}}
-{"tainted":["foo","bar"],"result":{"value":"success"}}
+[{"definition":{"bar":{"type":["number"],"mapping":["/xxx"]}},"baz":{"type":["string"],"mapping":["/yyy","/zzz"]},"value":{"type":["string"],"mapping":["/the/value"]}}]
+{"xxx":"foo","yyy":"bar","zzz":"qux","the":{"value":"success"}}
+#error

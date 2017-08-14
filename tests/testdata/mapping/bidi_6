@@ -1,5 +1,4 @@
 template and direct mapping
-[["foo","bar","baz"], { "value": "johndoe", "template": { "name": "John" } },
-    {"value": "janedoe", "template": {"name":"Jane"}}]
-{name:"John", "foo": {"bar":{"baz":"johndoe"}}}
+["/foo/bar/baz",{"value":"johndoe","template":{"name":"John"}},{"value":"janedoe","template":{"name":"Jane"}}]
+{"name":"John", "foo": {"bar":{"baz":"johndoe"}}}
 "johndoe"

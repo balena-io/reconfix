@@ -1,4 +1,4 @@
 ignore null mappings
-["foo"]
+["/foo"]
 null
 {}

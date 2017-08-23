@@ -1,4 +1,4 @@
-ignore direct mappings
+# ignore direct mappings
 [["foo","bar"],["bar","baz"],{"value":"foo","template":{"foo":1}},{"value":"bar","template":{"bar":2}}]
 "foo"
 {"value":"foo","template":{"foo":1}}

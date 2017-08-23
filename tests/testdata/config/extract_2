@@ -1,4 +1,21 @@
-multiple tainted files
-[{"definition":{"bar":{"type":["number"],"mapping":["/xxx"]}},"baz":{"type":["string"],"mapping":["/yyy","/zzz"]},"value":{"type":["string"],"mapping":["/the/value"]}}]
+# multiple tainted files
+[
+    {
+        "definition":{
+            "bar":{
+                "type":["number"],
+                "mapping":["/xxx"]
+            },
+            "baz":{
+                "type":["string"],
+                "mapping":["/yyy","/zzz"]
+            },
+            "value":{
+                "type":["string"],
+                "mapping":["/the/value"]
+            }
+        }
+    }
+]
 {"xxx":"foo","yyy":"bar","zzz":"qux","the":{"value":"success"}}
 #error

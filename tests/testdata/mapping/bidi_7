@@ -1,4 +1,4 @@
-disambiguate matching templates based on degree
+# disambiguate matching templates based on degree
 [{"value":"foo", "template":{"foo":1}},{"value":"foobar","template":{"foo":1,"bar":2}}]
 {"foo":1,"bar":2}
 "foobar"

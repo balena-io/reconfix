@@ -398,19 +398,21 @@ mod tests {
     use super::*;
     use schema::*;
 
+    use test::*;
+
     use serde_json::to_string;
     use serde_json::Value;
 
-    fn parse_data<T, F>(data: Vec<String>, convert: F) -> (T, Value, Option<Value>)
+    fn parse_data<T, F>(data: &str, convert: F) -> (T, Value, Option<Value>)
     where
-        F: FnOnce(Value) -> T,
+        F: FnOnce(&Value) -> T,
     {
-        let schema = data[1].parse::<Value>().expect("Invalid JSON on line 2!");
-        let tree = data[2].parse::<Value>().expect("Invalid JSON on line 3!");
-        let value = match data[3].trim() {
-            "#error" => None,
-            s => Some(s.parse::<Value>().expect("Invalid JSON on line 4!")),
-        };
+        let lines = read_sections(data.as_bytes());
+        let schema = lines[1].as_value().expect("Invalid JSON on line 2!");
+        let tree = lines[2].as_value().map(|x| x.clone()).expect(
+            "Invalid JSON on line 3!",
+        );
+        let value = lines[3].as_value().map(|x| x.clone());
 
         let parsed = convert(schema);
         (parsed, tree, value)
@@ -420,7 +422,7 @@ mod tests {
         use super::*;
         use serde_json::Value;
 
-        fn parse_properties(data: Vec<String>) -> (Vec<Property>, Value, Option<Value>) {
+        fn parse_properties(data: &str) -> (Vec<Property>, Value, Option<Value>) {
             parse_data(data, |json| {
                 json.as_array()
                     .expect("Properties must be an array")
@@ -434,11 +436,9 @@ mod tests {
             ($($name:ident),*) => ( $(
                 #[test]
                 fn $name() {
-                    let file_contents = include_str!(concat!("../tests/testdata/config/",
+                    let file = include_str!(concat!("../tests/testdata/config/",
                                                             stringify!($name)));
-                    let data = file_contents.split('\n').map(String::from).collect();
-
-                    let (props, dry, wet) = parse_properties(data);
+                    let (props, dry, wet) = parse_properties(file);
 
                     let dry = dry.as_object().expect("Dry value must be an object");
                     let wet = wet.unwrap();
@@ -458,11 +458,10 @@ mod tests {
             ($($name:ident),*) => ( $(
                 #[test]
                 fn $name() {
-                    let file_contents = include_str!(concat!("../tests/testdata/config/",
+                    let file = include_str!(concat!("../tests/testdata/config/",
                                                             stringify!($name)));
-                    let data = file_contents.split('\n').map(String::from).collect();
 
-                    let (props, wet, dry) = parse_properties(data);
+                    let (props, wet, dry) = parse_properties(file);
 
                     let mut tree = JsObject::new();
                     let result = generate_dry_property(&mut tree, &wet, &props[..])
@@ -480,7 +479,7 @@ mod tests {
         use super::*;
         use serde_json::Value;
 
-        fn parse_mappings(data: Vec<String>) -> (Vec<Mapping>, Value, Option<Value>) {
+        fn parse_mappings(data: &str) -> (Vec<Mapping>, Value, Option<Value>) {
             parse_data(data, |json| {
                 json.as_array()
                     .expect("List of mappings required!")
@@ -494,10 +493,9 @@ mod tests {
             ($($name:ident),*) => ( $(
                 #[test]
                 fn $name() {
-                    let file_contents = include_str!(concat!("../tests/testdata/mapping/",
+                    let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let data = file_contents.split('\n').map(String::from).collect();
-                    let (mappings, tree, value) = parse_mappings(data);
+                    let (mappings, tree, value) = parse_mappings(file);
 
                     let value = value.unwrap();
                     let mut wet = json!({});
@@ -525,10 +523,9 @@ mod tests {
             ($($name:ident),*) => ( $(
                 #[test]
                 fn $name() {
-                    let file_contents = include_str!(concat!("../tests/testdata/mapping/",
+                    let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let data = file_contents.split('\n').map(String::from).collect();
-                    let (mappings, tree, value) = parse_mappings(data);
+                    let (mappings, tree, value) = parse_mappings(file);
 
                     let extracted = extract_value(&tree, mappings.as_slice()).ok().and_then(|x| x);
                     assert_eq!(value, extracted);
@@ -542,10 +539,9 @@ mod tests {
             ($($name:ident),*) => ( $(
                 #[test]
                 fn $name() {
-                    let file_contents = include_str!(concat!("../tests/testdata/mapping/",
+                    let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let data = file_contents.split('\n').map(String::from).collect();
-                    let (mappings, value, tree) = parse_mappings(data);
+                    let (mappings, value, tree) = parse_mappings(file);
 
                     let mut wet = json!({});
                     let result = apply_mappings(&value, &mut wet, mappings.as_slice())
@@ -561,10 +557,9 @@ mod tests {
             ($($name:ident),*) => ( $(
                 #[test]
                 fn $name() {
-                    let file_contents = include_str!(concat!("../tests/testdata/mapping/",
+                    let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let data = file_contents.split('\n').map(String::from).collect();
-                    let (mappings, tree, value) = parse_mappings(data);
+                    let (mappings, tree, value) = parse_mappings(file);
 
                     let extracted = extract_value(&tree, mappings.as_slice()).ok().and_then(|x| x);
                     assert_eq!(value, extracted);

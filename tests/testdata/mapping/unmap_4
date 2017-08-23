@@ -1,4 +1,4 @@
-error if multiple matches with same degree
+# error if multiple matches with same degree
 [{"value":1,"template":{"foo":1}},{"value":2,"template":{"bar":2}}]
 {"foo":1,"bar":2}
 #error

@@ -1,4 +1,4 @@
-simple mapping
+# simple mapping
 ["/foo"]
 {"foo":3}
 3

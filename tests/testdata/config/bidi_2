@@ -1,4 +1,23 @@
-multiple simple mappings on multiple files
-[{"definition":{"name":{"type":["string"],"mapping":["/fullname"]},"job":{"type":["string"],"mapping":["/job/title"]},"age":{"type":["number"],"mapping":["/person/age"]}}}]
+# multiple simple mappings on multiple files
+[
+    {
+        "definition":{
+            "name":{
+                "type":["string"],
+                "mapping":["/fullname"]
+            },
+            "job":{
+                "type":["string"],
+                "mapping":["/job/title"]
+            },
+            "age":{
+                "type":["number"],
+                "mapping":["/person/age"]
+            }
+        }
+    }
+]
+# dry input
 {"name":"John Doe","job":"Software Engineer","age":35}
+# wet result
 {"fullname":"John Doe","job":{"title":"Software Engineer"},"person":{"age":35}}

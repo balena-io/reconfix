@@ -1,4 +1,4 @@
-multiple non-scalar mappings
+# multiple non-scalar mappings
 ["/foo", "/bar"]
 {"foo": {"hello":"world"}, "bar": {"hello":"world"}}
 {"hello":"world"}

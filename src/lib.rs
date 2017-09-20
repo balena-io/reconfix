@@ -36,3 +36,4 @@ mod errors {
 
 pub use errors::*;
 pub use transform::*;
+pub use schema::*;

@@ -197,7 +197,7 @@ fn serialize(wet: Value, format: &FileFormat) -> Result<String> {
             adaptor.serialize(wet, &mut buffer)?;
         },
         &FileFormat::Json => {
-            let adaptor = JsonAdaptor::new();
+            let adaptor = JsonAdaptor::new(false);
             adaptor.serialize(wet, &mut buffer)?;
         },
     }
@@ -214,7 +214,7 @@ fn deserialize(content: String, format: &FileFormat) -> Result<Value> {
             adaptor.deserialize(buffer.as_slice())
         },
         &FileFormat::Json => {
-            let adaptor = JsonAdaptor::new();
+            let adaptor = JsonAdaptor::new(false);
             adaptor.deserialize(buffer.as_slice())
         },
     }

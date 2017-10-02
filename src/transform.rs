@@ -1,9 +1,9 @@
 
 use std::collections::BTreeMap;
 
-use errors::*;
-use schema::{File, FileFormat, Location, Mapping, Property, PropertyDefinition, Schema};
-use adaptor::{Adaptor, IniAdaptor, JsonAdaptor};
+use error::*;
+use schema::{File, Location, Mapping, Property, PropertyDefinition, Schema};
+use common::{serialize, deserialize};
 use template::Wildcard;
 
 use serde_json::Value;
@@ -18,7 +18,7 @@ pub struct Entry {
     /// The file name associated with this entry.
     pub name: String,
     /// The file content associated with this entry.
-    pub content: String,
+    pub content: Value,
 }
 
 /// Transform the raw file data into a dry JSON structure.
@@ -48,13 +48,14 @@ pub fn transform_to_dry(config: Vec<Entry>, schema: &Schema) -> Result<Value> {
                 let inner_content = value.ok_or("value not found")?.as_str().ok_or(
                     "value is not a string",
                 )?;
-                inner_content.to_string()
+                
+                let raw = inner_content.to_string();
+                deserialize(raw.as_bytes(), &file.format)?
             },
         };
 
-        let wet = deserialize(wet_content, &file.format)?;
-        generate_dry_property(&mut root, &wet, file.properties.as_slice())?;
-        wet_cache.insert(name.to_string(), wet);
+        generate_dry_property(&mut root, &wet_content, file.properties.as_slice())?;
+        wet_cache.insert(name.to_string(), wet_content);
     }
 
     Ok(Value::Object(root))
@@ -174,51 +175,18 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
 
     let output = files
         .into_iter()
-        .map(|(name, (format, wet))| {
-            serialize(wet, &format).map(|c| {
-                Entry {
-                    name: name.to_string(),
-                    content: c,
-                }
-            })
+        .map(|(name, (format, wet))| { 
+            Entry {
+                name: name.to_string(),
+                content: wet,
+            }
         })
-        .collect::<Result<Vec<_>>>();
+        .collect::<Vec<_>>();
 
-    output
+    Ok(output)
 }
 
-/// Convert wet JSON into a raw `String` using the formatter appropriate
-/// for the provided `FileFormat`.
-fn serialize(wet: Value, format: &FileFormat) -> Result<String> {
-    let mut buffer = Vec::new();
-    match format {
-        &FileFormat::Ini => {
-            let adaptor = IniAdaptor::new();
-            adaptor.serialize(wet, &mut buffer)?;
-        },
-        &FileFormat::Json => {
-            let adaptor = JsonAdaptor::new(false);
-            adaptor.serialize(wet, &mut buffer)?;
-        },
-    }
-    String::from_utf8(buffer).chain_err(|| "unable to decode utf-8")
-}
 
-/// Deserialize raw text using the appropriate formatter for the
-/// `FileFormat` and return the wet JSON.
-fn deserialize(content: String, format: &FileFormat) -> Result<Value> {
-    let buffer = content.into_bytes();
-    match format {
-        &FileFormat::Ini => {
-            let adaptor = IniAdaptor::new();
-            adaptor.deserialize(buffer.as_slice())
-        },
-        &FileFormat::Json => {
-            let adaptor = JsonAdaptor::new(false);
-            adaptor.deserialize(buffer.as_slice())
-        },
-    }
-}
 
 /// Generate a wet JSON object.
 fn generate_wet_file(dry: &JsObject, props: &[Property]) -> Result<Value> {
@@ -406,6 +374,7 @@ mod tests {
     extern crate serde_json;
 
     use super::*;
+    use common::*;
     use schema::*;
 
     use test::*;
@@ -698,10 +667,10 @@ mod tests {
             "independent".into() => File {
                 format: FileFormat::Json,
                 fileset: false,
-                location: Location::Independent {
-                    partition: Partition::Primary(0),
+                location: Location::Independent(FileNode {
+                    partition: Partition::primary(0),
                     path: vec![],
-                },
+                }),
                 properties: vec![],
             },
             "dependent".into() => File {
@@ -729,7 +698,7 @@ mod tests {
         };
 
         let result = transform_to_wet(dry, &schema).unwrap().pop().unwrap();
-        let expected = r##"{"parent":{"child":"{\"wet\":\"value\"}"}}"##;
+        let expected = json!({"parent":{"child":"{\"wet\":\"value\"}"}});
 
         assert_eq!(expected, result.content);
     }
@@ -834,17 +803,16 @@ mod tests {
     fn wet_to_dry_dependent_json() {
         let inner = r##"{"child":{"wet":"value"}}"##;
         let wet = json!({"parent": inner});
-        let wet_content = to_string(&wet).unwrap();
 
         let files =
             btreemap!{
             "independent".into() => File {
                 format: FileFormat::Json,
                 fileset: false,
-                location: Location::Independent {
-                    partition: Partition::Primary(0),
+                location: Location::Independent(FileNode {
+                    partition: Partition::primary(0),
                     path: vec![],
-                },
+                }),
                 properties: vec![],
             },
             "dependent".into() => File {
@@ -872,7 +840,7 @@ mod tests {
         };
         let entry = Entry {
             name: "independent".into(),
-            content: wet_content,
+            content: wet,
         };
 
         let result = transform_to_dry(vec![entry], &schema).unwrap();

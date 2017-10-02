@@ -2,7 +2,7 @@ mod ini;
 
 use std::io::{Read, Write};
 
-use errors::*;
+use error::*;
 
 use serde_json::{from_reader, to_writer, to_writer_pretty};
 use serde_json::Value;
@@ -27,7 +27,7 @@ pub trait Adaptor<'a> {
 }
 
 pub struct JsonAdaptor {
-    pretty: bool,
+    pretty: bool
 }
 
 impl JsonAdaptor {
@@ -48,12 +48,12 @@ impl<'a> Adaptor<'a> for JsonAdaptor {
     where
         W: Write,
     {
-        let result = if self.pretty {
+        let write = if self.pretty {
             to_writer_pretty(writer, &value)
         } else {
             to_writer(writer, &value)
         };
 
-        result.chain_err(|| "unable to serialize JSON")
+        write.chain_err(|| "unable to serialize JSON")
     }
 }

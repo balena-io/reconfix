@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::str;
 
 use adaptor::Adaptor;
-use errors::*;
+use error::*;
 
 use nom::{alphanumeric, multispace, space, IResult};
 

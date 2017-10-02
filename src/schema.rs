@@ -9,19 +9,16 @@ use serde_json::map::Map;
 
 use regex::Regex;
 
-pub mod error {
-    error_chain!{
-        errors {
-            MissingKey(name: String)
-            InvalidFileName(name: String)
-            InvalidSchema(message: String)
-            UnknownValue(message: String)
-        }
+error_chain!{
+    errors {
+        MissingKey(name: String)
+        InvalidFileName(name: String)
+        InvalidSchema(message: String)
+        UnknownValue(message: String)
     }
 }
 
-use self::error::*;
-use self::error::ErrorKind::InvalidSchema;
+use common::*;
 
 /// Schema
 pub struct Schema {
@@ -41,34 +38,20 @@ impl Schema {
     pub fn from_json(v: &Value) -> Result<Schema> {
         let mut files = BTreeMap::new();
         match v.as_object() {
-            Some(obj) => for (k, v) in obj {
-                if !filename_is_valid(k) {
-                    bail!(InvalidSchema("filename invalid".into()))
+            Some(obj) => {
+                for (k, v) in obj {
+                    if !filename_is_valid(k) {
+                        bail!(ErrorKind::InvalidSchema("filename invalid".into()))
+                    }
+                    files.insert(k.to_owned(), File::from_json(v)?);
                 }
-                files.insert(k.to_owned(), File::from_json(v)?);
             },
-            None => bail!(InvalidSchema("schema is not an object".into())),
+            None => bail!(ErrorKind::InvalidSchema("schema is not an object".into())),
         }
         Ok(Schema { files: files })
     }
 }
 
-/// Supported output file formats
-#[derive(Eq, PartialEq, Clone)]
-pub enum FileFormat {
-    Ini,
-    Json,
-}
-
-impl FileFormat {
-    pub fn from_str(s: &str) -> Result<FileFormat> {
-        match s {
-            "ini" => Ok(FileFormat::Ini),
-            "json" => Ok(FileFormat::Json),
-            _ => bail!(ErrorKind::UnknownValue("unknown file format".into())),
-        }
-    }
-}
 /// File
 pub struct File {
     /// The file format to generate
@@ -84,49 +67,42 @@ pub struct File {
 fn get<'a>(v: &'a Value, k: &str) -> Result<&'a Value> {
     match v.get(k) {
         Some(v) => Ok(v),
-        None => bail!(InvalidSchema(format!("missing key {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!("missing key {}", k))),
     }
 }
 
 fn get_array<'a>(v: &'a Value, k: &str) -> Result<&'a Vec<Value>> {
     match get(v, k)?.as_array() {
         Some(v) => Ok(v),
-        None => bail!(InvalidSchema(format!("expected an array for {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!("expected an array for {}", k))),
     }
 }
 
 fn get_i64(v: &Value, k: &str) -> Result<i64> {
     match get(v, k)?.as_i64() {
         Some(v) => Ok(v),
-        None => bail!(InvalidSchema(format!("expected an int for {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!("expected an int for {}", k))),
     }
 }
 
 fn get_u64(v: &Value, k: &str) -> Result<u64> {
     match get(v, k)?.as_u64() {
         Some(v) => Ok(v),
-        None => bail!(InvalidSchema(format!(
-            "expected non-negative int for {}",
-            k
-        ))),
+        None => bail!(ErrorKind::InvalidSchema(format!("expected non-negative int for {}", k))),
     }
 }
 
 fn expect_object<'a>(v: &'a Value) -> Result<&'a Map<String, Value>> {
     match v.as_object() {
         Some(o) => Ok(o),
-        None => bail!(InvalidSchema(
-            "expected object, found different kind of value".into()
-        )),
+        None => bail!(ErrorKind::InvalidSchema("expected object, found different kind of value".into())),
     }
 }
 
 fn expect_string<'a>(v: &'a Value) -> Result<&'a str> {
     match v.as_str() {
         Some(s) => Ok(s),
-        None => bail!(InvalidSchema(
-            "expected string, found different kind of value".into()
-        )),
+        None => bail!(ErrorKind::InvalidSchema("expected string, found different kind of value".into())),
     }
 }
 
@@ -137,13 +113,14 @@ fn get_object<'a>(v: &'a Value, k: &str) -> Result<&'a Map<String, Value>> {
 fn get_string<'a>(v: &'a Value, k: &str) -> Result<&'a str> {
     match get(v, k)?.as_str() {
         Some(s) => Ok(s),
-        None => bail!(InvalidSchema(format!("expected a string for {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!("expected a string for {}", k))),
     }
 }
 impl File {
     pub fn from_json(v: &Value) -> Result<File> {
         expect_object(v)?;
-        let format = FileFormat::from_str(get_string(v, "type")?)?;
+        let format = FileFormat::from_str(get_string(v, "type")?)
+            .chain_err(|| ErrorKind::InvalidSchema("invalid file format".into()))?;
         let fileset = v.get("fileset").and_then(Value::as_bool).unwrap_or(false);
         let location = Location::from_json(get(v, "location")?)?;
         let json_properties = get_array(v, "properties")?;
@@ -162,38 +139,19 @@ impl File {
     }
 }
 
-/// A partition where a filesystem can be found
-#[derive(Eq, PartialEq, Clone)]
-pub enum Partition {
-    /// A primary partition
-    Primary(u8),
-    /// A logical partitoin
-    Logical {
-        /// The primary partition containing the logical partition table
-        on_primary: u8,
-        /// The partition number in the logical partition table
-        logical_number: u64,
-    },
-}
-
 impl Partition {
     pub fn from_json(v: &Value) -> Result<Partition> {
         let o = expect_object(v)?;
         let primary = get_u64(v, "primary")?;
         if primary > 4 {
-            bail!(InvalidSchema(
-                "primary partition number must be less than 4".into()
-            ))
+            bail!(ErrorKind::InvalidSchema("primary partition number must be less than 4".into()))
         }
         let primary = primary as u8;
         if o.contains_key("logical") {
             let logical = get_u64(v, "logical")?;
-            Ok(Partition::Logical {
-                on_primary: primary,
-                logical_number: logical,
-            })
+            Ok(Partition::logical(primary, logical))
         } else {
-            Ok(Partition::Primary(primary))
+            Ok(Partition::primary(primary))
         }
     }
 }
@@ -201,12 +159,7 @@ impl Partition {
 /// Location
 #[derive(Eq, PartialEq, Clone)]
 pub enum Location {
-    Independent {
-        /// The path on the filesystem where the contents while be written
-        path: Vec<String>,
-        /// The partition containing the filesystem `path` is relative to
-        partition: Partition,
-    },
+    Independent(FileNode),
     Dependent {
         /// The file name where the file will be inlined
         parent: String,
@@ -233,10 +186,10 @@ impl Location {
                     path.push(expect_string(p)?.to_owned());
                 }
                 let partition = Partition::from_json(get(v, "partition")?)?;
-                Ok(Location::Independent {
-                    path: path,
-                    partition: partition,
-                })
+                Ok(Location::Independent(FileNode {
+                    path: path, 
+                    partition: partition
+                }))
             },
         }
     }
@@ -294,9 +247,11 @@ impl PropertyType {
             "string" => PropertyType::String,
             "number" => PropertyType::Number,
             "boolean" => PropertyType::Boolean,
-            _ => bail!(InvalidSchema(
-                "property types must be either string, number, or boolean".into()
-            )),
+            _ => {
+                bail!(
+                    ErrorKind::InvalidSchema("property types must be either string, number, or boolean".into())
+                )
+            },
         };
 
         Ok(prop_type)
@@ -325,7 +280,7 @@ impl Mapping {
             //     let map = elems.iter()
             //         .map(|elem| {
             //             elem.as_str().map(String::from)
-            //                 .ok_or(InvalidSchema(
+            //                 .ok_or(ErrorKind::InvalidSchema(
             //                     "direct mapping elements must be strings".into()).into()
             //                  )
             //         })
@@ -336,18 +291,20 @@ impl Mapping {
             // },
             Value::String(ref s) => Mapping::Direct(s.to_owned()),
             Value::Object(ref obj) => {
-                let value = obj.get("value").ok_or(InvalidSchema(
-                    "template object must contain a value property".into(),
+                let value = obj.get("value").ok_or(ErrorKind::InvalidSchema(
+                    "template object must contain a value property"
+                        .into(),
                 ))?;
-                let template = obj.get("template").ok_or(InvalidSchema(
-                    "template must contain a template property".into(),
+                let template = obj.get("template").ok_or(ErrorKind::InvalidSchema(
+                    "template must contain a template property"
+                        .into(),
                 ))?;
                 Mapping::Template {
                     value: value.to_owned(),
                     template: template.to_owned(),
                 }
             },
-            _ => bail!(InvalidSchema("mapping must be a string or object".into())),
+            _ => bail!(ErrorKind::InvalidSchema("mapping must be a string or object".into())),
         };
 
         Ok(mapping)
@@ -362,7 +319,7 @@ pub struct PropertyDefinition {
 }
 
 impl PropertyDefinition {
-    pub fn from_json(v: &Value) -> error::Result<PropertyDefinition> {
+    pub fn from_json(v: &Value) -> Result<PropertyDefinition> {
         let json_types = get_array(v, "type")?;
         let mut types = Vec::with_capacity(json_types.len());
         for t in json_types {
@@ -382,10 +339,8 @@ impl PropertyDefinition {
 
         let mapping = match *get(v, "mapping")? {
             // Value::String(ref s) => vec![Mapping::Direct(vec![s.to_owned()])],
-            Value::Array(ref a) => a.iter()
-                .map(Mapping::from_json)
-                .collect::<Result<Vec<_>>>()?,
-            _ => bail!(InvalidSchema("mapping must be an array".into())),
+            Value::Array(ref a) => a.iter().map(Mapping::from_json).collect::<Result<Vec<_>>>()?,
+            _ => bail!(ErrorKind::InvalidSchema("mapping must be an array".into())),
         };
 
         Ok(PropertyDefinition {

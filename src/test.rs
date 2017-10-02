@@ -4,7 +4,7 @@ use std::cmp;
 use serde_json;
 use serde_json::{from_str, Value};
 
-use super::errors::*;
+use super::error::*;
 
 /// Represents a section of data in a test file.
 pub enum Section {
@@ -118,9 +118,9 @@ where
             x => Section::Comment(x.into()),
         }
     } else {
-        from_str::<Value>(&line)
-            .map(Section::Json)
-            .chain_err(|| "single-line json parse error")?
+        from_str::<Value>(&line).map(Section::Json).chain_err(
+            || "single-line json parse error",
+        )?
     };
 
     r.consume(line.len());

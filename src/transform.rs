@@ -45,7 +45,7 @@ pub fn transform_to_dry(config: Vec<Entry>, schema: &Schema) -> Result<Value> {
                 let inner_content = value.ok_or("value not found")?.as_str().ok_or(
                     "value is not a string",
                 )?;
-                
+
                 let raw = inner_content.to_string();
                 deserialize(raw.as_bytes(), &file.format)?
             },
@@ -159,9 +159,13 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
                 ref parent,
                 ref location,
             } => {
-                let serialized = serialize(wet, &file.format, false)?;
+                let mut buffer = Vec::new();
+                serialize(wet, &file.format, false, &mut buffer)?;
                 let entry = files.get_mut(parent).ok_or("parent file not found")?;
                 let mut value = follow_pointer_mut(&mut entry.1, location);
+                let serialized = String::from_utf8(buffer).chain_err(
+                    || "invalid serializer output",
+                )?;
                 *value = Value::String(serialized);
             },
         }
@@ -169,7 +173,7 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
 
     let output = files
         .into_iter()
-        .map(|(name, (format, wet))| { 
+        .map(|(name, (format, wet))| {
             Entry {
                 name: name.to_string(),
                 content: wet,

@@ -48,12 +48,12 @@ impl<'a> Adaptor<'a> for JsonAdaptor {
     where
         W: Write,
     {
-        let write = if self.pretty {
+        let result = if self.pretty {
             to_writer_pretty(writer, &value)
         } else {
             to_writer(writer, &value)
         };
 
-        write.chain_err(|| "unable to serialize JSON")
+        result.chain_err(|| "unable to serialize JSON")
     }
 }

@@ -51,11 +51,11 @@ impl<'a> Adaptor<'a> for JsonAdaptor {
         W: Write,
     {
         let result = if self.pretty {
-            to_writer_pretty(writer, &value) 
+            to_writer_pretty(writer, &value)
         } else {
             to_writer(writer, &value)
         };
-            
+
         result.chain_err(|| "unable to serialize JSON")
     }
 }

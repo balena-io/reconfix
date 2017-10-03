@@ -97,14 +97,22 @@ fn get_u64(v: &Value, k: &str) -> Result<u64> {
 fn expect_object<'a>(v: &'a Value) -> Result<&'a Map<String, Value>> {
     match v.as_object() {
         Some(o) => Ok(o),
-        None => bail!(ErrorKind::InvalidSchema("expected object, found different kind of value".into())),
+        None => {
+            bail!(ErrorKind::InvalidSchema(
+                "expected object, found different kind of value".into(),
+            ))
+        },
     }
 }
 
 fn expect_string<'a>(v: &'a Value) -> Result<&'a str> {
     match v.as_str() {
         Some(s) => Ok(s),
-        None => bail!(ErrorKind::InvalidSchema("expected string, found different kind of value".into())),
+        None => {
+            bail!(ErrorKind::InvalidSchema(
+                "expected string, found different kind of value".into(),
+            ))
+        },
     }
 }
 
@@ -121,8 +129,9 @@ fn get_string<'a>(v: &'a Value, k: &str) -> Result<&'a str> {
 impl File {
     pub fn from_json(v: &Value) -> Result<File> {
         expect_object(v)?;
-        let format = FileFormat::from_str(get_string(v, "type")?)
-            .chain_err(|| ErrorKind::InvalidSchema("invalid file format".into()))?;
+        let format = FileFormat::from_str(get_string(v, "type")?).chain_err(|| {
+            ErrorKind::InvalidSchema("invalid file format".into())
+        })?;
         let fileset = v.get("fileset").and_then(Value::as_bool).unwrap_or(false);
         let location = Location::from_json(get(v, "location")?)?;
         let json_properties = get_array(v, "properties")?;
@@ -189,8 +198,8 @@ impl Location {
                 }
                 let partition = Partition::from_json(get(v, "partition")?)?;
                 Ok(Location::Independent(FileNode {
-                    path: path, 
-                    partition: partition
+                    path: path,
+                    partition: partition,
                 }))
             },
         }
@@ -260,9 +269,9 @@ impl PropertyType {
             "number" => PropertyType::Number,
             "boolean" => PropertyType::Boolean,
             _ => {
-                bail!(
-                    ErrorKind::InvalidSchema("property types must be either string, number, or boolean".into())
-                )
+                bail!(ErrorKind::InvalidSchema(
+                    "property types must be either string, number, or boolean".into(),
+                ))
             },
         };
 

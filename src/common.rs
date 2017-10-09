@@ -8,24 +8,11 @@ use serde_json::Value;
 
 /// Represents a partition within a partition scheme
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct Partition {
-    primary: u8,
-    logical: Option<u64>,
-}
+pub struct Partition(u8);
 
 impl Partition {
-    pub fn primary(primary: u8) -> Partition {
-        Partition {
-            primary: primary,
-            logical: None,
-        }
-    }
-
-    pub fn logical(primary: u8, logical: u64) -> Partition {
-        Partition {
-            primary: primary,
-            logical: Some(logical),
-        }
+    pub fn new(p: u8) -> Partition {
+        Partition(p)
     }
 }
 

@@ -667,7 +667,7 @@ mod tests {
                 format: FileFormat::Json,
                 fileset: false,
                 location: Location::Independent(FileNode {
-                    partition: Partition::primary(0),
+                    partition: Partition::new(0),
                     path: vec![],
                 }),
                 properties: vec![],
@@ -814,7 +814,7 @@ mod tests {
                 format: FileFormat::Json,
                 fileset: false,
                 location: Location::Independent(FileNode {
-                    partition: Partition::primary(0),
+                    partition: Partition::new(0),
                     path: vec![],
                 }),
                 properties: vec![],

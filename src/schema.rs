@@ -150,18 +150,9 @@ impl File {
 
 impl Partition {
     pub fn from_json(v: &Value) -> Result<Partition> {
-        let o = expect_object(v)?;
-        let primary = get_u64(v, "primary")?;
-        if primary > 4 {
-            bail!(ErrorKind::InvalidSchema("primary partition number must be less than 4".into()))
-        }
-        let primary = primary as u8;
-        if o.contains_key("logical") {
-            let logical = get_u64(v, "logical")?;
-            Ok(Partition::logical(primary, logical))
-        } else {
-            Ok(Partition::primary(primary))
-        }
+        let p = v.as_u64()
+            .chain_err(|| ErrorKind::InvalidSchema("invalid partition format".into()))?;
+        Ok(Partition::new(p as u8))
     }
 }
 

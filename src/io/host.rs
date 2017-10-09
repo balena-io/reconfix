@@ -114,7 +114,7 @@ fn read_device(dir: &DirEntry) -> Result<Device> {
             let p = u8::from_str(&partition_str)
                 .chain_err(|| "unable to parse partition")?;
             
-            Some(Partition::primary(p))
+            Some(Partition::new(p))
         }
     };
 

@@ -14,15 +14,22 @@ use error::*;
 /// The default Reconfix plugin
 pub struct HostFile {}
 
-impl Plugin for HostFile {
+impl HostFile {
+    pub fn new() -> Self {
+        HostFile {}
+    }
+}
+
+impl<'a, 'b> Plugin<'a, 'b, File> for HostFile
+{
     fn open(
-        &self,
+        &'a mut self,
         node: &FileNode,
-    ) -> result::Result<Box<Content>, Box<error::Error + Send + Sync>> {
+    ) -> result::Result<File, Box<error::Error + Send + Sync>> {
         let path = node.path.join("/");
         let file = File::open(path)?;
 
-        Ok(Box::new(file))
+        Ok(file)
     }
 }
 

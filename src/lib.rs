@@ -117,24 +117,24 @@ impl Reconfix {
     }
 
     /// Read data in data sources and convert to dry
-    pub fn read_values_plugin<'r, P, C>(&self, plugin: P) -> Result<Value> 
+    pub fn read_values_plugin<'r, P, C>(&self, mut plugin: P) -> Result<Value> 
         where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content
     {
         let schema = self.get_schema()?;
-        read_values(&schema, plugin)
+        read_values(&schema, &mut plugin)
     }
 
     /// Convert dry to wet and write to data sources
-    pub fn write_values_plugin<'r, P, C>(&self, dry: Value, plugin: P) -> Result<()> 
+    pub fn write_values_plugin<'r, P, C>(&self, dry: Value, mut plugin: P) -> Result<()> 
         where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content
     {
         let schema = self.get_schema()?;
-        write_values(&schema, dry, plugin)
+        write_values(&schema, dry, &mut plugin)
     }
 }
 
-fn read_values<P, C>(schema: &Schema, mut plugin: P) -> Result<Value> 
-        where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content
+fn read_values<'a, 'b, 'r, P, C>(schema: &Schema, plugin: &'r mut P) -> Result<Value> 
+        where P: Plugin<'a, 'b, C>, C: Content + 'b, 'a: 'b, 'r: 'a
 {
     let mut entries = Vec::new();
     for (name, file) in schema.files.iter() {
@@ -163,11 +163,11 @@ fn read_values<P, C>(schema: &Schema, mut plugin: P) -> Result<Value>
     transform_to_dry(entries, &schema)
 }
 
-fn write_values<P, C>(schema: &Schema, dry: Value, mut plugin: P) -> Result<()> 
-        where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content,
+fn write_values<'a, 'b, 'r, P, C>(schema: &Schema, dry: Value, plugin: &'r mut P) -> Result<()> 
+        where P: Plugin<'a, 'b, C>, C: Content + 'b, 'a: 'b, 'r: 'a
 {
     let entries = transform_to_wet(dry, &schema)?;
-    let plugin = &mut plugin;
+    //let plugin = &mut plugin;
 
     for entry in entries {
         let file = schema.files.get(&entry.name).ok_or_else(

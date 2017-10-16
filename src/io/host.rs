@@ -21,6 +21,7 @@ impl HostFile {
 }
 
 impl<'a, 'b> Plugin<'a, 'b, File> for HostFile
+    where 'a: 'b
 {
     fn open(
         &'a mut self,

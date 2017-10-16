@@ -14,6 +14,10 @@ impl Partition {
     pub fn new(p: u8) -> Partition {
         Partition(p)
     }
+
+    pub fn num(&self) -> u8 {
+        self.0
+    }
 }
 
 /// Represents the location of a file in a partition scheme

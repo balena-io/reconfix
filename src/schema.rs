@@ -21,6 +21,7 @@ error_chain!{
 use common::*;
 
 /// Schema
+#[derive(Clone)]
 pub struct Schema {
     pub files: BTreeMap<String, File>,
 }
@@ -55,6 +56,7 @@ impl Schema {
 }
 
 /// File
+#[derive(Clone)]
 pub struct File {
     /// The file format to generate
     pub format: FileFormat,
@@ -224,6 +226,7 @@ impl PartialOrd for Location {
 }
 
 /// Property
+#[derive(Clone)]
 pub struct Property {
     pub definition: BTreeMap<String, PropertyDefinition>,
     pub when: Option<Value>,
@@ -245,7 +248,7 @@ impl Property {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub enum PropertyType {
     String,
     Number,
@@ -279,7 +282,7 @@ impl PropertyType {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Mapping {
     Direct(String),
     Template { value: Value, template: Value },
@@ -324,6 +327,7 @@ impl Mapping {
 }
 
 /// Property definition
+#[derive(Clone)]
 pub struct PropertyDefinition {
     pub types: Vec<PropertyType>,
     pub properties: Vec<Property>,

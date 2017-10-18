@@ -11,23 +11,53 @@ use common::FileNode;
 /// Trait representing an IO implementation
 pub trait Content: io::Read + io::Write {}
 
-// pub enum Has<'a, T> where T: Content + 'a {
-//     Borrowed(&'a T),
-//     Owned(T),
+// impl<'a, T> io::Read for Has<'a, T>
+//     where T: Content
+// {
+//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+//         match self {
+//             &mut Has::Borrowed(ref mut b) => b.read(buf),
+//             &mut Has::Owned(ref mut o) => o.read(buf),
+//         }
+//     }
+// }
+
+// impl<'a, T> io::Write for Has<'a, T>
+//     where T: Content
+// {
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         match self {
+//             &mut Has::Borrowed(ref mut b) => b.write(buf),
+//             &mut Has::Owned(ref mut o) => o.write(buf),
+//         }
+//     }
+
+//     fn flush(&mut self) -> io::Result<()> {
+//         match self {
+//             &mut Has::Borrowed(ref mut b) => b.flush(),
+//             &mut Has::Owned(ref mut o) => o.flush(),
+//         }
+//     }
+// }
+
+// impl<'a, T> Content for Has<'a, T>
+//     where T: Content
+// {
 // }
 
 /// Trait that Reconfix plugins must adhere to
-pub trait Plugin<'a, 'b, C>
-    where C: Content + 'b
+pub trait Plugin
 {
+    /// Type representing the contents of a file
+    type Value: Content;
     /// Given a `FileNode` provide an object that can be read from and writtent to.
-    fn open(&'a mut self, &FileNode) -> result::Result<C, Box<error::Error + Send + Sync>>;
+    fn open(self, &FileNode) -> result::Result<Self::Value, Box<error::Error + Send + Sync>>;
 }
 
-impl<'a, 'b, 'r, P, C> Plugin<'a, 'b, C> for &'r mut P
-    where P: Plugin<'a, 'b, C>, C: Content + 'b
-{
-    fn open(&'a mut self, node: &FileNode) -> result::Result<C, Box<error::Error + Send + Sync>> {
-        self.open(node)
-    }
-}
+// impl<'b, 'r, P, T> Plugin<'b, T> for &'r mut P
+//     where P: Plugin<'b, T> + 'r, T: Content
+// {
+//     fn open(&mut self, node: &FileNode) -> result::Result<Has<'b, T>, Box<error::Error + Send + Sync>> {
+//         self.open(node)
+//     }
+// }

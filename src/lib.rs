@@ -49,14 +49,17 @@ pub use error::*;
 pub use common::FileNode;
 pub use io::{Plugin, Content};
 
-use common::{serialize, deserialize};
+use common::{serialize, deserialize, FileFormat};
 use transform::{Entry, transform_to_dry, transform_to_wet};
 use schema::{Schema, Location};
 use io::host::HostFile;
 
+use std::ops::{Deref, DerefMut};
+
 use serde_json::{from_reader, Value};
 
 /// The entry point for the Reconfix library
+#[derive(Clone)]
 pub struct Reconfix {
     default: HostFile,
     schema: Option<Schema>,
@@ -117,24 +120,24 @@ impl Reconfix {
     }
 
     /// Read data in data sources and convert to dry
-    pub fn read_values_plugin<'r, P, C>(&self, plugin: P) -> Result<Value> 
-        where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content
+    pub fn read_values_plugin<P: Plugin + DerefMut>(&self, mut plugin: P) -> Result<Value> 
+        where for<'a> &'a mut <P as Deref>::Target: Plugin
     {
         let schema = self.get_schema()?;
         read_values(&schema, plugin)
     }
 
     /// Convert dry to wet and write to data sources
-    pub fn write_values_plugin<'r, P, C>(&self, dry: Value, plugin: P) -> Result<()> 
-        where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content
+    pub fn write_values_plugin<P: Plugin + DerefMut>(&self, dry: Value, mut plugin: P) -> Result<()> 
+        where for<'a> &'a mut <P as Deref>::Target: Plugin
     {
         let schema = self.get_schema()?;
         write_values(&schema, dry, plugin)
     }
 }
 
-fn read_values<P, C>(schema: &Schema, mut plugin: P) -> Result<Value> 
-        where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content
+fn read_values<P: Plugin + DerefMut>(schema: &Schema, mut plugin: P) -> Result<Value> 
+    where for<'a> &'a mut <P as Deref>::Target: Plugin
 {
     let mut entries = Vec::new();
     for (name, file) in schema.files.iter() {
@@ -145,12 +148,11 @@ fn read_values<P, C>(schema: &Schema, mut plugin: P) -> Result<Value>
             Location::Independent(ref node) => node,
         };
 
-        let wet = {
-            let content = plugin.open(node)
-                .map_err(|e| Error::with_boxed_chain(e, ErrorKind::Plugin))?;
-
-            deserialize(content, &file.format)?
-        };
+        // let wet = read_single(&file.format, node, &mut plugin)?;
+        let content = (&mut *plugin).open(node)
+            .map_err(|e| Error::with_boxed_chain(e, ErrorKind::Plugin))?;
+        
+        let wet = deserialize(content, &file.format)?;
         
         let entry = Entry {
             name: name.to_string(),
@@ -163,11 +165,18 @@ fn read_values<P, C>(schema: &Schema, mut plugin: P) -> Result<Value>
     transform_to_dry(entries, &schema)
 }
 
-fn write_values<P, C>(schema: &Schema, dry: Value, mut plugin: P) -> Result<()> 
-        where for<'a, 'b> P: Plugin<'a, 'b, C>, C: Content,
+// fn read_single<P: Plugin>(format: &FileFormat, node: &FileNode, plugin: &mut P) -> Result<Value> {
+//     let content = plugin.open(node)
+//                 .map_err(|e| Error::with_boxed_chain(e, ErrorKind::Plugin))?;
+
+//     deserialize(content, format)
+// }
+
+fn write_values<P: Plugin + DerefMut>(schema: &Schema, dry: Value, mut plugin: P) -> Result<()> 
+    where for<'a> &'a mut <P as Deref>::Target: Plugin
 {
     let entries = transform_to_wet(dry, &schema)?;
-    let plugin = &mut plugin;
+    //let plugin = &mut plugin;
 
     for entry in entries {
         let file = schema.files.get(&entry.name).ok_or_else(
@@ -175,14 +184,24 @@ fn write_values<P, C>(schema: &Schema, dry: Value, mut plugin: P) -> Result<()>
         )?;
 
         if let Location::Independent(ref node) = file.location {
-            plugin.open(node).map_err(|e| {
+            //write_single(entry.content, &file.format, node, &mut plugin)?;
+            (&mut *plugin).open(node).map_err(|e| {
                 Error::with_boxed_chain(e, ErrorKind::Plugin)
             })
             .and_then(move |content| {
                 serialize(entry.content, &file.format, content)
-            });
+            })?;
         }
     }
 
     Ok(())
 }
+
+// fn write_single<P: Plugin>(wet: Value, format: &FileFormat, node: &FileNode, plugin: &mut P) -> Result<()> {
+//     plugin.open(node).map_err(|e| {
+//         Error::with_boxed_chain(e, ErrorKind::Plugin)
+//     })
+//     .and_then(move |content| {
+//         serialize(wet, format, content)
+//     })
+// }

@@ -12,6 +12,7 @@ use common::{FileNode, Partition};
 use error::*;
 
 /// The default Reconfix plugin
+#[derive(Clone)]
 pub struct HostFile {}
 
 impl HostFile {
@@ -20,12 +21,12 @@ impl HostFile {
     }
 }
 
-impl<'a, 'b> Plugin<'a, 'b, File> for HostFile
-{
+impl<'a> Plugin for &'a mut HostFile {
+    type Value = File;
     fn open(
-        &'a mut self,
+        self,
         node: &FileNode,
-    ) -> result::Result<File, Box<error::Error + Send + Sync>> {
+    ) -> result::Result<Self::Value, Box<error::Error + Send + Sync>> {
         let path = node.path.join("/");
         let file = File::open(path)?;
 

@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::os::linux::fs::MetadataExt;
 use std::io::Read;
 
-use io::{Plugin, Content};
+use io::{Plugin};
 use common::{FileNode, Partition};
 use error::*;
 
@@ -22,11 +22,22 @@ impl HostFile {
 }
 
 impl<'a> Plugin for &'a mut HostFile {
-    type Value = File;
-    fn open(
+    type Read = File;
+    type Write = File;
+    fn read(
         self,
         node: &FileNode,
-    ) -> result::Result<Self::Value, Box<error::Error + Send + Sync>> {
+    ) -> result::Result<Self::Read, Box<error::Error + Send + Sync>> {
+        let path = node.path.join("/");
+        let file = File::open(path)?;
+
+        Ok(file)
+    }
+
+    fn write(
+        self,
+        node: &FileNode,
+    ) -> result::Result<Self::Read, Box<error::Error + Send + Sync>> {
         let path = node.path.join("/");
         let file = File::open(path)?;
 
@@ -34,7 +45,7 @@ impl<'a> Plugin for &'a mut HostFile {
     }
 }
 
-impl Content for File {}
+//impl Content for File {}
 
 struct Device {
     pub name: String,

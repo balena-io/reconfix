@@ -11,17 +11,29 @@ use regex::Regex;
 
 error_chain!{
     errors {
-        MissingKey(name: String)
-        InvalidFileName(name: String)
-        InvalidSchema(message: String)
-        UnknownValue(message: String)
+        MissingKey(name: String) {
+            description("missing key on object")
+            display("missing key: '{}'", name)
+        }
+        InvalidFileName(name: String) {
+            description("invalid file name")
+            display("invalid file name: '{}'", name)
+        }
+        InvalidSchema(message: String) {
+            description("invalid schema")
+            display("invalid schema: {}", message)
+        }
+        UnknownValue(message: String) {
+            description("unknown value")
+            display("unknown value: {}", message)
+        }
     }
 }
 
 use common::*;
 
 /// Schema
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Schema {
     pub files: BTreeMap<String, File>,
 }
@@ -56,7 +68,7 @@ impl Schema {
 }
 
 /// File
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct File {
     /// The file format to generate
     pub format: FileFormat,
@@ -71,21 +83,21 @@ pub struct File {
 fn get<'a>(v: &'a Value, k: &str) -> Result<&'a Value> {
     match v.get(k) {
         Some(v) => Ok(v),
-        None => bail!(ErrorKind::InvalidSchema(format!("missing key {}", k))),
+        None => bail!(ErrorKind::MissingKey(k.into())),
     }
 }
 
 fn get_array<'a>(v: &'a Value, k: &str) -> Result<&'a Vec<Value>> {
     match get(v, k)?.as_array() {
         Some(v) => Ok(v),
-        None => bail!(ErrorKind::InvalidSchema(format!("expected an array for {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!("expected an array for key '{}'", k))),
     }
 }
 
 fn get_i64(v: &Value, k: &str) -> Result<i64> {
     match get(v, k)?.as_i64() {
         Some(v) => Ok(v),
-        None => bail!(ErrorKind::InvalidSchema(format!("expected an int for {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!("expected an int for key '{}'", k))),
     }
 }
 
@@ -161,7 +173,7 @@ impl Partition {
 }
 
 /// Location
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub enum Location {
     Independent(FileNode),
     Dependent {
@@ -226,7 +238,7 @@ impl PartialOrd for Location {
 }
 
 /// Property
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Property {
     pub definition: BTreeMap<String, PropertyDefinition>,
     pub when: Option<Value>,
@@ -327,7 +339,7 @@ impl Mapping {
 }
 
 /// Property definition
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PropertyDefinition {
     pub types: Vec<PropertyType>,
     pub properties: Vec<Property>,

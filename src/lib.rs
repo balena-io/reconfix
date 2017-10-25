@@ -39,7 +39,9 @@ mod error {
             /// Indicates a parsing error
             Parse { }
             /// Indicates a plugin error
-            Plugin { }
+            Plugin(inner: Box<::std::error::Error + Send>) { }
+            /// Indicates an IO error
+            Io(inner: Box<::std::io::Error>) { }
 
         }
     }
@@ -47,7 +49,7 @@ mod error {
 
 pub use error::*;
 pub use common::FileNode;
-pub use io::{Plugin, Content};
+pub use io::{Plugin};
 
 use common::{serialize, deserialize, FileFormat};
 use transform::{Entry, transform_to_dry, transform_to_wet};
@@ -90,6 +92,7 @@ impl Reconfix {
         let schema_json: Value = from_reader(r).chain_err(
             || "unable to read schema file",
         )?;
+
 
         let schema = Schema::from_json(&schema_json)
             .chain_err(|| "unable to parse schema json")?;
@@ -149,10 +152,14 @@ fn read_values<P: Plugin + DerefMut>(schema: &Schema, mut plugin: P) -> Result<V
         };
 
         // let wet = read_single(&file.format, node, &mut plugin)?;
-        let content = (&mut *plugin).open(node)
-            .map_err(|e| Error::with_boxed_chain(e, ErrorKind::Plugin))?;
+        let content = (&mut *plugin).read(node)
+            .map_err(|e| ErrorKind::Plugin(e))?;
+        
+        println!("deserializing {:?}", node);
         
         let wet = deserialize(content, &file.format)?;
+
+        println!("content of {}: '{:?}'", name, wet);
         
         let entry = Entry {
             name: name.to_string(),
@@ -185,12 +192,11 @@ fn write_values<P: Plugin + DerefMut>(schema: &Schema, dry: Value, mut plugin: P
 
         if let Location::Independent(ref node) = file.location {
             //write_single(entry.content, &file.format, node, &mut plugin)?;
-            (&mut *plugin).open(node).map_err(|e| {
-                Error::with_boxed_chain(e, ErrorKind::Plugin)
-            })
-            .and_then(move |content| {
-                serialize(entry.content, &file.format, content)
-            })?;
+            (&mut *plugin).write(node)
+                .map_err(|e| ErrorKind::Plugin(e).into())
+                .and_then(move |content| {
+                    serialize(entry.content, &file.format, content)
+                })?;
         }
     }
 

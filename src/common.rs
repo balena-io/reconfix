@@ -31,7 +31,7 @@ pub struct FileNode {
 
 
 /// Supported output file formats
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub enum FileFormat {
     Ini,
     Json,

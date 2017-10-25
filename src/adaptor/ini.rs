@@ -59,7 +59,8 @@ impl<'a> Adaptor<'a> for IniAdaptor {
         R: Read,
     {
         let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer).unwrap();
+        reader.read_to_end(&mut buffer)
+            .map_err(|e| ErrorKind::Io(e.into()))?;
 
         // parse the basic INI structure
         let (no_section, sections) = match ini_file(&buffer) {

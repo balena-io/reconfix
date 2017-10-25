@@ -9,7 +9,7 @@ pub mod host;
 use common::FileNode;
 
 /// Trait representing an IO implementation
-pub trait Content: io::Read + io::Write {}
+// pub trait Content: io::Read + io::Write {}
 
 // impl<'a, T> io::Read for Has<'a, T>
 //     where T: Content
@@ -48,10 +48,14 @@ pub trait Content: io::Read + io::Write {}
 /// Trait that Reconfix plugins must adhere to
 pub trait Plugin
 {
-    /// Type representing the contents of a file
-    type Value: Content;
-    /// Given a `FileNode` provide an object that can be read from and writtent to.
-    fn open(self, &FileNode) -> result::Result<Self::Value, Box<error::Error + Send + Sync>>;
+    /// Type representing the readable contents of a file
+    type Read: io::Read;
+    /// Type representint the writable contents of a file
+    type Write: io::Write;
+    /// Given a `FileNode` provide an `Read` implementation for reading the contents.
+    fn read(self, &FileNode) -> result::Result<Self::Read, Box<error::Error + Send + Sync>>;
+    /// Given a `FileNode` provide an `Write` implementation for reading the contents.
+    fn write(self, &FileNode) -> result::Result<Self::Write, Box<error::Error + Send + Sync>>;
 }
 
 // impl<'b, 'r, P, T> Plugin<'b, T> for &'r mut P

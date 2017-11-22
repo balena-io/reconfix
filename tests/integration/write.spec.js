@@ -131,17 +131,17 @@ ava.test('should be able to modify a fileset', (test) => {
       cellular: imagefs.readFile({
         image: image,
         partition: schema.files.system_connections.location.partition,
-        path: path.join(schema.files.system_connections.location.path, 'cellular')
+        path: path.posix.join(schema.files.system_connections.location.path, 'cellular')
       }),
       ethernet: imagefs.readFile({
         image: image,
         partition: schema.files.system_connections.location.partition,
-        path: path.join(schema.files.system_connections.location.path, 'ethernet')
+        path: path.posix.join(schema.files.system_connections.location.path, 'ethernet')
       }),
       wifi: imagefs.readFile({
         image: image,
         partition: schema.files.system_connections.location.partition,
-        path: path.join(schema.files.system_connections.location.path, 'wifi')
+        path: path.posix.join(schema.files.system_connections.location.path, 'wifi')
       })
     });
   };
@@ -181,17 +181,17 @@ ava.test('should not override custom properties inside a fileset', (test) => {
       cellular: imagefs.readFile({
         image: image,
         partition: schema.files.system_connections.location.partition,
-        path: path.join(schema.files.system_connections.location.path, 'cellular')
+        path: path.posix.join(schema.files.system_connections.location.path, 'cellular')
       }),
       ethernet: imagefs.readFile({
         image: image,
         partition: schema.files.system_connections.location.partition,
-        path: path.join(schema.files.system_connections.location.path, 'ethernet')
+        path: path.posix.join(schema.files.system_connections.location.path, 'ethernet')
       }),
       wifi: imagefs.readFile({
         image: image,
         partition: schema.files.system_connections.location.partition,
-        path: path.join(schema.files.system_connections.location.path, 'wifi')
+        path: path.posix.join(schema.files.system_connections.location.path, 'wifi')
       })
     });
   };
@@ -200,7 +200,7 @@ ava.test('should not override custom properties inside a fileset', (test) => {
     return imagefs.writeFile({
       image: imagePath,
       partition: schema.files.system_connections.location.partition,
-      path: path.join(schema.files.system_connections.location.path, 'cellular')
+      path: path.posix.join(schema.files.system_connections.location.path, 'cellular')
     }, '[connection]\nname=cellular\nfoo=bar\nbar=baz').then(() => {
       return reconfix.writeConfiguration(schema, {
         cellularConnectionName: 'newcellular',

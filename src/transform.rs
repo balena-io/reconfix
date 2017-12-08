@@ -162,7 +162,7 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
                 let mut buffer = Vec::new();
                 serialize(wet, &file.format, false, &mut buffer)?;
                 let entry = files.get_mut(parent).ok_or("parent file not found")?;
-                let mut value = follow_pointer_mut(&mut entry.1, location);
+                let value = follow_pointer_mut(&mut entry.1, location);
                 let serialized = String::from_utf8(buffer).chain_err(
                     || "invalid serializer output",
                 )?;
@@ -320,7 +320,7 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
     for mapping in mappings {
         match mapping {
             &Mapping::Direct(ref ptr) => {
-                let mut value = follow_pointer_mut(wet, &ptr);
+                let value = follow_pointer_mut(wet, &ptr);
                 *value = dry.clone();
             },
             &Mapping::Template {

@@ -1,15 +1,9 @@
 
+use std::fs::File;
+use std::io::{Read, Write};
 
-use std::fs::{self, File, DirEntry};
-use std::error;
-use std::result;
-use std::str::FromStr;
-use std::os::linux::fs::MetadataExt;
-use std::io::Read;
-
-use io::{Plugin};
-use common::{FileNode, Partition};
-use error::*;
+use io::Plugin;
+use common::FileNode;
 
 /// The default Reconfix plugin
 #[derive(Clone)]
@@ -22,126 +16,133 @@ impl HostFile {
 }
 
 impl<'a> Plugin for &'a mut HostFile {
-    type Read = File;
-    type Write = File;
     fn read(
         self,
-        node: &FileNode,
-    ) -> result::Result<Self::Read, Box<error::Error + Send + Sync>> {
+        node: FileNode,
+    ) -> ::std::result::Result<Vec<u8>, Box<::std::error::Error + Send>> {
         let path = node.path.join("/");
-        let file = File::open(path)?;
-
-        Ok(file)
+        File::open(path)
+            .and_then(|mut f| {
+                let mut buffer = Vec::new();
+                f.read_to_end(&mut buffer)?;
+                Ok(buffer)
+            })
+            .map_err(|e| Box::new(e) as Box<::std::error::Error + Send>)
     }
 
     fn write(
         self,
-        node: &FileNode,
-    ) -> result::Result<Self::Read, Box<error::Error + Send + Sync>> {
+        node: FileNode,
+        buf: Vec<u8>,
+    ) -> ::std::result::Result<(), Box<::std::error::Error + Send>> {
         let path = node.path.join("/");
-        let file = File::open(path)?;
-
-        Ok(file)
+        File::open(path)
+            .and_then(|mut f| f.write_all(&buf))
+            .map_err(|e| Box::new(e) as Box<::std::error::Error + Send>)
     }
 }
 
-//impl Content for File {}
+// use std::fs::{self, DirEntry};
+// use std::str::FromStr;
+// use std::os::linux::fs::MetadataExt;
+// 
+// use common::Partition;
+// 
+// struct Device {
+//     pub name: String,
+//     pub major: u32,
+//     pub minor: u32,
+//     pub partition: Option<Partition>,
+//     pub children: Vec<Device>,
+// }
 
-struct Device {
-    pub name: String,
-    pub major: u32,
-    pub minor: u32,
-    pub partition: Option<Partition>,
-    pub children: Vec<Device>,
-}
+// fn get_root_device(devices: &[Device], parent: Option<&Device>) -> Result<()> {
+//     let metadata = fs::metadata("/")
+//         .chain_err(|| "unable to stat root directory")?;
 
-fn get_root_device(devices: &[Device], parent: Option<&Device>) -> Result<()> {
-    let metadata = fs::metadata("/")
-        .chain_err(|| "unable to stat root directory")?;
+//     let device = metadata.st_dev();
 
-    let device = metadata.st_dev();
+//     Ok(())
+// }
 
-    Ok(())
-}
+// fn get_devices() -> Result<Vec<Device>> {
+//     let dirs = fs::read_dir("/sys/block")
+//         .chain_err(|| "unable to read block devices")?;
 
-fn get_devices() -> Result<Vec<Device>> {
-    let dirs = fs::read_dir("/sys/block")
-        .chain_err(|| "unable to read block devices")?;
-
-    let mut parents = Vec::new();
+//     let mut parents = Vec::new();
     
-    for dir in dirs {
-        let next_dir = dir.chain_err(|| "unable to read next entry")?;
-        let mut device = read_device(&next_dir)
-            .chain_err(|| "unable to read device")?;
+//     for dir in dirs {
+//         let next_dir = dir.chain_err(|| "unable to read next entry")?;
+//         let mut device = read_device(&next_dir)
+//             .chain_err(|| "unable to read device")?;
         
-        let subdirs = fs::read_dir(next_dir.path())
-            .chain_err(|| "unable to read sub-devices")?;
+//         let subdirs = fs::read_dir(next_dir.path())
+//             .chain_err(|| "unable to read sub-devices")?;
 
-        for dir in subdirs {
-            let next_dir = dir.chain_err(|| "unable to read next entry")?;
-            let subname = next_dir.file_name().to_str()
-                .chain_err(|| "invalid sub-device name")?
-                .to_string();
+//         for dir in subdirs {
+//             let next_dir = dir.chain_err(|| "unable to read next entry")?;
+//             let subname = next_dir.file_name().to_str()
+//                 .chain_err(|| "invalid sub-device name")?
+//                 .to_string();
 
-            if subname.starts_with(&device.name) {
-                let sub_device = read_device(&next_dir)?;
-                device.children.push(sub_device);
-            }
-        }
+//             if subname.starts_with(&device.name) {
+//                 let sub_device = read_device(&next_dir)?;
+//                 device.children.push(sub_device);
+//             }
+//         }
 
-        parents.push(device);
-    }
+//         parents.push(device);
+//     }
 
-    Ok(parents)
-}
+//     Ok(parents)
+// }
 
-fn read_device(dir: &DirEntry) -> Result<Device> {
-    let canonical = dir.path().canonicalize()
-        .chain_err(|| "unable to locate device")?;
+// fn read_device(dir: &DirEntry) -> Result<Device> {
+//     let canonical = dir.path().canonicalize()
+//         .chain_err(|| "unable to locate device")?;
 
-    let name = canonical.file_name()
-        .and_then(|os| os.to_str())
-        .ok_or_else(|| "invalid device dir")?
-        .to_string();
+//     let name = canonical.file_name()
+//         .and_then(|os| os.to_str())
+//         .ok_or_else(|| "invalid device dir")?
+//         .to_string();
     
-    let device = canonical.join("dev");
-    let mut dev_file = File::open(&device)
-        .chain_err(|| "unable to open device file")?;
+//     let device = canonical.join("dev");
+//     let mut dev_file = File::open(&device)
+//         .chain_err(|| "unable to open device file")?;
 
-    let mut device_str = String::new();
-    dev_file.read_to_string(&mut device_str)
-        .chain_err(|| "unable to read device data")?;
+//     let mut device_str = String::new();
+//     dev_file.read_to_string(&mut device_str)
+//         .chain_err(|| "unable to read device data")?;
 
-    let pair = device_str.splitn(2, ':').collect::<Vec<_>>();
-    let major = pair.get(0).ok_or_else(|| "missing major number".into())
-        .and_then(|m| u32::from_str(m).chain_err(|| "invalid major number"))?;
-    let minor = pair.get(1).ok_or_else(|| "missing minor number".into())
-        .and_then(|m| u32::from_str(m).chain_err(|| "invalid minor number"))?;
+//     let pair = device_str.splitn(2, ':').collect::<Vec<_>>();
+//     let major = pair.get(0).ok_or_else(|| "missing major number".into())
+//         .and_then(|m| u32::from_str(m).chain_err(|| "invalid major number"))?;
+//     let minor = pair.get(1).ok_or_else(|| "missing minor number".into())
+//         .and_then(|m| u32::from_str(m).chain_err(|| "invalid minor number"))?;
     
-    let partition = canonical.join("partition");
-    let parition_num = match partition.is_file() {
-        false => None,
-        true => {
-            let mut part_file = File::open(&partition)
-            .chain_err(|| "unable to open partition file")?;
+//     let partition = canonical.join("partition");
+//     let parition_num = match partition.is_file() {
+//         false => None,
+//         true => {
+//             let mut part_file = File::open(&partition)
+//             .chain_err(|| "unable to open partition file")?;
         
-            let mut partition_str = String::new();
-            part_file.read_to_string(&mut partition_str)
-                .chain_err(|| "unable to read partition data")?;
+//             let mut partition_str = String::new();
+//             part_file.read_to_string(&mut partition_str)
+//                 .chain_err(|| "unable to read partition data")?;
 
-            let p = u8::from_str(&partition_str)
-                .chain_err(|| "unable to parse partition")?;
+//             let p = u8::from_str(&partition_str)
+//                 .chain_err(|| "unable to parse partition")?;
             
-            Some(Partition::new(p))
-        }
-    };
+//             Some(Partition::new(p))
+//         }
+//     };
 
-    Ok(Device {
-        name: name,
-        major: major,
-        minor: minor,
-        partition: parition_num,
-        children: vec![],
-    })
-}
+//     Ok(Device {
+//         name: name,
+//         major: major,
+//         minor: minor,
+//         partition: parition_num,
+//         children: vec![],
+//     })
+// }

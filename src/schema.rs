@@ -348,28 +348,42 @@ pub struct PropertyDefinition {
 
 impl PropertyDefinition {
     pub fn from_json(v: &Value) -> Result<PropertyDefinition> {
-        let json_types = get_array(v, "type")?;
-        let mut types = Vec::with_capacity(json_types.len());
-        for t in json_types {
-            types.push(PropertyType::from_json(t)?);
-        }
+        let obj = expect_object(v)?;
+        let types = obj.get("type")
+            .map(|v| {
+                v.as_array()
+                    .ok_or_else(|| ErrorKind::InvalidSchema("expected array for 'type'".into()).into())
+                    .and_then(|array| {
+                        array.into_iter()
+                            .map(PropertyType::from_json)
+                            .collect::<Result<Vec<_>>>()
+                    })
+            })
+            .unwrap_or_else(|| Ok(Vec::new()))?;
 
-        let properties = match get_array(v, "properties") {
-            Ok(props) => {
-                let mut properties = Vec::with_capacity(props.len());
-                for prop in props {
-                    properties.push(Property::from_json(prop)?);
-                }
-                properties
-            },
-            Err(_) => vec![],
-        };
+        let properties = obj.get("properties")
+            .map(|v| {
+                v.as_array()
+                    .ok_or_else(|| ErrorKind::InvalidSchema("expected array for 'properties'".into()).into())
+                    .and_then(|array| {
+                        array.into_iter()
+                            .map(Property::from_json)
+                            .collect::<Result<Vec<_>>>()
+                    })
+            })
+            .unwrap_or_else(|| Ok(Vec::new()))?;
 
-        let mapping = match *get(v, "mapping")? {
-            // Value::String(ref s) => vec![Mapping::Direct(vec![s.to_owned()])],
-            Value::Array(ref a) => a.iter().map(Mapping::from_json).collect::<Result<Vec<_>>>()?,
-            _ => bail!(ErrorKind::InvalidSchema("mapping must be an array".into())),
-        };
+        let mapping = obj.get("mapping")
+            .map(|v| {
+                v.as_array()
+                    .ok_or_else(|| ErrorKind::InvalidSchema("expected array for 'mapping'".into()).into())
+                    .and_then(|array| {
+                        array.into_iter()
+                            .map(Mapping::from_json)
+                            .collect::<Result<Vec<_>>>()
+                    })
+            })
+            .unwrap_or_else(|| Ok(Vec::new()))?;
 
         Ok(PropertyDefinition {
             types: types,

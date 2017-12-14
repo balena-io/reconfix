@@ -51,7 +51,9 @@ impl<'a> Plugin for &'a mut CallbackPlugin {
 
     fn write(self, file: FileNode, data: Vec<u8>) -> Result<(), Box<error::Error + Send>> {
         debug!("js plugin write invoked");
-        self.writer.write(file, data).map_err(handle_error)
+        let result = self.writer.write(file, data).map_err(handle_error);
+        debug!("js plugin write finished");
+        result
     }
 }
 
@@ -70,7 +72,7 @@ fn render_error<'a, S: Scope<'a>, T>(_: &mut S, err: &::std::error::Error) -> Vm
 
     let mut e = err;
     while let Some(next) = e.cause() {
-        writeln!(&mut buf, "Caused by: {}", e).expect("unable to serialize error cause");
+        writeln!(&mut buf, "Caused by: {}", next).expect("unable to serialize error cause");
         e = next;
     }
 
@@ -167,10 +169,14 @@ impl Task for WriteTask {
     type JsEvent = JsValue;
 
     fn perform(&mut self) -> Result<Self::Output, Self::Error> {
-        self.reconfix.write_values_plugin(self.data.clone(), &mut self.plugin)
+        debug!("beginning background write task");
+        let result = self.reconfix.write_values_plugin(self.data.clone(), &mut self.plugin);
+        debug!("background write task complete");
+        result
     }
 
     fn complete<'a, T: Scope<'a>>(self, scope: &'a mut T, result: Result<Self::Output, Self::Error>) -> JsResult<Self::JsEvent> {
+        debug!("write task completed");
         result.or_else(|e| to_managed_error(scope, e))?;
 
         Ok(JsUndefined::new().upcast())
@@ -214,6 +220,8 @@ declare_types! {
         }
 
         method loadSchema(call) {
+            debug!("loading schema...");
+
             let scope = call.scope;
             let schema = call.arguments.require(scope, 0)?.check::<JsString>()?;
             let data = schema.value();

@@ -4,11 +4,12 @@ const stream = require('stream');
 class BufferStream extends stream.Duplex {
     constructor(options) {
         super(options);
-        this.inner = new native.BufferStream();
+        this.inner = options.inner;
     }
 
     _read(size) {
-        this.inner.read(size, this.push);
+        let result = this.inner.read(size);
+        this.push(result);
     }
 
     _write(chunk, encoding, callback) {
@@ -21,7 +22,9 @@ class Reconfix {
         this._inner = new native.Reconfix(
             (partition, path, callback) => {
                 options.read(partition, path, (err, stream) => {
-                    let buffer = new BufferStream();
+                    let buffer = new BufferStream({ 
+                        inner: new native.BufferStream() 
+                    });
                     stream.on('error', (err) => {
                         callback(err);
                     });
@@ -33,13 +36,11 @@ class Reconfix {
             },
             (partition, path, data, callback) => {
                 options.write(partition, path, (err, stream) => {
-                    stream.on('error', (err) => {
-                        callback(err);
-                    });
-                    stream.on('finish', () => {
-                        callback();
-                    });
-                    data.pipe(stream);
+                    stream.on('error', callback);
+                    stream.on('finish', () => callback(null));
+
+                    let buffer = new BufferStream({ inner: data });
+                    buffer.pipe(stream);
                 })
             }
         );
@@ -54,7 +55,7 @@ class Reconfix {
     }
 
     writeValues(json, callback) {
-        this._inner.callback(callback);
+        this._inner.writeValues(json, callback);
     }
 }
 

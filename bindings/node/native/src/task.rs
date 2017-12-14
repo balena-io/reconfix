@@ -33,9 +33,9 @@ impl ReadHandle {
     pub fn read(&mut self, file: FileNode) -> Result<Vec<u8>, Option<ErrorWrapper>> {
         debug!("sending read signal");
         self.tx.send(file).map_err(|_| None)?;
-        debug!("waiting for result signal");
+        debug!("waiting for read result signal");
         let result = self.rx.recv().map_err(|_| None)?;
-        debug!("result signal received");
+        debug!("read result signal received");
         result.map_err(Some)
     }
 }
@@ -118,8 +118,11 @@ impl WriteHandle {
     }
 
     pub fn write(&mut self, file: FileNode, data: Vec<u8>) -> Result<(), Option<ErrorWrapper>> {
+        debug!("sending write signal");
         self.tx.send((file, data)).map_err(|_| None)?;
+        debug!("waiting for write result signal");
         let result = self.rx.recv().map_err(|_| None)?;
+        debug!("write result signal received");
         result.map_err(Some)
     }
 }
@@ -136,9 +139,9 @@ impl Task for WriteTask {
     type JsEvent = JsValue;
 
     fn perform(&mut self) -> Result<Self::Output, Self::Error> {
-        let value = self.rx.recv()
-            .map_err(|_| ())?;
-
+        debug!("waiting for write dispatcher signal");
+        let value = self.rx.recv().map_err(|_| ())?;
+        debug!("write dispatcher signal received");
         Ok(value)
     }
 
@@ -151,11 +154,14 @@ impl Task for WriteTask {
 
         let sender = self.tx.clone();
         let continuation = JsFunction::new(scope, Box::new(move |call| {
+            debug!("write continuation invoked");
             let error = call.arguments.require(call.scope, 0)?;
             if !error.is_a::<JsUndefined>() && !error.is_a::<JsNull>() {
+                debug!("received error value in write continuation");
                 return send(&sender, Err(ErrorWrapper::new(error)));
             }
 
+            debug!("sending write completion signal");
             send(&sender, Ok(()))
         }))?;
 
@@ -174,6 +180,7 @@ impl Task for WriteTask {
         let func = continuation.upcast();
         let args = vec![partition, path, data, func];
 
+        debug!("invoking write dispatcher callback");
         callback.call(scope, JsUndefined::new(), args)?;
 
         let sender = self.tx.clone();

@@ -124,9 +124,7 @@ const schema = {
       type: 'ini',
       location: {
         path: 'config.txt',
-        partition: {
-          primary: 1
-        }
+        partition: 1
       }
     },
     network_config: {
@@ -140,10 +138,7 @@ const schema = {
       type: 'json',
       location: {
         path: 'config.json',
-        partition: {
-          primary: 4,
-          logical: 1
-        }
+        partition: 5
       }
     }
   }

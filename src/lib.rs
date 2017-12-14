@@ -14,19 +14,15 @@ mod io;
 #[cfg(test)]
 mod test;
 
-#[macro_use]
-extern crate error_chain;
+#[macro_use] extern crate log;
+#[macro_use] extern crate error_chain;
 extern crate futures;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate maplit;
-#[macro_use]
-extern crate nom;
-extern crate regex;
+#[macro_use] extern crate nom;
 extern crate serde;
-#[macro_use]
-extern crate serde_json;
+#[macro_use] extern crate serde_json;
+extern crate regex;
+#[macro_use] extern crate lazy_static;
+#[macro_use] extern crate maplit;
 
 mod error {
     error_chain! {
@@ -93,12 +89,22 @@ impl Reconfix {
     pub fn load_schema<R>(&mut self, r: R) -> Result<()> 
         where R: std::io::Read
     {
-        let schema_json: Value = from_reader(r).chain_err(
-            || "unable to read schema file",
-        )?;
+        debug!("reading JSON...");
 
+        let schema_json: Value = from_reader(r)
+            .map_err(|e| {
+                error!("failed to read JSON: {}", e);
+                e
+            })
+            .chain_err(|| "unable to read schema file")?;
+
+        debug!("parsing schema structure...");
 
         let schema = Schema::from_json(&schema_json)
+            .map_err(|e| {
+                error!("failed to parse schema: {}", e);
+                e
+            })
             .chain_err(|| "unable to parse schema json")?;
         
         self.schema = Some(schema);

@@ -44,15 +44,17 @@ impl Task for ChunkTask {
     }
 
     fn complete<'a, S: Scope<'a>>(self, scope: &'a mut S, _: Result<Self::Output, Self::Error>) -> JsResult<Self::JsEvent> {
-        if self.chunk.len() == 0 {
-            return Ok(JsNull::new().upcast())
-        }
+        // if self.chunk.len() == 0 {
+        //     debug!("interpreting empty chunk as end");
+        //     return Ok(JsNull::new().upcast())
+        // }
 
         let mut chunk = JsBuffer::new(scope, self.chunk.len() as u32)?;
         chunk.grab(|mut inner| {
             inner.as_mut_slice().clone_from_slice(self.chunk.as_slice());
         });
 
+        debug!("returning copied data");
         Ok(chunk.upcast())
     }
 }
@@ -72,18 +74,29 @@ declare_types! {
         method read(call) {
             let scope = call.scope;
             let size = call.arguments.require(scope, 0)?.check::<JsNumber>()?.value() as usize;
-            let push = call.arguments.require(scope, 1)?.check::<JsFunction>()?;
+            //let push = call.arguments.require(scope, 1)?.check::<JsFunction>()?;
 
             let tmp_buf = call.arguments.this(scope).grab(move |inner| {
                 let to_drain = cmp::min(inner.buf.len(), size);
-                let unread: Vec<u8> = inner.buf.drain(..to_drain).collect();
-                let read = mem::replace(&mut inner.buf, unread);
-                read
+                if (to_drain == 0) {
+                    return None;
+                }
+
+                debug!("draining {} bytes from buffer", to_drain);
+                let read: Vec<u8> = inner.buf.drain(..to_drain).collect();
+                Some(read)
             });
 
-            ChunkTask::new(tmp_buf).schedule(push); 
+            tmp_buf.map(|buffer| {
+                let mut chunk = JsBuffer::new(scope, buffer.len() as u32)?;
+                chunk.grab(|mut inner| {
+                    inner.as_mut_slice().clone_from_slice(buffer.as_slice());
+                });
+                Ok(chunk.upcast())
+            }).unwrap_or_else(|| Ok(JsNull::new().upcast()))
 
-            Ok(JsUndefined::new().upcast())
+            //debug!("scheduling buffer read callback");
+            //ChunkTask::new(tmp_buf).schedule(push);
         }
 
         method write(call) {

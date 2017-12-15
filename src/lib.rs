@@ -76,15 +76,6 @@ impl Reconfix {
         }
     }
 
-    /// Initialize reconfix from plugin
-    // pub fn from_plugin(p: Box<Plugin>) -> Self
-    // {
-    //     Reconfix { 
-    //         plugin: p,
-    //         schema: None,
-    //     }
-    // }
-
     /// Load the schema from the specified `Read` implementation.
     pub fn load_schema<R>(&mut self, r: R) -> Result<()> 
         where R: std::io::Read
@@ -183,13 +174,6 @@ fn read_values<P: Plugin + DerefMut>(schema: Schema, mut plugin: P) -> Result<Va
     entries.wait()
 }
 
-// fn read_single<P: Plugin>(format: &FileFormat, node: &FileNode, plugin: &mut P) -> Result<Value> {
-//     let content = plugin.open(node)
-//                 .map_err(|e| Error::with_boxed_chain(e, ErrorKind::Plugin))?;
-
-//     deserialize(content, format)
-// }
-
 fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P) -> Result<()> 
     where for<'a> &'a mut <P as Deref>::Target: Plugin
 {
@@ -223,12 +207,3 @@ fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P)
 
     future.wait()
 }
-
-// fn write_single<P: Plugin>(wet: Value, format: &FileFormat, node: &FileNode, plugin: &mut P) -> Result<()> {
-//     plugin.open(node).map_err(|e| {
-//         Error::with_boxed_chain(e, ErrorKind::Plugin)
-//     })
-//     .and_then(move |content| {
-//         serialize(wet, format, content)
-//     })
-// }

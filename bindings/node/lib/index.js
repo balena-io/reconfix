@@ -13,7 +13,8 @@ class BufferStream extends stream.Duplex {
     }
 
     _write(chunk, encoding, callback) {
-        this.inner.write(chunk, encoding, callback);
+        this.inner.write(chunk, encoding);
+        callback(null);
     }
 }
 

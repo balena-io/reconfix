@@ -332,6 +332,7 @@ pub struct PropertyDefinition {
     pub types: Vec<PropertyType>,
     pub properties: Vec<Property>,
     pub mapping: Vec<Mapping>,
+    pub optional: bool,
 }
 
 impl PropertyDefinition {
@@ -372,11 +373,18 @@ impl PropertyDefinition {
                     })
             })
             .unwrap_or_else(|| Ok(Vec::new()))?;
+        
+        let optional = obj.get("optional")
+            .map(|v| v.as_bool()
+                .ok_or_else(|| ErrorKind::InvalidSchema("expected bool for 'optional'".into()).into()) as Result<bool>
+            )
+            .unwrap_or_else(|| Ok(false))?;
 
         Ok(PropertyDefinition {
             types: types,
             properties: properties,
             mapping: mapping,
+            optional: optional,
         })
     }
 }

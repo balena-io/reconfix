@@ -78,8 +78,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
     for mapping in mappings {
         let value = match mapping {
             &Mapping::Direct(ref ptr) => {
-                let value = follow_pointer(wet, &ptr).ok_or("direct mapping not found")?;
-                Some(value)
+                follow_pointer(wet, &ptr)
             },
             &Mapping::Template {
                 ref value,
@@ -121,17 +120,20 @@ fn valid_type(def: &PropertyDefinition, val: &Value) -> bool {
 fn generate_dry_property(dry: &mut JsObject, wet: &Value, props: &[Property]) -> Result<()> {
     for prop in props.iter() {
         for (name, def) in prop.definition.iter() {
-            let value = extract_value(wet, &def.mapping)?;
+            if !def.mapping.is_empty() {
+                let value = extract_value(wet, &def.mapping)?;
 
-            if let Some(val) = value {
-                if !valid_type(def, &val) {
-                    return Err("selected value is not a valid type".into());
+                if let Some(val) = value {
+                    if !valid_type(def, &val) {
+                        return Err("selected value is not a valid type".into());
+                    }
+
+                    dry.insert(name.clone(), val.clone());
+                } else if !def.optional {
+                    return Err(format!("no valid mapping found for required property '{}'", name).into());
                 }
-
-                dry.insert(name.clone(), val.clone());
-            } else {
-                //TODO: generate a warning?
             }
+            
 
             if let &mut Value::Object(ref mut inner) =
                 dry.entry(name.as_ref()).or_insert(json!({}))

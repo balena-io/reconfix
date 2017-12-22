@@ -1,5 +1,7 @@
+
 const native = require('../native');
 const stream = require('stream');
+const Promise = require('bluebird');
 
 class BufferStream extends stream.Duplex {
     constructor(options) {
@@ -18,45 +20,59 @@ class BufferStream extends stream.Duplex {
     }
 }
 
+function bufferRead(stream) {
+    return new Promise((resolve, reject) => {
+        let buffer = new BufferStream({ 
+            inner: new native.BufferStream() 
+        });
+        stream.on('error', reject);
+        stream.on('end', () => resolve(buffer.inner));
+
+        stream.pipe(buffer);
+    });
+}
+
+function bufferWrite(data, stream) {
+    return new Promise((resolve, reject) => {
+        stream.on('error', reject);
+        stream.on('finish', () => resolve());
+
+        let buffer = new BufferStream({ inner: data });
+        buffer.pipe(stream);
+    })
+}
+
 class Reconfix {
     constructor(options) {
+        let readAsync = Promise.promisify(options.read);
+        let writeAsync = Promise.promisify(options.write);
         this._inner = new native.Reconfix(
             (partition, path, callback) => {
-                options.read(partition, path, (err, stream) => {
-                    let buffer = new BufferStream({ 
-                        inner: new native.BufferStream() 
-                    });
-                    stream.on('error', (err) => {
-                        callback(err);
-                    });
-                    stream.on('end', () => {
-                        callback(null, buffer.inner);
-                    });
-                    stream.pipe(buffer);
-                });
+                readAsync(partition, path).then((disposer) => {
+                    return Promise.using(disposer, bufferRead);
+                }).asCallback(callback);
             },
             (partition, path, data, callback) => {
-                options.write(partition, path, (err, stream) => {
-                    stream.on('error', callback);
-                    stream.on('finish', () => callback(null));
-
-                    let buffer = new BufferStream({ inner: data });
-                    buffer.pipe(stream);
-                })
+                writeAsync(partition, path).then((disposer) => {
+                    return Promise.using(disposer, (stream) => bufferWrite(data, stream));
+                }).asCallback(callback);
             }
         );
+        this._readValues = Promise.promisify(this._inner.readValues);
+        this._writeValues= Promise.promisify(this._inner.writeValues);
     }
 
     loadSchema(json) {
-        return this._inner.loadSchema(json);
+        let input = JSON.stringify(json);
+        return this._inner.loadSchema(input);
     }
 
-    readValues(callback) {
-        this._inner.readValues(callback);
+    readValues() {
+        return this._readValues();
     }
 
     writeValues(json, callback) {
-        this._inner.writeValues(json, callback);
+        return this._writeValues(json);
     }
 }
 

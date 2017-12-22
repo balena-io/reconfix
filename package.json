@@ -6,7 +6,8 @@
   "author": "Aaron Brodersen <aaron@resin.io>",
   "license": "MIT",
   "dependencies": {
-    "neon-cli": "^0.1.20"
+    "neon-cli": "^0.1.20",
+    "bluebird": "^3.5.1"
   },
   "scripts": {
     "install": "neon clean --path bindings/node && neon build --path bindings/node"

@@ -202,8 +202,8 @@ declare_types! {
         init(call) {
             use std::error::Error;
 
-            if let Err(e) = env_logger::init() {
-                return jserror::JsError::throw(jserror::Kind::Error, e.description());
+            if let Err(_) = env_logger::init() {
+                warn!("ignoring duplicate set_logger");
             }
 
             let scope = call.scope;

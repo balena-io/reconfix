@@ -68,11 +68,11 @@ class Reconfix {
     }
 
     readValues() {
-        return this._readValues();
+        return this._readValues.bind(this._inner)();
     }
 
     writeValues(json, callback) {
-        return this._writeValues(json);
+        return this._writeValues.bind(this._inner)(json);
     }
 }
 

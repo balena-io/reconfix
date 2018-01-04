@@ -23,13 +23,13 @@ matrix:
         - os: osx
 
 install:
-    - (cargo install rustfmt || true)
+    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo install rustfmt) || true)
     - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo install clippy) || true)
     - (cargo install cargo-travis || true)
     - export PATH=$PATH:$HOME/.cargo/bin
 script:
     - cargo clean
-    - cargo fmt -- --write-mode=diff
+    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo fmt -- --write-mode=diff) || true)
     - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo clippy) || true)
     - cargo build --verbose
 after_success:

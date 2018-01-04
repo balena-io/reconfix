@@ -6,10 +6,11 @@ dependencies:
   override:
     - curl https://sh.rustup.rs -sSf | sh -s -- -y
     - rustup update stable
+    - rustup update nightly
     - rm ~/.gitconfig
-    - cargo install rustfmt
+    - cargo +nightly install rustfmt-nightly
 test:
   override:
     - cargo clean
-    - cargo fmt -- --write-mode=diff
+    - cargo +nightly fmt -- --write-mode=diff
     - cargo test --color=never --verbose

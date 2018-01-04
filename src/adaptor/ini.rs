@@ -1,4 +1,3 @@
-
 use std::cmp::Ordering;
 use std::io::{Read, Write};
 use std::str;
@@ -23,7 +22,6 @@ enum Property {
 /// The `Pair` struct is used to represent a key and either a section or value.
 #[derive(Eq, PartialEq, Debug)]
 struct Pair(String, Property);
-
 
 /// This ordering is used to correctly sort sections before serialization.
 impl Ord for Pair {
@@ -148,9 +146,8 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
 fn insert_section(root: &mut Map<String, Value>, section_name: &str, pairs: Vec<(&str, &str)>) {
     // recursively query the object using the split section name
     let mut insert_map = section_name.split('.').fold(root, |map, key| {
-        let entry = map.entry(key.trim()).or_insert_with(
-            || Value::Object(Map::new()),
-        );
+        let entry = map.entry(key.trim())
+            .or_insert_with(|| Value::Object(Map::new()));
         match *entry {
             Value::Object(ref mut sub) => sub,
             _ => panic!("name collision"),
@@ -227,9 +224,8 @@ where
     }
 
     // chain names together for subsections
-    let parent_name = name.map(|x| x.to_string() + ".").unwrap_or_else(
-        || "".to_string(),
-    );
+    let parent_name = name.map(|x| x.to_string() + ".")
+        .unwrap_or_else(|| "".to_string());
 
     for Pair(mut key, value) in data {
         match value {
@@ -248,17 +244,18 @@ where
 }
 
 /// Parses the section name from the `[header]`
-named!(section_name<&str>, map_res!(
-    delimited!(
-        char!('['),
-        is_not!("]"),
-        char!(']')
-    ),
-    str::from_utf8
-));
+named!(
+    section_name<&str>,
+    map_res!(
+        delimited!(char!('['), is_not!("]"), char!(']')),
+        str::from_utf8
+    )
+);
 
 /// Parses a `# comment` value
-named!(comment, delimited!(
+named!(
+    comment,
+    delimited!(
         tag!(b"#"),
         take_while!(call!(|c| c != b'\n')),
         opt!(complete!(tag!("\n")))
@@ -266,11 +263,9 @@ named!(comment, delimited!(
 );
 
 /// Parses and swallows any whitespace or comments
-named!(blanks,
-    map!(
-        many0!(alt!(comment | multispace)),
-        |_| { &b""[..] }
-    )
+named!(
+    blanks,
+    map!(many0!(alt!(comment | multispace)), |_| &b""[..])
 );
 
 /// Parses a `key = value` pair and returns a tuple
@@ -347,7 +342,10 @@ mod tests {
 
     #[test]
     fn infer_type_number_decimal() {
-        assert_eq!(infer_type("12.34"), Value::Number(Number::from_f64(12.34).unwrap()));
+        assert_eq!(
+            infer_type("12.34"),
+            Value::Number(Number::from_f64(12.34).unwrap())
+        );
     }
 
     #[test]
@@ -361,7 +359,6 @@ mod tests {
         let mut sections = Map::new();
         sections.insert("section".to_string(), Value::Object(pairs));
         assert_eq!(value, Value::Object(sections));
-
     }
 
     #[test]
@@ -468,9 +465,9 @@ mod tests {
         pairs.insert(
             "key".to_string(),
             Value::Array(vec![
-            Value::String("value1".to_string()),
-            Value::String("value2".to_string()),
-        ]),
+                Value::String("value1".to_string()),
+                Value::String("value2".to_string()),
+            ]),
         );
 
         let mut section = Map::new();
@@ -566,7 +563,6 @@ key2 = value2\n"[..];
         assert_eq!(buffer, expected);
     }
 
-
     fn print_output<T: Debug>(res: &IResult<&[u8], T>) {
         match *res {
             IResult::Done(ref i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
@@ -660,10 +656,7 @@ key2 = value2\n"[..];
 
         let res = key_value_group(ini);
         print_output(&res);
-        let expected = vec![
-            ("param1", "value1"),
-            ("param2", "value2"),
-        ];
+        let expected = vec![("param1", "value1"), ("param2", "value2")];
         assert_eq!(res, IResult::Done(&b""[..], expected));
     }
 
@@ -673,10 +666,7 @@ key2 = value2\n"[..];
 
         let res = key_value_group(ini);
         print_output(&res);
-        let expected = vec![
-            ("param1", "value1"),
-            ("param1", "value2"),
-        ];
+        let expected = vec![("param1", "value1"), ("param1", "value2")];
         assert_eq!(res, IResult::Done(&b""[..], expected));
     }
 
@@ -801,10 +791,7 @@ param2 = val2"[..];
 
         let res = ini_file(ini);
         print_output(&res);
-        let expected = vec![
-            ("param1", "val1"),
-            ("param2", "val2")
-        ];
+        let expected = vec![("param1", "val1"), ("param2", "val2")];
         assert_eq!(res, IResult::Done(&b""[..], (expected, vec![])));
     }
 
@@ -816,22 +803,13 @@ param2 = val2
 
 [section]
 param3 = val3
-param4 = val4"
-            [..];
+param4 = val4"[..];
 
         let res = ini_file(ini);
         print_output(&res);
-        let expected = vec![
-            ("param1", "val1"),
-            ("param2", "val2")
-        ];
+        let expected = vec![("param1", "val1"), ("param2", "val2")];
 
-        let sections = vec![
-            ("section", vec![
-                ("param3", "val3"),
-                ("param4", "val4"),
-            ])
-        ];
+        let sections = vec![("section", vec![("param3", "val3"), ("param4", "val4")])];
 
         assert_eq!(res, IResult::Done(&b""[..], (expected, sections)));
     }
@@ -845,10 +823,7 @@ param2 = val2"[..];
         let res = ini_file(ini);
         print_output(&res);
         let expected = vec![
-            ("parent.child", vec![
-                ("param1", "val1"),
-                ("param2", "val2"),
-            ])
+            ("parent.child", vec![("param1", "val1"), ("param2", "val2")]),
         ];
         assert_eq!(res, IResult::Done(&b""[..], (vec![], expected)));
     }

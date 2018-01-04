@@ -41,19 +41,15 @@ impl Schema {
     pub fn from_json(v: &Value) -> Result<Schema> {
         let mut files = BTreeMap::new();
         match v.as_object() {
-            Some(obj) => {
-                for (k, v) in obj {
-                    if !filename_is_valid(k) {
-                        bail!(InvalidSchema("filename invalid".into()))
-                    }
-                    files.insert(k.to_owned(), File::from_json(v)?);
+            Some(obj) => for (k, v) in obj {
+                if !filename_is_valid(k) {
+                    bail!(InvalidSchema("filename invalid".into()))
                 }
+                files.insert(k.to_owned(), File::from_json(v)?);
             },
             None => bail!(InvalidSchema("schema is not an object".into())),
         }
-        Ok(Schema {
-            files: files,
-        })
+        Ok(Schema { files: files })
     }
 }
 
@@ -109,21 +105,28 @@ fn get_i64(v: &Value, k: &str) -> Result<i64> {
 fn get_u64(v: &Value, k: &str) -> Result<u64> {
     match get(v, k)?.as_u64() {
         Some(v) => Ok(v),
-        None => bail!(InvalidSchema(format!("expected non-negative int for {}", k))),
+        None => bail!(InvalidSchema(format!(
+            "expected non-negative int for {}",
+            k
+        ))),
     }
 }
 
 fn expect_object<'a>(v: &'a Value) -> Result<&'a Map<String, Value>> {
     match v.as_object() {
         Some(o) => Ok(o),
-        None => bail!(InvalidSchema("expected object, found different kind of value".into())),
+        None => bail!(InvalidSchema(
+            "expected object, found different kind of value".into()
+        )),
     }
 }
 
 fn expect_string<'a>(v: &'a Value) -> Result<&'a str> {
     match v.as_str() {
         Some(s) => Ok(s),
-        None => bail!(InvalidSchema("expected string, found different kind of value".into())),
+        None => bail!(InvalidSchema(
+            "expected string, found different kind of value".into()
+        )),
     }
 }
 
@@ -178,7 +181,9 @@ impl Partition {
         let o = expect_object(v)?;
         let primary = get_u64(v, "primary")?;
         if primary > 4 {
-            bail!(InvalidSchema("primary partition number must be less than 4".into()))
+            bail!(InvalidSchema(
+                "primary partition number must be less than 4".into()
+            ))
         }
         let primary = primary as u8;
         if o.contains_key("logical") {
@@ -240,18 +245,8 @@ impl Location {
 impl Ord for Location {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
-            (&Location::Independent {
-                 ..
-             },
-             &Location::Dependent {
-                 ..
-             }) => Ordering::Less,
-            (&Location::Dependent {
-                 ..
-             },
-             &Location::Independent {
-                 ..
-             }) => Ordering::Greater,
+            (&Location::Independent { .. }, &Location::Dependent { .. }) => Ordering::Less,
+            (&Location::Dependent { .. }, &Location::Independent { .. }) => Ordering::Greater,
             _ => Ordering::Equal,
         }
     }
@@ -299,11 +294,9 @@ impl PropertyType {
             "string" => PropertyType::String,
             "number" => PropertyType::Number,
             "boolean" => PropertyType::Boolean,
-            _ => {
-                bail!(
-                    InvalidSchema("property types must be either string, number, or boolean".into())
-                )
-            },
+            _ => bail!(InvalidSchema(
+                "property types must be either string, number, or boolean".into()
+            )),
         };
 
         Ok(prop_type)
@@ -344,12 +337,10 @@ impl Mapping {
             Value::String(ref s) => Mapping::Direct(s.to_owned()),
             Value::Object(ref obj) => {
                 let value = obj.get("value").ok_or(InvalidSchema(
-                    "template object must contain a value property"
-                        .into(),
+                    "template object must contain a value property".into(),
                 ))?;
                 let template = obj.get("template").ok_or(InvalidSchema(
-                    "template must contain a template property"
-                        .into(),
+                    "template must contain a template property".into(),
                 ))?;
                 Mapping::Template {
                     value: value.to_owned(),
@@ -391,7 +382,9 @@ impl PropertyDefinition {
 
         let mapping = match *get(v, "mapping")? {
             // Value::String(ref s) => vec![Mapping::Direct(vec![s.to_owned()])],
-            Value::Array(ref a) => a.iter().map(Mapping::from_json).collect::<Result<Vec<_>>>()?,
+            Value::Array(ref a) => a.iter()
+                .map(Mapping::from_json)
+                .collect::<Result<Vec<_>>>()?,
             _ => bail!(InvalidSchema("mapping must be an array".into())),
         };
 

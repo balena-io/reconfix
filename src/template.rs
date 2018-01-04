@@ -1,4 +1,3 @@
-
 use serde_json::Value;
 use serde_json::Value::*;
 
@@ -63,33 +62,24 @@ pub fn type_wildcards(s: &str) -> Option<Vec<Wildcard>> {
 ///    values match
 pub fn matches(data: &Value, pattern: &Value) -> bool {
     match *pattern {
-        String(ref s) => {
-            match type_wildcards(s) {
-                None => data == pattern,
-                Some(wildcards) => wildcards.iter().any(|v| v.matches(data)),
-            }
+        String(ref s) => match type_wildcards(s) {
+            None => data == pattern,
+            Some(wildcards) => wildcards.iter().any(|v| v.matches(data)),
         },
-        Array(ref a) => {
-            match data.as_array() {
-                Some(d) => {
-                    if a.len() == d.len() {
-                        a.iter().zip(d.iter()).all(|(a, b)| matches(a, b))
-                    } else {
-                        false
-                    }
-                },
-                None => false,
-            }
+        Array(ref a) => match data.as_array() {
+            Some(d) => {
+                if a.len() == d.len() {
+                    a.iter().zip(d.iter()).all(|(a, b)| matches(a, b))
+                } else {
+                    false
+                }
+            },
+            None => false,
         },
-        Object(ref o) => {
-            match data.as_object() {
-                Some(d) => {
-                    o.iter().all(|(k, pattern)| {
-                        d.get(k).map_or(false, |data| matches(data, pattern))
-                    })
-                },
-                None => false,
-            }
+        Object(ref o) => match data.as_object() {
+            Some(d) => o.iter()
+                .all(|(k, pattern)| d.get(k).map_or(false, |data| matches(data, pattern))),
+            None => false,
         },
         _ => data == pattern,
     }
@@ -99,11 +89,10 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
 ///
 /// The degree is the total number of fields in a value.
 pub fn degree(pattern: &Value) -> u64 {
-    1 +
-        match *pattern {
-            Object(ref o) => o.values().map(degree).sum(),
-            _ => 0,
-        }
+    1 + match *pattern {
+        Object(ref o) => o.values().map(degree).sum(),
+        _ => 0,
+    }
 }
 
 #[cfg(test)]

@@ -8,7 +8,7 @@ dependencies:
     - rustup update stable
     - rustup update nightly
     - rm ~/.gitconfig
-    - cargo +nightly install rustfmt-nightly
+    - cargo +nightly install --force rustfmt-nightly
 test:
   override:
     - cargo clean

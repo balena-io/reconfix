@@ -409,9 +409,10 @@ mod tests {
     {
         let lines = read_sections(data.as_bytes());
         let schema = lines[1].as_value().expect("Invalid JSON on line 2!");
-        let tree = lines[2].as_value().map(|x| x.clone()).expect(
-            "Invalid JSON on line 3!",
-        );
+        let tree = lines[2]
+            .as_value()
+            .map(|x| x.clone())
+            .expect("Invalid JSON on line 3!");
         let value = lines[3].as_value().map(|x| x.clone());
 
         let parsed = convert(schema);

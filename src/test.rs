@@ -1,4 +1,3 @@
-
 use std::io::{self, BufRead, BufReader};
 use std::cmp;
 
@@ -119,9 +118,9 @@ where
             x => Section::Comment(x.into()),
         }
     } else {
-        from_str::<Value>(&line).map(Section::Json).chain_err(
-            || "single-line json parse error",
-        )?
+        from_str::<Value>(&line)
+            .map(Section::Json)
+            .chain_err(|| "single-line json parse error")?
     };
 
     r.consume(line.len());

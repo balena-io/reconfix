@@ -1,4 +1,3 @@
-
 use std::collections::BTreeMap;
 
 use errors::*;
@@ -36,18 +35,17 @@ pub fn transform_to_dry(config: Vec<Entry>, schema: &Schema) -> Result<Value> {
 
     for (name, file) in ordered {
         let wet_content = match &file.location {
-            &Location::Independent {
-                ..
-            } => mapped.remove(name).ok_or("file not found")?,
+            &Location::Independent { .. } => mapped.remove(name).ok_or("file not found")?,
             &Location::Dependent {
                 ref parent,
                 ref location,
             } => {
                 let parent_wet_content = wet_cache.get(parent).ok_or("parent not found")?;
                 let value = follow_pointer(parent_wet_content, location.as_ref());
-                let inner_content = value.ok_or("value not found")?.as_str().ok_or(
-                    "value is not a string",
-                )?;
+                let inner_content = value
+                    .ok_or("value not found")?
+                    .as_str()
+                    .ok_or("value is not a string")?;
                 inner_content.to_string()
             },
         };
@@ -132,8 +130,7 @@ fn generate_dry_property(dry: &mut JsObject, wet: &Value, props: &[Property]) ->
                 //TODO: generate a warning?
             }
 
-            if let &mut Value::Object(ref mut inner) =
-                dry.entry(name.as_ref()).or_insert(json!({}))
+            if let &mut Value::Object(ref mut inner) = dry.entry(name.as_ref()).or_insert(json!({}))
             {
                 generate_dry_property(inner, wet, &def.properties)?;
             }
@@ -155,9 +152,7 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
         let wet = generate_wet_file(dry, &file.properties)?;
 
         match file.location {
-            Location::Independent {
-                ..
-            } => {
+            Location::Independent { .. } => {
                 files.insert(name.to_string(), (file.format.clone(), wet));
             },
             Location::Dependent {
@@ -175,11 +170,9 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
     let output = files
         .into_iter()
         .map(|(name, (format, wet))| {
-            serialize(wet, &format).map(|c| {
-                Entry {
-                    name: name.to_string(),
-                    content: c,
-                }
+            serialize(wet, &format).map(|c| Entry {
+                name: name.to_string(),
+                content: c,
             })
         })
         .collect::<Result<Vec<_>>>();
@@ -309,8 +302,7 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                 } else {
                                     Err(format!(
                                         "wildcard value '{}' does not match original value '{}'",
-                                        new_value,
-                                        old_value
+                                        new_value, old_value
                                     ))
                                 }
                             },
@@ -320,15 +312,13 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                 } else {
                                     Err(format!(
                                         "wildcard value '{}' does not match new value '{}'",
-                                        old_value,
-                                        new_value
+                                        old_value, new_value
                                     ))
                                 }
                             },
                             (None, None) => Err(format!(
                                 "cannot replace value '{}' with '{}'",
-                                old_value,
-                                new_value
+                                old_value, new_value
                             )),
                             (Some(new), Some(old)) => {
                                 if new.eq(&old) {
@@ -425,7 +415,6 @@ mod tests {
         let parsed = convert(schema);
         (parsed, tree, value)
     }
-
 
     mod transform {
         use super::*;
@@ -593,21 +582,21 @@ mod tests {
         );
     }
 
-
-
     #[test]
     fn dry_to_wet_simple_direct() {
         let dry = json!({ "dry": "value" });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "dry".into() => PropertyDefinition {
-                    types: vec![PropertyType::String],
-                    properties: vec![],
-                    mapping: vec![Mapping::Direct("/wet".into())],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "dry".into() => PropertyDefinition {
+                        types: vec![PropertyType::String],
+                        properties: vec![],
+                        mapping: vec![Mapping::Direct("/wet".into())],
+                    },
                 },
             },
-        }];
+        ];
 
         let expected = json!({ "wet": "value" });
 
@@ -619,25 +608,27 @@ mod tests {
     #[test]
     fn dry_to_wet_dry_heirarchy_direct() {
         let dry = json!({ "parent": { "dry": "value" } });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "parent".into() => PropertyDefinition {
-                    types: vec![],
-                    mapping: vec![],
-                    properties: vec![Property {
-                        when: None,
-                        definition: btreemap!{
-                            "dry".into() => PropertyDefinition {
-                                types: vec![PropertyType::String],
-                                mapping: vec![Mapping::Direct("/wet".into())],
-                                properties: vec![],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "parent".into() => PropertyDefinition {
+                        types: vec![],
+                        mapping: vec![],
+                        properties: vec![Property {
+                            when: None,
+                            definition: btreemap!{
+                                "dry".into() => PropertyDefinition {
+                                    types: vec![PropertyType::String],
+                                    mapping: vec![Mapping::Direct("/wet".into())],
+                                    properties: vec![],
+                                }
                             }
-                        }
-                    }],
+                        }],
+                    },
                 },
             },
-        }];
+        ];
 
         let expected = json!({ "wet": "value" });
 
@@ -649,16 +640,18 @@ mod tests {
     #[test]
     fn dry_to_wet_wet_heirarchy_direct() {
         let dry = json!({ "dry": "value" });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "dry".into() => PropertyDefinition {
-                    types: vec![PropertyType::String],
-                    properties: vec![],
-                    mapping: vec![Mapping::Direct("/parent/wet".into())],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "dry".into() => PropertyDefinition {
+                        types: vec![PropertyType::String],
+                        properties: vec![],
+                        mapping: vec![Mapping::Direct("/parent/wet".into())],
+                    },
                 },
             },
-        }];
+        ];
 
         let expected = json!({ "parent": { "wet": "value" } });
 
@@ -671,19 +664,21 @@ mod tests {
     fn dry_to_wet_simple_template() {
         let dry = json!({ "template": "yes" });
         let template = json!({"parent": { "key": "value" } });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "template".into() => PropertyDefinition {
-                    types: vec![PropertyType::String],
-                    properties: vec![],
-                    mapping: vec![Mapping::Template {
-                        value: json!("yes"),
-                        template: template.clone(),
-                    }],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "template".into() => PropertyDefinition {
+                        types: vec![PropertyType::String],
+                        properties: vec![],
+                        mapping: vec![Mapping::Template {
+                            value: json!("yes"),
+                            template: template.clone(),
+                        }],
+                    },
                 },
             },
-        }];
+        ];
 
         let result = generate_wet_file(dry.as_object().unwrap(), &props).unwrap();
 
@@ -698,8 +693,7 @@ mod tests {
     #[test]
     fn dry_to_wet_dependent_json() {
         let dry = json!({"key": "value" });
-        let files =
-            btreemap!{
+        let files = btreemap!{
             "independent".into() => File {
                 format: FileFormat::Json,
                 fileset: false,
@@ -729,9 +723,7 @@ mod tests {
             }
         };
 
-        let schema = Schema {
-            files: files,
-        };
+        let schema = Schema { files: files };
 
         let result = transform_to_wet(dry, &schema).unwrap().pop().unwrap();
         let expected = r##"{"parent":{"child":"{\"wet\":\"value\"}"}}"##;
@@ -742,16 +734,18 @@ mod tests {
     #[test]
     fn wet_to_dry_simple_direct() {
         let wet = json!({ "wet": "value" });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "dry".into() => PropertyDefinition {
-                    types: vec![PropertyType::String],
-                    properties: vec![],
-                    mapping: vec![Mapping::Direct("/wet".into())],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "dry".into() => PropertyDefinition {
+                        types: vec![PropertyType::String],
+                        properties: vec![],
+                        mapping: vec![Mapping::Direct("/wet".into())],
+                    },
                 },
             },
-        }];
+        ];
 
         let expected = json!({ "dry": "value" });
         let mut root = JsObject::new();
@@ -763,25 +757,27 @@ mod tests {
     #[test]
     fn wet_to_dry_dry_heirarchy_direct() {
         let wet = json!({ "wet": "value" });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "parent".into() => PropertyDefinition {
-                    types: vec![PropertyType::String],
-                    mapping: vec![],
-                    properties: vec![Property {
-                        when: None,
-                        definition: btreemap!{
-                            "dry".into() => PropertyDefinition {
-                                types: vec![PropertyType::String],
-                                mapping: vec![Mapping::Direct("/wet".into())],
-                                properties: vec![],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "parent".into() => PropertyDefinition {
+                        types: vec![PropertyType::String],
+                        mapping: vec![],
+                        properties: vec![Property {
+                            when: None,
+                            definition: btreemap!{
+                                "dry".into() => PropertyDefinition {
+                                    types: vec![PropertyType::String],
+                                    mapping: vec![Mapping::Direct("/wet".into())],
+                                    properties: vec![],
+                                }
                             }
-                        }
-                    }],
+                        }],
+                    },
                 },
             },
-        }];
+        ];
 
         let expected = json!({ "parent": { "dry": "value" } });
         let mut root = JsObject::new();
@@ -793,16 +789,18 @@ mod tests {
     #[test]
     fn wet_to_dry_wet_heirarchy_direct() {
         let wet = json!({ "parent": { "wet": "value" } });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "dry".into() => PropertyDefinition {
-                    types: vec![PropertyType::String],
-                    properties: vec![],
-                    mapping: vec![Mapping::Direct("/parent/wet".into())],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "dry".into() => PropertyDefinition {
+                        types: vec![PropertyType::String],
+                        properties: vec![],
+                        mapping: vec![Mapping::Direct("/parent/wet".into())],
+                    },
                 },
             },
-        }];
+        ];
 
         let expected = json!({ "dry": "value" });
         let mut root = JsObject::new();
@@ -814,19 +812,21 @@ mod tests {
     #[test]
     fn wet_to_dry_simple_template() {
         let template = json!({"parent": { "key": "value" } });
-        let props = vec![Property {
-            when: None,
-            definition: btreemap!{
-                "template".into() => PropertyDefinition {
-                    types: vec![PropertyType::String],
-                    properties: vec![],
-                    mapping: vec![Mapping::Template {
-                        value: json!("yes"),
-                        template: template.clone(),
-                    }],
+        let props = vec![
+            Property {
+                when: None,
+                definition: btreemap!{
+                    "template".into() => PropertyDefinition {
+                        types: vec![PropertyType::String],
+                        properties: vec![],
+                        mapping: vec![Mapping::Template {
+                            value: json!("yes"),
+                            template: template.clone(),
+                        }],
+                    },
                 },
             },
-        }];
+        ];
 
         let mut dry = JsObject::new();
         generate_dry_property(&mut dry, &template, &props).unwrap();
@@ -838,11 +838,10 @@ mod tests {
     #[test]
     fn wet_to_dry_dependent_json() {
         let inner = r##"{"child":{"wet":"value"}}"##;
-        let wet = json!({"parent": inner});
+        let wet = json!({ "parent": inner });
         let wet_content = to_string(&wet).unwrap();
 
-        let files =
-            btreemap!{
+        let files = btreemap!{
             "independent".into() => File {
                 format: FileFormat::Json,
                 fileset: false,
@@ -872,9 +871,7 @@ mod tests {
             },
         };
 
-        let schema = Schema {
-            files: files,
-        };
+        let schema = Schema { files: files };
         let entry = Entry {
             name: "independent".into(),
             content: wet_content,

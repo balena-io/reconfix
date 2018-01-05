@@ -12,15 +12,15 @@ mod transform;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
-extern crate nom;
-extern crate serde;
-#[macro_use]
-extern crate serde_json;
-extern crate regex;
-#[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate maplit;
+#[macro_use]
+extern crate nom;
+extern crate regex;
+extern crate serde;
+#[macro_use]
+extern crate serde_json;
 
 mod errors {
     error_chain! {

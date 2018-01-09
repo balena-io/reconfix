@@ -1,4 +1,4 @@
-no error if multiple agreeing templates
+# no error if multiple agreeing templates
 [{"value":1,"template":{"foo":1}},{"value":1, "template":{"foo":1}}]
 {"foo":1}
 1

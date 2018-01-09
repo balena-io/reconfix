@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 
 use errors::*;
 
-use serde_json::{from_reader, to_writer};
+use serde_json::{from_reader, to_writer, to_writer_pretty};
 use serde_json::Value;
 
 // #[derive(Debug, Eq, PartialEq)]
@@ -26,11 +26,13 @@ pub trait Adaptor<'a> {
     fn deserialize<R: Read>(&self, reader: R) -> Result<Value>;
 }
 
-pub struct JsonAdaptor {}
+pub struct JsonAdaptor {
+    pretty: bool,
+}
 
 impl JsonAdaptor {
-    pub fn new() -> JsonAdaptor {
-        JsonAdaptor {}
+    pub fn new(pretty: bool) -> JsonAdaptor {
+        JsonAdaptor { pretty: pretty }
     }
 }
 
@@ -46,6 +48,12 @@ impl<'a> Adaptor<'a> for JsonAdaptor {
     where
         W: Write,
     {
-        to_writer(writer, &value).chain_err(|| "unable to serialize JSON")
+        let result = if self.pretty {
+            to_writer_pretty(writer, &value)
+        } else {
+            to_writer(writer, &value)
+        };
+
+        result.chain_err(|| "unable to serialize JSON")
     }
 }

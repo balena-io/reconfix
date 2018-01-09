@@ -9,6 +9,9 @@ mod schema;
 mod template;
 mod transform;
 
+#[cfg(test)]
+mod test;
+
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
@@ -33,3 +36,4 @@ mod errors {
 
 pub use errors::*;
 pub use transform::*;
+pub use schema::*;

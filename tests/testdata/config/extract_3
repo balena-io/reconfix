@@ -1,4 +1,17 @@
-empty if everything is tainted
-[{"definition":{"bar":{"type":["number"],"mapping":["/xxx"]},"baz":{"type":["string"],"mapping":["/yyy","/zzz"]}}}]
+# empty if everything is tainted
+[
+    {
+        "definition":{
+            "bar":{
+                "type":["number"],
+                "mapping":["/xxx"]
+            },
+            "baz":{
+                "type":["string"],
+                "mapping":["/yyy","/zzz"]
+            }
+        }
+    }
+]
 {"xxx":"foo","yyy":"bar","zzz":"qux"}
 #error

@@ -1,4 +1,13 @@
-single simple mapping on single file
-[{"definition":{"bar":{"type":["number"],"mapping":["/baz"]}}}]
+# single simple mapping on single file
+[
+    {
+        "definition":{
+            "bar":{
+                "type":["number"],
+                "mapping":["/baz"]
+            }
+        }
+    }
+]
 {"bar":3}
 {"baz":3}

@@ -1,4 +1,4 @@
-ignore null mappings
+# ignore null mappings
 ["/foo"]
 null
 {}

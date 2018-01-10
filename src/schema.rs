@@ -51,13 +51,11 @@ impl Schema {
     pub fn from_json(v: &Value) -> Result<Schema> {
         let mut files = BTreeMap::new();
         match v.as_object() {
-            Some(obj) => {
-                for (k, v) in obj {
-                    if !filename_is_valid(k) {
-                        bail!(ErrorKind::InvalidSchema("filename invalid".into()))
-                    }
-                    files.insert(k.to_owned(), File::from_json(v)?);
+            Some(obj) => for (k, v) in obj {
+                if !filename_is_valid(k) {
+                    bail!(ErrorKind::InvalidSchema("filename invalid".into()))
                 }
+                files.insert(k.to_owned(), File::from_json(v)?);
             },
             None => bail!(ErrorKind::InvalidSchema("schema is not an object".into())),
         }
@@ -88,43 +86,48 @@ fn get<'a>(v: &'a Value, k: &str) -> Result<&'a Value> {
 fn get_array<'a>(v: &'a Value, k: &str) -> Result<&'a Vec<Value>> {
     match get(v, k)?.as_array() {
         Some(v) => Ok(v),
-        None => bail!(ErrorKind::InvalidSchema(format!("expected an array for key '{}'", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!(
+            "expected an array for key '{}'",
+            k
+        ))),
     }
 }
 
 fn get_i64(v: &Value, k: &str) -> Result<i64> {
     match get(v, k)?.as_i64() {
         Some(v) => Ok(v),
-        None => bail!(ErrorKind::InvalidSchema(format!("expected an int for key '{}'", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!(
+            "expected an int for key '{}'",
+            k
+        ))),
     }
 }
 
 fn get_u64(v: &Value, k: &str) -> Result<u64> {
     match get(v, k)?.as_u64() {
         Some(v) => Ok(v),
-        None => bail!(ErrorKind::InvalidSchema(format!("expected non-negative int for {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!(
+            "expected non-negative int for {}",
+            k
+        ))),
     }
 }
 
 fn expect_object<'a>(v: &'a Value) -> Result<&'a Map<String, Value>> {
     match v.as_object() {
         Some(o) => Ok(o),
-        None => {
-            bail!(ErrorKind::InvalidSchema(
-                "expected object, found different kind of value".into(),
-            ))
-        },
+        None => bail!(ErrorKind::InvalidSchema(
+            "expected object, found different kind of value".into(),
+        )),
     }
 }
 
 fn expect_string<'a>(v: &'a Value) -> Result<&'a str> {
     match v.as_str() {
         Some(s) => Ok(s),
-        None => {
-            bail!(ErrorKind::InvalidSchema(
-                "expected string, found different kind of value".into(),
-            ))
-        },
+        None => bail!(ErrorKind::InvalidSchema(
+            "expected string, found different kind of value".into(),
+        )),
     }
 }
 
@@ -135,15 +138,17 @@ fn get_object<'a>(v: &'a Value, k: &str) -> Result<&'a Map<String, Value>> {
 fn get_string<'a>(v: &'a Value, k: &str) -> Result<&'a str> {
     match get(v, k)?.as_str() {
         Some(s) => Ok(s),
-        None => bail!(ErrorKind::InvalidSchema(format!("expected a string for {}", k))),
+        None => bail!(ErrorKind::InvalidSchema(format!(
+            "expected a string for {}",
+            k
+        ))),
     }
 }
 impl File {
     pub fn from_json(v: &Value) -> Result<File> {
         expect_object(v)?;
-        let format = FileFormat::from_str(get_string(v, "type")?).chain_err(|| {
-            ErrorKind::InvalidSchema("invalid file format".into())
-        })?;
+        let format = FileFormat::from_str(get_string(v, "type")?)
+            .chain_err(|| ErrorKind::InvalidSchema("invalid file format".into()))?;
         let fileset = v.get("fileset").and_then(Value::as_bool).unwrap_or(false);
         let location = Location::from_json(get(v, "location")?)?;
         let json_properties = get_array(v, "properties")?;
@@ -192,7 +197,7 @@ impl Location {
                     parent: expect_string(p)?.to_owned(),
                     location: expect_string(json_path)?.to_owned(),
                 })
-            },
+            }
             None => {
                 let json_path = get_array(v, "path")?;
                 let mut path = Vec::with_capacity(json_path.len());
@@ -204,7 +209,7 @@ impl Location {
                     path: path,
                     partition: partition,
                 }))
-            },
+            }
         }
     }
 }
@@ -262,11 +267,9 @@ impl PropertyType {
             "string" => PropertyType::String,
             "number" => PropertyType::Number,
             "boolean" => PropertyType::Boolean,
-            _ => {
-                bail!(ErrorKind::InvalidSchema(
-                    "property types must be either string, number, or boolean".into(),
-                ))
-            },
+            _ => bail!(ErrorKind::InvalidSchema(
+                "property types must be either string, number, or boolean".into(),
+            )),
         };
 
         Ok(prop_type)
@@ -307,19 +310,19 @@ impl Mapping {
             Value::String(ref s) => Mapping::Direct(s.to_owned()),
             Value::Object(ref obj) => {
                 let value = obj.get("value").ok_or(ErrorKind::InvalidSchema(
-                    "template object must contain a value property"
-                        .into(),
+                    "template object must contain a value property".into(),
                 ))?;
                 let template = obj.get("template").ok_or(ErrorKind::InvalidSchema(
-                    "template must contain a template property"
-                        .into(),
+                    "template must contain a template property".into(),
                 ))?;
                 Mapping::Template {
                     value: value.to_owned(),
                     template: template.to_owned(),
                 }
-            },
-            _ => bail!(ErrorKind::InvalidSchema("mapping must be a string or object".into())),
+            }
+            _ => bail!(ErrorKind::InvalidSchema(
+                "mapping must be a string or object".into()
+            )),
         };
 
         Ok(mapping)
@@ -341,9 +344,12 @@ impl PropertyDefinition {
         let types = obj.get("type")
             .map(|v| {
                 v.as_array()
-                    .ok_or_else(|| ErrorKind::InvalidSchema("expected array for 'type'".into()).into())
+                    .ok_or_else(|| {
+                        ErrorKind::InvalidSchema("expected array for 'type'".into()).into()
+                    })
                     .and_then(|array| {
-                        array.into_iter()
+                        array
+                            .into_iter()
                             .map(PropertyType::from_json)
                             .collect::<Result<Vec<_>>>()
                     })
@@ -353,9 +359,12 @@ impl PropertyDefinition {
         let properties = obj.get("properties")
             .map(|v| {
                 v.as_array()
-                    .ok_or_else(|| ErrorKind::InvalidSchema("expected array for 'properties'".into()).into())
+                    .ok_or_else(|| {
+                        ErrorKind::InvalidSchema("expected array for 'properties'".into()).into()
+                    })
                     .and_then(|array| {
-                        array.into_iter()
+                        array
+                            .into_iter()
                             .map(Property::from_json)
                             .collect::<Result<Vec<_>>>()
                     })
@@ -365,19 +374,24 @@ impl PropertyDefinition {
         let mapping = obj.get("mapping")
             .map(|v| {
                 v.as_array()
-                    .ok_or_else(|| ErrorKind::InvalidSchema("expected array for 'mapping'".into()).into())
+                    .ok_or_else(|| {
+                        ErrorKind::InvalidSchema("expected array for 'mapping'".into()).into()
+                    })
                     .and_then(|array| {
-                        array.into_iter()
+                        array
+                            .into_iter()
                             .map(Mapping::from_json)
                             .collect::<Result<Vec<_>>>()
                     })
             })
             .unwrap_or_else(|| Ok(Vec::new()))?;
-        
+
         let optional = obj.get("optional")
-            .map(|v| v.as_bool()
-                .ok_or_else(|| ErrorKind::InvalidSchema("expected bool for 'optional'".into()).into()) as Result<bool>
-            )
+            .map(|v| {
+                v.as_bool().ok_or_else(|| {
+                    ErrorKind::InvalidSchema("expected bool for 'optional'".into()).into()
+                }) as Result<bool>
+            })
             .unwrap_or_else(|| Ok(false))?;
 
         Ok(PropertyDefinition {

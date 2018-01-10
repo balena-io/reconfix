@@ -73,7 +73,7 @@ pub fn matches(data: &Value, pattern: &Value) -> bool {
                 } else {
                     false
                 }
-            },
+            }
             None => false,
         },
         Object(ref o) => match data.as_object() {

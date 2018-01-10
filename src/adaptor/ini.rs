@@ -59,7 +59,8 @@ impl<'a> Adaptor<'a> for IniAdaptor {
         R: Read,
     {
         let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)
+        reader
+            .read_to_end(&mut buffer)
             .map_err(|e| ErrorKind::Io(e.into()))?;
 
         // parse the basic INI structure
@@ -122,7 +123,7 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
     match map.entry(key) {
         Entry::Vacant(e) => {
             e.insert(value);
-        },
+        }
         Entry::Occupied(mut e) => {
             // we use a dummy value here so we can replace it with
             // the modified value later. If we remove the value,
@@ -132,13 +133,13 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
                 Value::Array(mut a) => {
                     a.push(value);
                     a
-                },
+                }
                 x => vec![x, value],
             };
 
             // add back the modified vector, droping the dummy value
             e.insert(Value::Array(modified));
-        },
+        }
     }
 }
 
@@ -181,7 +182,7 @@ fn emit_values(key: &str, value: &Value) -> Result<Vec<Pair>> {
         (Ok(x), _) => Ok(vec![x]),
         (_, &Value::Array(ref elems)) => {
             elems.iter().map(flatten_value).collect::<Result<Vec<_>>>()
-        },
+        }
         _ => Err("invalid value".into()),
     };
 
@@ -232,12 +233,12 @@ where
         match value {
             Property::Value(v) => {
                 writeln!(writer, "{} = {}", key, v).unwrap();
-            },
+            }
             Property::Section(s) => {
                 writeln!(writer, "").unwrap();
                 key.insert_str(0, &parent_name);
                 write_section(Some(&key), s, writer)?;
-            },
+            }
         };
     }
 

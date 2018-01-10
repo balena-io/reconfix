@@ -1,4 +1,3 @@
-
 use std::fs::File;
 use std::io::{Read, Write};
 
@@ -45,9 +44,9 @@ impl<'a> Plugin for &'a mut HostFile {
 // use std::fs::{self, DirEntry};
 // use std::str::FromStr;
 // use std::os::linux::fs::MetadataExt;
-// 
+//
 // use common::Partition;
-// 
+//
 // struct Device {
 //     pub name: String,
 //     pub major: u32,
@@ -70,12 +69,12 @@ impl<'a> Plugin for &'a mut HostFile {
 //         .chain_err(|| "unable to read block devices")?;
 
 //     let mut parents = Vec::new();
-    
+
 //     for dir in dirs {
 //         let next_dir = dir.chain_err(|| "unable to read next entry")?;
 //         let mut device = read_device(&next_dir)
 //             .chain_err(|| "unable to read device")?;
-        
+
 //         let subdirs = fs::read_dir(next_dir.path())
 //             .chain_err(|| "unable to read sub-devices")?;
 
@@ -105,7 +104,7 @@ impl<'a> Plugin for &'a mut HostFile {
 //         .and_then(|os| os.to_str())
 //         .ok_or_else(|| "invalid device dir")?
 //         .to_string();
-    
+
 //     let device = canonical.join("dev");
 //     let mut dev_file = File::open(&device)
 //         .chain_err(|| "unable to open device file")?;
@@ -119,21 +118,21 @@ impl<'a> Plugin for &'a mut HostFile {
 //         .and_then(|m| u32::from_str(m).chain_err(|| "invalid major number"))?;
 //     let minor = pair.get(1).ok_or_else(|| "missing minor number".into())
 //         .and_then(|m| u32::from_str(m).chain_err(|| "invalid minor number"))?;
-    
+
 //     let partition = canonical.join("partition");
 //     let parition_num = match partition.is_file() {
 //         false => None,
 //         true => {
 //             let mut part_file = File::open(&partition)
 //             .chain_err(|| "unable to open partition file")?;
-        
+
 //             let mut partition_str = String::new();
 //             part_file.read_to_string(&mut partition_str)
 //                 .chain_err(|| "unable to read partition data")?;
 
 //             let p = u8::from_str(&partition_str)
 //                 .chain_err(|| "unable to parse partition")?;
-            
+
 //             Some(Partition::new(p))
 //         }
 //     };

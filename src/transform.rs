@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use error::*;
 use schema::{File, Location, Mapping, Property, PropertyDefinition, Schema};
-use common::{serialize, deserialize};
+use common::{deserialize, serialize};
 use template::Wildcard;
 
 use serde_json::Value;
@@ -42,13 +42,14 @@ pub fn transform_to_dry(config: Vec<Entry>, schema: &Schema) -> Result<Value> {
             } => {
                 let parent_wet_content = wet_cache.get(parent).ok_or("parent not found")?;
                 let value = follow_pointer(parent_wet_content, location.as_ref());
-                let inner_content = value.ok_or("value not found")?.as_str().ok_or(
-                    "value is not a string",
-                )?;
+                let inner_content = value
+                    .ok_or("value not found")?
+                    .as_str()
+                    .ok_or("value is not a string")?;
 
                 let raw = inner_content.to_string();
                 deserialize(raw.as_bytes(), &file.format)?
-            },
+            }
         };
 
         generate_dry_property(&mut root, &wet_content, file.properties.as_slice())?;
@@ -74,9 +75,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
 
     for mapping in mappings {
         let value = match mapping {
-            &Mapping::Direct(ref ptr) => {
-                follow_pointer(wet, &ptr)
-            },
+            &Mapping::Direct(ref ptr) => follow_pointer(wet, &ptr),
             &Mapping::Template {
                 ref value,
                 ref template,
@@ -86,7 +85,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
                 } else {
                     None
                 }
-            },
+            }
         };
 
         let next = match (current, value) {
@@ -96,7 +95,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
                 } else {
                     return Err("found non-matching values".into());
                 }
-            },
+            }
             (Some(c), None) => Some(c),
             (None, Some(v)) => Some(v.clone()),
             _ => None,
@@ -127,10 +126,11 @@ fn generate_dry_property(dry: &mut JsObject, wet: &Value, props: &[Property]) ->
 
                     dry.insert(name.clone(), val.clone());
                 } else if !def.optional {
-                    return Err(format!("no valid mapping found for required property '{}'", name).into());
+                    return Err(
+                        format!("no valid mapping found for required property '{}'", name).into(),
+                    );
                 }
             }
-            
 
             if let &mut Value::Object(ref mut inner) = dry.entry(name.as_ref()).or_insert(json!({}))
             {
@@ -156,7 +156,7 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
         match file.location {
             Location::Independent { .. } => {
                 files.insert(name.to_string(), (file.format.clone(), wet));
-            },
+            }
             Location::Dependent {
                 ref parent,
                 ref location,
@@ -165,27 +165,23 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
                 serialize(wet, &file.format, false, &mut buffer)?;
                 let entry = files.get_mut(parent).ok_or("parent file not found")?;
                 let value = follow_pointer_mut(&mut entry.1, location);
-                let serialized = String::from_utf8(buffer).chain_err(
-                    || "invalid serializer output",
-                )?;
+                let serialized =
+                    String::from_utf8(buffer).chain_err(|| "invalid serializer output")?;
                 *value = Value::String(serialized);
-            },
+            }
         }
     }
 
     let output = files
         .into_iter()
-        .map(|(name, (format, wet))| {
-            Entry {
-                name: name.to_string(),
-                content: wet,
-            }
+        .map(|(name, (format, wet))| Entry {
+            name: name.to_string(),
+            content: wet,
         })
         .collect::<Vec<_>>();
 
     Ok(output)
 }
-
 
 /// Generate a wet JSON object.
 fn generate_wet_file(dry: &JsObject, props: &[Property]) -> Result<Value> {
@@ -213,7 +209,7 @@ fn follow_pointer<'a>(v: &'a Value, pointer: &str) -> Option<&'a Value> {
                 &Value::Object(ref obj) => obj.get(name),
                 _ => None, //TODO: return an error or warning?
             }
-        },
+        }
     })
 }
 
@@ -259,13 +255,13 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                 } else {
                     bail!("cannot insert template: key already has value")
                 }
-            },
+            }
             new_value => {
                 let new_wild = parse_wildcard(new_value);
                 match tree.entry(key.clone()) {
                     MapEntry::Vacant(v) => {
                         v.insert(new_value.clone());
-                    },
+                    }
                     MapEntry::Occupied(mut o) => {
                         let old_value = o.insert(Value::Bool(false));
                         let old_wild = parse_wildcard(&old_value);
@@ -279,7 +275,7 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                         new_value, old_value
                                     ))
                                 }
-                            },
+                            }
                             (None, Some(old)) => {
                                 if wildcard_matches(&old, new_value) {
                                     Ok(new_value.clone())
@@ -289,7 +285,7 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                         old_value, new_value
                                     ))
                                 }
-                            },
+                            }
                             (None, None) => Err(format!(
                                 "cannot replace value '{}' with '{}'",
                                 old_value, new_value
@@ -300,13 +296,13 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                 } else {
                                     Err("wildcard values do not match".into())
                                 }
-                            },
+                            }
                         };
 
                         o.insert(insert?);
-                    },
+                    }
                 }
-            },
+            }
         }
     }
 
@@ -324,7 +320,7 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
             &Mapping::Direct(ref ptr) => {
                 let value = follow_pointer_mut(wet, &ptr);
                 *value = dry.clone();
-            },
+            }
             &Mapping::Template {
                 ref value,
                 ref template,
@@ -337,7 +333,7 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
                         bail!("wet value must be an object");
                     }
                 }
-            },
+            }
         }
     }
 
@@ -820,7 +816,7 @@ mod tests {
     #[test]
     fn wet_to_dry_dependent_json() {
         let inner = r##"{"child":{"wet":"value"}}"##;
-        let wet = json!({"parent": inner});
+        let wet = json!({ "parent": inner });
 
         let files = btreemap!{
             "independent".into() => File {

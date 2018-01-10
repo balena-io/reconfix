@@ -14,15 +14,21 @@ mod io;
 #[cfg(test)]
 mod test;
 
-#[macro_use] extern crate log;
-#[macro_use] extern crate error_chain;
+#[macro_use]
+extern crate error_chain;
 extern crate futures;
-#[macro_use] extern crate nom;
-extern crate serde;
-#[macro_use] extern crate serde_json;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate maplit;
+#[macro_use]
+extern crate nom;
 extern crate regex;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate maplit;
+extern crate serde;
+#[macro_use]
+extern crate serde_json;
 
 mod error {
     error_chain! {
@@ -46,11 +52,11 @@ mod error {
 
 pub use error::*;
 pub use common::FileNode;
-pub use io::{Plugin};
+pub use io::Plugin;
 
-use common::{serialize, deserialize};
-use transform::{Entry, transform_to_dry, transform_to_wet};
-use schema::{Schema, Location};
+use common::{deserialize, serialize};
+use transform::{transform_to_dry, transform_to_wet, Entry};
+use schema::{Location, Schema};
 use io::host::HostFile;
 
 use std::ops::{Deref, DerefMut};
@@ -77,8 +83,9 @@ impl Reconfix {
     }
 
     /// Load the schema from the specified `Read` implementation.
-    pub fn load_schema<R>(&mut self, r: R) -> Result<()> 
-        where R: std::io::Read
+    pub fn load_schema<R>(&mut self, r: R) -> Result<()>
+    where
+        R: std::io::Read,
     {
         debug!("reading JSON...");
 
@@ -97,7 +104,7 @@ impl Reconfix {
                 e
             })
             .chain_err(|| "unable to parse schema json")?;
-        
+
         self.schema = Some(schema);
 
         Ok(())
@@ -124,74 +131,76 @@ impl Reconfix {
     }
 
     /// Read data in data sources and convert to dry
-    pub fn read_values_plugin<P: Plugin + DerefMut>(&self, plugin: P) -> Result<Value> 
-        where for<'a> &'a mut <P as Deref>::Target: Plugin
+    pub fn read_values_plugin<P: Plugin + DerefMut>(&self, plugin: P) -> Result<Value>
+    where
+        for<'a> &'a mut <P as Deref>::Target: Plugin,
     {
         let schema = self.get_schema()?;
         read_values(schema, plugin)
     }
 
     /// Convert dry to wet and write to data sources
-    pub fn write_values_plugin<P: Plugin + DerefMut>(&self, dry: Value, plugin: P) -> Result<()> 
-        where for<'a> &'a mut <P as Deref>::Target: Plugin
+    pub fn write_values_plugin<P: Plugin + DerefMut>(&self, dry: Value, plugin: P) -> Result<()>
+    where
+        for<'a> &'a mut <P as Deref>::Target: Plugin,
     {
         let schema = self.get_schema()?;
         write_values(schema, dry, plugin)
     }
 }
 
-fn read_values<P: Plugin + DerefMut>(schema: Schema, mut plugin: P) -> Result<Value> 
-    where for<'a> &'a mut <P as Deref>::Target: Plugin
+fn read_values<P: Plugin + DerefMut>(schema: Schema, mut plugin: P) -> Result<Value>
+where
+    for<'a> &'a mut <P as Deref>::Target: Plugin,
 {
-    let data = schema.files.iter().map(|(name, file)| {
-        (name.clone(), file.location.clone(), file.format.clone())
-    });
+    let data = schema
+        .files
+        .iter()
+        .map(|(name, file)| (name.clone(), file.location.clone(), file.format.clone()));
 
     let entries = stream::iter_ok(data)
-        .filter_map(|(name, location, format)| {
-            match location {
-                Location::Dependent {
-                    ..
-                } => None,
-                Location::Independent(node) => Some((name, node, format)),
-            }
+        .filter_map(|(name, location, format)| match location {
+            Location::Dependent { .. } => None,
+            Location::Independent(node) => Some((name, node, format)),
         })
         .and_then(|(name, node, format)| {
-            (&mut *plugin).read(node)
+            (&mut *plugin)
+                .read(node)
                 .map(|content| (name, content, format))
                 .map_err(|e| ErrorKind::Plugin(e).into())
         })
         .and_then(|(name, content, format)| {
             let wet = deserialize(content.as_slice(), &format)?;
 
-            Ok(Entry { name: name.to_string(), content: wet })
+            Ok(Entry {
+                name: name.to_string(),
+                content: wet,
+            })
         })
         .collect()
-        .and_then(|entries| {
-            transform_to_dry(entries, &schema)
-        });
+        .and_then(|entries| transform_to_dry(entries, &schema));
 
     entries.wait()
 }
 
-fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P) -> Result<()> 
-    where for<'a> &'a mut <P as Deref>::Target: Plugin
+fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P) -> Result<()>
+where
+    for<'a> &'a mut <P as Deref>::Target: Plugin,
 {
     let entries = transform_to_wet(dry, &schema)?;
     //let plugin = &mut plugin;
 
     let future = stream::iter_ok(entries)
         .and_then(|entry| {
-            schema.files.get(&entry.name).ok_or_else(
-                || "missing file entry".into(),
-            )
-            .map(|file| (entry, file))
+            schema
+                .files
+                .get(&entry.name)
+                .ok_or_else(|| "missing file entry".into())
+                .map(|file| (entry, file))
         })
-        .filter_map(|(entry, file)| {
-            match file.location {
-                Location::Independent(ref node) => Some((entry, node, &file.format)),
-                _ => None,
-            }
+        .filter_map(|(entry, file)| match file.location {
+            Location::Independent(ref node) => Some((entry, node, &file.format)),
+            _ => None,
         })
         .and_then(|(entry, node, format)| {
             let mut buf = Vec::new();
@@ -199,7 +208,8 @@ fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P)
             Ok((node, buf))
         })
         .and_then(|(node, buf)| {
-            (&mut *plugin).write(node.clone(), buf)
+            (&mut *plugin)
+                .write(node.clone(), buf)
                 .map_err(|e| ErrorKind::Plugin(e).into())
         })
         .collect()

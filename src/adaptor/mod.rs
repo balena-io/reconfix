@@ -27,7 +27,7 @@ pub trait Adaptor<'a> {
 }
 
 pub struct JsonAdaptor {
-    pretty: bool
+    pretty: bool,
 }
 
 impl JsonAdaptor {

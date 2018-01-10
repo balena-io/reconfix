@@ -564,6 +564,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -586,6 +587,7 @@ mod tests {
                     "parent".into() => PropertyDefinition {
                         types: vec![],
                         mapping: vec![],
+                        optional: false,
                         properties: vec![Property {
                             when: None,
                             definition: btreemap!{
@@ -593,6 +595,7 @@ mod tests {
                                     types: vec![PropertyType::String],
                                     mapping: vec![Mapping::Direct("/wet".into())],
                                     properties: vec![],
+                                    optional: false,
                                 }
                             }
                         }],
@@ -619,6 +622,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/parent/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -642,6 +646,7 @@ mod tests {
                     "template".into() => PropertyDefinition {
                         types: vec![PropertyType::String],
                         properties: vec![],
+                        optional: false,
                         mapping: vec![Mapping::Template {
                             value: json!("yes"),
                             template: template.clone(),
@@ -688,6 +693,7 @@ mod tests {
                             types: vec![PropertyType::String],
                             properties: vec![],
                             mapping: vec![Mapping::Direct("/wet".into())],
+                            optional: false,
                         }
                     },
                 }],
@@ -713,6 +719,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -735,6 +742,7 @@ mod tests {
                     "parent".into() => PropertyDefinition {
                         types: vec![PropertyType::String],
                         mapping: vec![],
+                        optional: false,
                         properties: vec![Property {
                             when: None,
                             definition: btreemap!{
@@ -742,6 +750,7 @@ mod tests {
                                     types: vec![PropertyType::String],
                                     mapping: vec![Mapping::Direct("/wet".into())],
                                     properties: vec![],
+                                    optional: false,
                                 }
                             }
                         }],
@@ -768,6 +777,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/parent/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -790,6 +800,7 @@ mod tests {
                     "template".into() => PropertyDefinition {
                         types: vec![PropertyType::String],
                         properties: vec![],
+                        optional: false,
                         mapping: vec![Mapping::Template {
                             value: json!("yes"),
                             template: template.clone(),
@@ -835,6 +846,7 @@ mod tests {
                             types: vec![PropertyType::String],
                             properties: vec![],
                             mapping: vec![Mapping::Direct("/child/wet".into())],
+                            optional: false,
                         },
                     },
                 }],

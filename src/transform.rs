@@ -141,8 +141,8 @@ fn condition_match(conditions: &[(Pointer, Value)], values: &[(Pointer, Value)])
             None => false,
         };
 
-        if !result { 
-            return false; 
+        if !result {
+            return false;
         }
     }
 
@@ -158,7 +158,7 @@ fn condition_match_tree(conditions: &[(Pointer, Value)], tree: &JsObject) -> boo
         };
 
         if !result {
-            return false; 
+            return false;
         }
     }
 
@@ -420,7 +420,12 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
 }
 
 /// Recursively process dry JSON values and insert them into the wet JSON tree.
-fn generate_wet_properties(root: &JsObject, subtree: &JsObject, wet: &mut Value, props: &[Property]) -> Result<()> {
+fn generate_wet_properties(
+    root: &JsObject,
+    subtree: &JsObject,
+    wet: &mut Value,
+    props: &[Property],
+) -> Result<()> {
     for prop in props.iter() {
         let conditions = generate_all_conditions(prop)?;
         if !condition_match_tree(conditions.as_slice(), root) {
@@ -441,8 +446,6 @@ fn generate_wet_properties(root: &JsObject, subtree: &JsObject, wet: &mut Value,
             }
         }
     }
-
-    
 
     Ok(())
 }

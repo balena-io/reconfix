@@ -4,7 +4,7 @@ use std::cmp;
 use serde_json;
 use serde_json::{from_str, Value};
 
-use super::errors::*;
+use super::error::*;
 
 /// Represents a section of data in a test file.
 pub enum Section {

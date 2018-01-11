@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
-use errors::*;
-use schema::{File, FileFormat, Location, Mapping, Property, PropertyDefinition, Schema};
-use adaptor::{Adaptor, IniAdaptor, JsonAdaptor};
+use error::*;
+use schema::{File, Location, Mapping, Property, PropertyDefinition, Schema};
+use common::{deserialize, serialize};
 use template::Wildcard;
 
 use serde_json::Value;
@@ -17,7 +17,7 @@ pub struct Entry {
     /// The file name associated with this entry.
     pub name: String,
     /// The file content associated with this entry.
-    pub content: String,
+    pub content: Value,
 }
 
 /// Transform the raw file data into a dry JSON structure.
@@ -46,13 +46,14 @@ pub fn transform_to_dry(config: Vec<Entry>, schema: &Schema) -> Result<Value> {
                     .ok_or("value not found")?
                     .as_str()
                     .ok_or("value is not a string")?;
-                inner_content.to_string()
-            },
+
+                let raw = inner_content.to_string();
+                deserialize(raw.as_bytes(), &file.format)?
+            }
         };
 
-        let wet = deserialize(wet_content, &file.format)?;
-        generate_dry_property(&mut root, &wet, file.properties.as_slice())?;
-        wet_cache.insert(name.to_string(), wet);
+        generate_dry_property(&mut root, &wet_content, file.properties.as_slice())?;
+        wet_cache.insert(name.to_string(), wet_content);
     }
 
     Ok(Value::Object(root))
@@ -74,10 +75,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
 
     for mapping in mappings {
         let value = match mapping {
-            &Mapping::Direct(ref ptr) => {
-                let value = follow_pointer(wet, &ptr).ok_or("direct mapping not found")?;
-                Some(value)
-            },
+            &Mapping::Direct(ref ptr) => follow_pointer(wet, &ptr),
             &Mapping::Template {
                 ref value,
                 ref template,
@@ -87,7 +85,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
                 } else {
                     None
                 }
-            },
+            }
         };
 
         let next = match (current, value) {
@@ -97,7 +95,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
                 } else {
                     return Err("found non-matching values".into());
                 }
-            },
+            }
             (Some(c), None) => Some(c),
             (None, Some(v)) => Some(v.clone()),
             _ => None,
@@ -118,16 +116,20 @@ fn valid_type(def: &PropertyDefinition, val: &Value) -> bool {
 fn generate_dry_property(dry: &mut JsObject, wet: &Value, props: &[Property]) -> Result<()> {
     for prop in props.iter() {
         for (name, def) in prop.definition.iter() {
-            let value = extract_value(wet, &def.mapping)?;
+            if !def.mapping.is_empty() {
+                let value = extract_value(wet, &def.mapping)?;
 
-            if let Some(val) = value {
-                if !valid_type(def, &val) {
-                    return Err("selected value is not a valid type".into());
+                if let Some(val) = value {
+                    if !valid_type(def, &val) {
+                        return Err("selected value is not a valid type".into());
+                    }
+
+                    dry.insert(name.clone(), val.clone());
+                } else if !def.optional {
+                    return Err(
+                        format!("no valid mapping found for required property '{}'", name).into(),
+                    );
                 }
-
-                dry.insert(name.clone(), val.clone());
-            } else {
-                //TODO: generate a warning?
             }
 
             if let &mut Value::Object(ref mut inner) = dry.entry(name.as_ref()).or_insert(json!({}))
@@ -154,63 +156,31 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
         match file.location {
             Location::Independent { .. } => {
                 files.insert(name.to_string(), (file.format.clone(), wet));
-            },
+            }
             Location::Dependent {
                 ref parent,
                 ref location,
             } => {
-                let serialized = serialize(wet, &file.format)?;
+                let mut buffer = Vec::new();
+                serialize(wet, &file.format, false, &mut buffer)?;
                 let entry = files.get_mut(parent).ok_or("parent file not found")?;
-                let mut value = follow_pointer_mut(&mut entry.1, location);
+                let value = follow_pointer_mut(&mut entry.1, location);
+                let serialized =
+                    String::from_utf8(buffer).chain_err(|| "invalid serializer output")?;
                 *value = Value::String(serialized);
-            },
+            }
         }
     }
 
     let output = files
         .into_iter()
-        .map(|(name, (format, wet))| {
-            serialize(wet, &format).map(|c| Entry {
-                name: name.to_string(),
-                content: c,
-            })
+        .map(|(name, (format, wet))| Entry {
+            name: name.to_string(),
+            content: wet,
         })
-        .collect::<Result<Vec<_>>>();
+        .collect::<Vec<_>>();
 
-    output
-}
-
-/// Convert wet JSON into a raw `String` using the formatter appropriate
-/// for the provided `FileFormat`.
-fn serialize(wet: Value, format: &FileFormat) -> Result<String> {
-    let mut buffer = Vec::new();
-    match format {
-        &FileFormat::Ini => {
-            let adaptor = IniAdaptor::new();
-            adaptor.serialize(wet, &mut buffer)?;
-        },
-        &FileFormat::Json => {
-            let adaptor = JsonAdaptor::new(false);
-            adaptor.serialize(wet, &mut buffer)?;
-        },
-    }
-    String::from_utf8(buffer).chain_err(|| "unable to decode utf-8")
-}
-
-/// Deserialize raw text using the appropriate formatter for the
-/// `FileFormat` and return the wet JSON.
-fn deserialize(content: String, format: &FileFormat) -> Result<Value> {
-    let buffer = content.into_bytes();
-    match format {
-        &FileFormat::Ini => {
-            let adaptor = IniAdaptor::new();
-            adaptor.deserialize(buffer.as_slice())
-        },
-        &FileFormat::Json => {
-            let adaptor = JsonAdaptor::new(false);
-            adaptor.deserialize(buffer.as_slice())
-        },
-    }
+    Ok(output)
 }
 
 /// Generate a wet JSON object.
@@ -239,7 +209,7 @@ fn follow_pointer<'a>(v: &'a Value, pointer: &str) -> Option<&'a Value> {
                 &Value::Object(ref obj) => obj.get(name),
                 _ => None, //TODO: return an error or warning?
             }
-        },
+        }
     })
 }
 
@@ -285,13 +255,13 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                 } else {
                     bail!("cannot insert template: key already has value")
                 }
-            },
+            }
             new_value => {
                 let new_wild = parse_wildcard(new_value);
                 match tree.entry(key.clone()) {
                     MapEntry::Vacant(v) => {
                         v.insert(new_value.clone());
-                    },
+                    }
                     MapEntry::Occupied(mut o) => {
                         let old_value = o.insert(Value::Bool(false));
                         let old_wild = parse_wildcard(&old_value);
@@ -305,7 +275,7 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                         new_value, old_value
                                     ))
                                 }
-                            },
+                            }
                             (None, Some(old)) => {
                                 if wildcard_matches(&old, new_value) {
                                     Ok(new_value.clone())
@@ -315,7 +285,7 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                         old_value, new_value
                                     ))
                                 }
-                            },
+                            }
                             (None, None) => Err(format!(
                                 "cannot replace value '{}' with '{}'",
                                 old_value, new_value
@@ -326,13 +296,13 @@ fn insert_template(tree: &mut JsObject, template: &JsObject) -> Result<()> {
                                 } else {
                                     Err("wildcard values do not match".into())
                                 }
-                            },
+                            }
                         };
 
                         o.insert(insert?);
-                    },
+                    }
                 }
-            },
+            }
         }
     }
 
@@ -348,9 +318,9 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
     for mapping in mappings {
         match mapping {
             &Mapping::Direct(ref ptr) => {
-                let mut value = follow_pointer_mut(wet, &ptr);
+                let value = follow_pointer_mut(wet, &ptr);
                 *value = dry.clone();
-            },
+            }
             &Mapping::Template {
                 ref value,
                 ref template,
@@ -363,7 +333,7 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
                         bail!("wet value must be an object");
                     }
                 }
-            },
+            }
         }
     }
 
@@ -396,6 +366,7 @@ mod tests {
     extern crate serde_json;
 
     use super::*;
+    use common::*;
     use schema::*;
 
     use test::*;
@@ -589,6 +560,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -611,6 +583,7 @@ mod tests {
                     "parent".into() => PropertyDefinition {
                         types: vec![],
                         mapping: vec![],
+                        optional: false,
                         properties: vec![Property {
                             when: None,
                             definition: btreemap!{
@@ -618,6 +591,7 @@ mod tests {
                                     types: vec![PropertyType::String],
                                     mapping: vec![Mapping::Direct("/wet".into())],
                                     properties: vec![],
+                                    optional: false,
                                 }
                             }
                         }],
@@ -644,6 +618,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/parent/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -667,6 +642,7 @@ mod tests {
                     "template".into() => PropertyDefinition {
                         types: vec![PropertyType::String],
                         properties: vec![],
+                        optional: false,
                         mapping: vec![Mapping::Template {
                             value: json!("yes"),
                             template: template.clone(),
@@ -693,10 +669,10 @@ mod tests {
             "independent".into() => File {
                 format: FileFormat::Json,
                 fileset: false,
-                location: Location::Independent {
-                    partition: Partition::Primary(0),
+                location: Location::Independent(FileNode {
+                    partition: Partition::new(0),
                     path: vec![],
-                },
+                }),
                 properties: vec![],
             },
             "dependent".into() => File {
@@ -713,6 +689,7 @@ mod tests {
                             types: vec![PropertyType::String],
                             properties: vec![],
                             mapping: vec![Mapping::Direct("/wet".into())],
+                            optional: false,
                         }
                     },
                 }],
@@ -722,7 +699,7 @@ mod tests {
         let schema = Schema { files: files };
 
         let result = transform_to_wet(dry, &schema).unwrap().pop().unwrap();
-        let expected = r##"{"parent":{"child":"{\"wet\":\"value\"}"}}"##;
+        let expected = json!({"parent":{"child":"{\"wet\":\"value\"}"}});
 
         assert_eq!(expected, result.content);
     }
@@ -738,6 +715,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -760,6 +738,7 @@ mod tests {
                     "parent".into() => PropertyDefinition {
                         types: vec![PropertyType::String],
                         mapping: vec![],
+                        optional: false,
                         properties: vec![Property {
                             when: None,
                             definition: btreemap!{
@@ -767,6 +746,7 @@ mod tests {
                                     types: vec![PropertyType::String],
                                     mapping: vec![Mapping::Direct("/wet".into())],
                                     properties: vec![],
+                                    optional: false,
                                 }
                             }
                         }],
@@ -793,6 +773,7 @@ mod tests {
                         types: vec![PropertyType::String],
                         properties: vec![],
                         mapping: vec![Mapping::Direct("/parent/wet".into())],
+                        optional: false,
                     },
                 },
             },
@@ -815,6 +796,7 @@ mod tests {
                     "template".into() => PropertyDefinition {
                         types: vec![PropertyType::String],
                         properties: vec![],
+                        optional: false,
                         mapping: vec![Mapping::Template {
                             value: json!("yes"),
                             template: template.clone(),
@@ -835,16 +817,15 @@ mod tests {
     fn wet_to_dry_dependent_json() {
         let inner = r##"{"child":{"wet":"value"}}"##;
         let wet = json!({ "parent": inner });
-        let wet_content = to_string(&wet).unwrap();
 
         let files = btreemap!{
             "independent".into() => File {
                 format: FileFormat::Json,
                 fileset: false,
-                location: Location::Independent {
-                    partition: Partition::Primary(0),
+                location: Location::Independent(FileNode {
+                    partition: Partition::new(0),
                     path: vec![],
-                },
+                }),
                 properties: vec![],
             },
             "dependent".into() => File {
@@ -861,6 +842,7 @@ mod tests {
                             types: vec![PropertyType::String],
                             properties: vec![],
                             mapping: vec![Mapping::Direct("/child/wet".into())],
+                            optional: false,
                         },
                     },
                 }],
@@ -870,7 +852,7 @@ mod tests {
         let schema = Schema { files: files };
         let entry = Entry {
             name: "independent".into(),
-            content: wet_content,
+            content: wet,
         };
 
         let result = transform_to_dry(vec![entry], &schema).unwrap();

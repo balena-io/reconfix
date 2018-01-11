@@ -2,7 +2,7 @@
 name = "node-reconfix"
 version = "0.1.0"
 authors = ["Aaron Brodersen <aaron@resin.io>"]
-license = "MIT"
+license = "Apache-2.0"
 build = "build.rs"
 
 [lib]

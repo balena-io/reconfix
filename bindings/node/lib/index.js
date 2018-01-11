@@ -22,7 +22,7 @@ class BufferStream extends stream.Duplex {
 
 function bufferRead(stream) {
     return new Promise((resolve, reject) => {
-        let buffer = new BufferStream({ 
+        const buffer = new BufferStream({ 
             inner: new native.BufferStream() 
         });
         stream.on('error', reject);
@@ -44,8 +44,8 @@ function bufferWrite(data, stream) {
 
 class Reconfix {
     constructor(options) {
-        let readAsync = Promise.promisify(options.read);
-        let writeAsync = Promise.promisify(options.write);
+        const readAsync = Promise.promisify(options.read);
+        const writeAsync = Promise.promisify(options.write);
         this._inner = new native.Reconfix(
             (partition, path, callback) => {
                 readAsync(partition, path).then((disposer) => {
@@ -63,7 +63,7 @@ class Reconfix {
     }
 
     loadSchema(json) {
-        let input = JSON.stringify(json);
+        const input = JSON.stringify(json);
         return this._inner.loadSchema(input);
     }
 
@@ -71,7 +71,7 @@ class Reconfix {
         return this._readValues.bind(this._inner)();
     }
 
-    writeValues(json, callback) {
+    writeValues(json) {
         return this._writeValues.bind(this._inner)(json);
     }
 }

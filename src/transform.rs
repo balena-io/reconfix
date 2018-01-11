@@ -114,6 +114,57 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
     Ok(current)
 }
 
+fn generate_conditions(prefix: &Pointer, when: &JsObject, conditions: &mut Vec<(Pointer, Value)>) {
+    for (key, value) in when {
+        let ptr = prefix.extend(key.as_str());
+        match value {
+            &Value::Object(ref o) => generate_conditions(&ptr, &o, conditions),
+            x => conditions.push((ptr, x.clone())),
+        }
+    }
+}
+
+fn generate_all_conditions(prop: &Property) -> Result<Vec<(Pointer, Value)>> {
+    let mut buffer = Vec::new();
+    if let Some(ref when) = prop.when {
+        let when_obj = when.as_object().ok_or_else(|| "when must be an object")?;
+        generate_conditions(&Pointer::new(), when_obj, &mut buffer);
+    }
+
+    Ok(buffer)
+}
+
+fn condition_match(conditions: &[(Pointer, Value)], values: &[(Pointer, Value)]) -> bool {
+    for &(ref cond_ptr, ref cond_val) in conditions.iter() {
+        let result = match values.iter().find(|&&(ref ptr, _)| ptr == cond_ptr) {
+            Some(&(_, ref val)) => val == cond_val,
+            None => false,
+        };
+
+        if !result { 
+            return false; 
+        }
+    }
+
+    true
+}
+
+fn condition_match_tree(conditions: &[(Pointer, Value)], tree: &JsObject) -> bool {
+    let tree = Value::Object(tree.clone());
+    for &(ref ptr, ref val) in conditions {
+        let result = match ptr.search(&tree) {
+            Some(v) => v == val,
+            None => false,
+        };
+
+        if !result {
+            return false; 
+        }
+    }
+
+    true
+}
+
 fn valid_type(def: &PropertyDefinition, val: &Value) -> bool {
     def.types.iter().any(|t| t.is_type(&val))
 }
@@ -141,6 +192,11 @@ fn generate_dry_values(
     dry: &mut Vec<(Pointer, Value)>,
 ) -> Result<()> {
     for prop in props.iter() {
+        let conditions = generate_all_conditions(prop)?;
+        if !condition_match(conditions.as_slice(), dry) {
+            continue;
+        }
+
         for (name, def) in prop.definition.iter() {
             let ptr = root.extend(name.as_str());
 
@@ -212,9 +268,7 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
 fn generate_wet_file(dry: &JsObject, props: &[Property]) -> Result<Value> {
     let mut root = Value::Object(JsObject::new());
 
-    for prop in props {
-        generate_wet_property(dry, &mut root, prop)?;
-    }
+    generate_wet_properties(dry, dry, &mut root, props)?;
 
     if find_wildcards(&root) {
         bail!("wildcard values found in output");
@@ -366,22 +420,29 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
 }
 
 /// Recursively process dry JSON values and insert them into the wet JSON tree.
-fn generate_wet_property(dry: &JsObject, wet: &mut Value, prop: &Property) -> Result<()> {
-    for (name, definition) in prop.definition.iter() {
-        let dry_value = dry.get(&*name).ok_or("dry value not found")?;
-
-        if !definition.mapping.is_empty() && !valid_type(definition, dry_value) {
-            return Err("selected value is not a valid type".into());
+fn generate_wet_properties(root: &JsObject, subtree: &JsObject, wet: &mut Value, props: &[Property]) -> Result<()> {
+    for prop in props.iter() {
+        let conditions = generate_all_conditions(prop)?;
+        if !condition_match_tree(conditions.as_slice(), root) {
+            continue;
         }
 
-        apply_mappings(dry_value, wet, &definition.mapping)?;
+        for (name, definition) in prop.definition.iter() {
+            let dry_value = subtree.get(&*name).ok_or("dry value not found")?;
 
-        if let Some(sub) = dry_value.as_object() {
-            for property in definition.properties.iter() {
-                generate_wet_property(sub, wet, &property)?;
+            if !definition.mapping.is_empty() && !valid_type(definition, dry_value) {
+                return Err("selected value is not a valid type".into());
+            }
+
+            apply_mappings(dry_value, wet, &definition.mapping)?;
+
+            if let Some(sub) = dry_value.as_object() {
+                generate_wet_properties(root, sub, wet, definition.properties.as_slice())?;
             }
         }
     }
+
+    
 
     Ok(())
 }
@@ -468,7 +529,7 @@ mod tests {
             )* )
         }
 
-        transform_bidi_gen!(bidi_1, bidi_2, bidi_3);
+        transform_bidi_gen!(bidi_1, bidi_2, bidi_3, bidi_4, bidi_5);
 
         macro_rules! transform_extract_gen {
             ($($name:ident),*) => ( $(

@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use error::*;
 use schema::{File, Location, Mapping, Property, PropertyDefinition, Schema};
 use common::{deserialize, serialize};
+use json::Pointer;
 use template::Wildcard;
 
 use serde_json::Value;
@@ -24,14 +25,15 @@ pub struct Entry {
 /// A matching `Entry` is requird for every `Independent` file
 /// in the `Schema`.
 pub fn transform_to_dry(config: Vec<Entry>, schema: &Schema) -> Result<Value> {
-    let mut root = JsObject::new();
     let ordered = sort_files(&schema.files);
     let mut mapped = config
         .into_iter()
         .map(|e| (e.name, e.content))
         .collect::<BTreeMap<_, _>>();
 
+    let mut dry_buffer = Vec::new();
     let mut wet_cache = BTreeMap::new();
+    let prefix = Pointer::new();
 
     for (name, file) in ordered {
         let wet_content = match &file.location {
@@ -52,11 +54,16 @@ pub fn transform_to_dry(config: Vec<Entry>, schema: &Schema) -> Result<Value> {
             }
         };
 
-        generate_dry_property(&mut root, &wet_content, file.properties.as_slice())?;
+        generate_dry_values(
+            &prefix,
+            &wet_content,
+            file.properties.as_slice(),
+            &mut dry_buffer,
+        )?;
         wet_cache.insert(name.to_string(), wet_content);
     }
 
-    Ok(Value::Object(root))
+    generate_dry_object(dry_buffer)
 }
 
 /// Order files for processing. Currently, this just sorts `Independent` files
@@ -107,35 +114,109 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
     Ok(current)
 }
 
+fn generate_conditions(prefix: &Pointer, when: &JsObject, conditions: &mut Vec<(Pointer, Value)>) {
+    for (key, value) in when {
+        let ptr = prefix.extend(key.as_str());
+        match value {
+            &Value::Object(ref o) => generate_conditions(&ptr, &o, conditions),
+            x => conditions.push((ptr, x.clone())),
+        }
+    }
+}
+
+fn generate_all_conditions(prop: &Property) -> Result<Vec<(Pointer, Value)>> {
+    let mut buffer = Vec::new();
+    if let Some(ref when) = prop.when {
+        let when_obj = when.as_object().ok_or_else(|| "when must be an object")?;
+        generate_conditions(&Pointer::new(), when_obj, &mut buffer);
+    }
+
+    Ok(buffer)
+}
+
+fn condition_match(conditions: &[(Pointer, Value)], values: &[(Pointer, Value)]) -> bool {
+    for &(ref cond_ptr, ref cond_val) in conditions.iter() {
+        let result = match values.iter().find(|&&(ref ptr, _)| ptr == cond_ptr) {
+            Some(&(_, ref val)) => val == cond_val,
+            None => false,
+        };
+
+        if !result {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn condition_match_tree(conditions: &[(Pointer, Value)], tree: &JsObject) -> bool {
+    let tree = Value::Object(tree.clone());
+    for &(ref ptr, ref val) in conditions {
+        let result = match ptr.search(&tree) {
+            Some(v) => v == val,
+            None => false,
+        };
+
+        if !result {
+            return false;
+        }
+    }
+
+    true
+}
+
 fn valid_type(def: &PropertyDefinition, val: &Value) -> bool {
     def.types.iter().any(|t| t.is_type(&val))
 }
 
+fn generate_dry_object(entries: Vec<(Pointer, Value)>) -> Result<Value> {
+    let mut tree = json!({});
+    for (ptr, val) in entries {
+        match ptr.entry(&mut tree)? {
+            ::json::Entry::Vacant(v) => {
+                v.insert(val);
+            }
+            ::json::Entry::Occupied(_) => bail!("key '{}' is alread occupied with a value", ptr),
+        }
+    }
+
+    Ok(tree)
+}
+
 /// Recursively process properties, extracting wet values and inserting them
 /// into the dry tree.
-fn generate_dry_property(dry: &mut JsObject, wet: &Value, props: &[Property]) -> Result<()> {
+fn generate_dry_values(
+    root: &Pointer,
+    wet: &Value,
+    props: &[Property],
+    dry: &mut Vec<(Pointer, Value)>,
+) -> Result<()> {
     for prop in props.iter() {
+        let conditions = generate_all_conditions(prop)?;
+        if !condition_match(conditions.as_slice(), dry) {
+            continue;
+        }
+
         for (name, def) in prop.definition.iter() {
+            let ptr = root.extend(name.as_str());
+
             if !def.mapping.is_empty() {
                 let value = extract_value(wet, &def.mapping)?;
 
                 if let Some(val) = value {
                     if !valid_type(def, &val) {
-                        return Err("selected value is not a valid type".into());
+                        bail!("value '{}' is not a valid type for '{}'", val, ptr);
                     }
 
-                    dry.insert(name.clone(), val.clone());
+                    dry.push((ptr.clone(), val.clone()));
                 } else if !def.optional {
                     return Err(
-                        format!("no valid mapping found for required property '{}'", name).into(),
+                        format!("no valid mapping found for required property '{}'", ptr).into(),
                     );
                 }
             }
 
-            if let &mut Value::Object(ref mut inner) = dry.entry(name.as_ref()).or_insert(json!({}))
-            {
-                generate_dry_property(inner, wet, &def.properties)?;
-            }
+            generate_dry_values(&ptr, wet, &def.properties, dry)?;
         }
     }
 
@@ -187,9 +268,7 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
 fn generate_wet_file(dry: &JsObject, props: &[Property]) -> Result<Value> {
     let mut root = Value::Object(JsObject::new());
 
-    for prop in props {
-        generate_wet_property(dry, &mut root, prop)?;
-    }
+    generate_wet_properties(dry, dry, &mut root, props)?;
 
     if find_wildcards(&root) {
         bail!("wildcard values found in output");
@@ -341,19 +420,29 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
 }
 
 /// Recursively process dry JSON values and insert them into the wet JSON tree.
-fn generate_wet_property(dry: &JsObject, wet: &mut Value, prop: &Property) -> Result<()> {
-    for (name, definition) in prop.definition.iter() {
-        let dry_value = dry.get(&*name).ok_or("dry value not found")?;
-
-        if !definition.mapping.is_empty() && !valid_type(definition, dry_value) {
-            return Err("selected value is not a valid type".into());
+fn generate_wet_properties(
+    root: &JsObject,
+    subtree: &JsObject,
+    wet: &mut Value,
+    props: &[Property],
+) -> Result<()> {
+    for prop in props.iter() {
+        let conditions = generate_all_conditions(prop)?;
+        if !condition_match_tree(conditions.as_slice(), root) {
+            continue;
         }
 
-        apply_mappings(dry_value, wet, &definition.mapping)?;
+        for (name, definition) in prop.definition.iter() {
+            let dry_value = subtree.get(&*name).ok_or("dry value not found")?;
 
-        if let Some(sub) = dry_value.as_object() {
-            for property in definition.properties.iter() {
-                generate_wet_property(sub, wet, &property)?;
+            if !definition.mapping.is_empty() && !valid_type(definition, dry_value) {
+                return Err("selected value is not a valid type".into());
+            }
+
+            apply_mappings(dry_value, wet, &definition.mapping)?;
+
+            if let Some(sub) = dry_value.as_object() {
+                generate_wet_properties(root, sub, wet, definition.properties.as_slice())?;
             }
         }
     }
@@ -390,6 +479,25 @@ mod tests {
         (parsed, tree, value)
     }
 
+    fn generate_dry(wet: &Value, props: &[Property]) -> Option<Value> {
+        let mut buffer = Vec::new();
+        let prefix = Pointer::new();
+
+        match generate_dry_values(&prefix, wet, props, &mut buffer) {
+            Err(e) => return None,
+            _ => (),
+        }
+
+        generate_dry_object(buffer).ok()
+    }
+
+    fn generate_dry_obj(wet: &Value, props: &[Property]) -> Option<JsObject> {
+        match generate_dry(wet, props) {
+            Some(Value::Object(o)) => Some(o),
+            _ => None,
+        }
+    }
+
     mod transform {
         use super::*;
         use serde_json::Value;
@@ -417,14 +525,14 @@ mod tests {
                     let result = generate_wet_file(dry, &props[..]).unwrap();
                     assert_eq!(wet, result);
 
-                    let mut dry_result = JsObject::new();
-                    generate_dry_property(&mut dry_result, &wet, &props[..]).unwrap();
+                    let dry_result = generate_dry_obj(&wet, props.as_slice()).unwrap();
+
                     assert_eq!(dry, &dry_result);
                 }
             )* )
         }
 
-        transform_bidi_gen!(bidi_1, bidi_2, bidi_3);
+        transform_bidi_gen!(bidi_1, bidi_2, bidi_3, bidi_4, bidi_5);
 
         macro_rules! transform_extract_gen {
             ($($name:ident),*) => ( $(
@@ -435,9 +543,7 @@ mod tests {
 
                     let (props, wet, dry) = parse_properties(file);
 
-                    let mut tree = JsObject::new();
-                    let result = generate_dry_property(&mut tree, &wet, &props[..])
-                        .ok().map(|_| Value::Object(tree));
+                    let result = generate_dry(&wet, props.as_slice());
 
                     assert_eq!(dry, result);
                 }
@@ -722,10 +828,9 @@ mod tests {
         ];
 
         let expected = json!({ "dry": "value" });
-        let mut root = JsObject::new();
-        generate_dry_property(&mut root, &wet, &props).unwrap();
+        let root = generate_dry(&wet, props.as_slice()).unwrap();
 
-        assert_eq!(expected, Value::Object(root));
+        assert_eq!(expected, root);
     }
 
     #[test]
@@ -756,10 +861,9 @@ mod tests {
         ];
 
         let expected = json!({ "parent": { "dry": "value" } });
-        let mut root = JsObject::new();
-        generate_dry_property(&mut root, &wet, &props).unwrap();
+        let root = generate_dry(&wet, props.as_slice()).unwrap();
 
-        assert_eq!(expected, Value::Object(root));
+        assert_eq!(expected, root);
     }
 
     #[test]
@@ -780,10 +884,9 @@ mod tests {
         ];
 
         let expected = json!({ "dry": "value" });
-        let mut root = JsObject::new();
-        generate_dry_property(&mut root, &wet, &props).unwrap();
+        let root = generate_dry(&wet, props.as_slice()).unwrap();
 
-        assert_eq!(expected, Value::Object(root));
+        assert_eq!(expected, root);
     }
 
     #[test]
@@ -806,11 +909,10 @@ mod tests {
             },
         ];
 
-        let mut dry = JsObject::new();
-        generate_dry_property(&mut dry, &template, &props).unwrap();
+        let root = generate_dry(&template, props.as_slice()).unwrap();
 
         let expected = json!({"template": "yes"});
-        assert_eq!(expected, Value::Object(dry));
+        assert_eq!(expected, root);
     }
 
     #[test]

@@ -5,6 +5,7 @@
 #![recursion_limit = "1024"]
 
 mod common;
+mod json;
 mod adaptor;
 mod schema;
 mod template;

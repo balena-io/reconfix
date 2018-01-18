@@ -1,0 +1,22 @@
+# when condition satisfied
+[
+    {
+        "definition": {
+            "bar": {
+                "type": ["boolean"],
+                "mapping": ["/foo/bar"]
+            }
+        }
+    },
+    {
+        "when": { "bar": true },
+        "definition": {
+            "baz": {
+                "type": ["string"],
+                "mapping": ["/foo/baz"]
+            }
+        }
+    }
+]
+{"bar":true,"baz":"test"}
+{"foo":{"bar":true,"baz":"test"}}

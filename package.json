@@ -1,12 +1,12 @@
 {
-  "name": "reconfix",
-  "version": "0.1.2",
+  "name": "reconfix-preview",
+  "version": "0.2.0",
   "description": "A Node.js wrapper for the Reconfix library.",
   "main": "bindings/node/lib/index.js",
   "author": "Aaron Brodersen <aaron@resin.io>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
-    "neon-cli": "^0.1.20",
+    "neon-cli": "^0.1.22",
     "bluebird": "^3.5.1"
   },
   "scripts": {

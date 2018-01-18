@@ -433,16 +433,20 @@ fn generate_wet_properties(
         }
 
         for (name, definition) in prop.definition.iter() {
-            let dry_value = subtree.get(&*name).ok_or("dry value not found")?;
+            let dry_value = subtree.get(&*name);
 
-            if !definition.mapping.is_empty() && !valid_type(definition, dry_value) {
-                return Err("selected value is not a valid type".into());
-            }
+            if let Some(val) = dry_value {
+                if !definition.mapping.is_empty() && !valid_type(definition, &val) {
+                    bail!("value '{}' is not a valid type for '{}'", val, name);
+                }
 
-            apply_mappings(dry_value, wet, &definition.mapping)?;
+                apply_mappings(val, wet, &definition.mapping)?;
 
-            if let Some(sub) = dry_value.as_object() {
-                generate_wet_properties(root, sub, wet, definition.properties.as_slice())?;
+                if let Some(sub) = val.as_object() {
+                    generate_wet_properties(root, sub, wet, definition.properties.as_slice())?;
+                }
+            } else if !definition.optional {
+                bail!("no valid mapping found for required property '{}'", name);
             }
         }
     }

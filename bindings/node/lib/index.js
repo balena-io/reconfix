@@ -44,22 +44,16 @@ function bufferWrite(data, stream) {
 
 class Reconfix {
     constructor(options) {
-        const readAsync = Promise.promisify(options.read);
-        const writeAsync = Promise.promisify(options.write);
         this._inner = new native.Reconfix(
             (partition, path, callback) => {
-                readAsync(partition, path).then((disposer) => {
-                    return Promise.using(disposer, bufferRead);
-                }).asCallback(callback);
+                options.read(partition, path)
+                    .asCallback(callback);
             },
             (partition, path, data, callback) => {
-                writeAsync(partition, path).then((disposer) => {
-                    return Promise.using(disposer, (stream) => bufferWrite(data, stream));
-                }).asCallback(callback);
+                options.write(partition, path, data)
+                    .asCallback(callback);
             }
         );
-        this._readValues = Promise.promisify(this._inner.readValues);
-        this._writeValues= Promise.promisify(this._inner.writeValues);
     }
 
     loadSchema(json) {
@@ -68,11 +62,13 @@ class Reconfix {
     }
 
     readValues() {
-        return this._readValues.bind(this._inner)();
+        const readPromise = Promise.promisify(this._inner.readValues);
+        return readPromise.bind(this._inner)();
     }
 
     writeValues(json) {
-        return this._writeValues.bind(this._inner)(json);
+        const writePromise = Promise.promisify(this._inner.writeValues);
+        return writePromise.bind(this._inner)(json);
     }
 }
 

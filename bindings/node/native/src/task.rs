@@ -2,10 +2,9 @@
 use std::fmt;
 use std::sync::mpsc;
 
-use super::buffer::JsBufferStream;
-
 use neon::scope::Scope;
 use neon::js::{JsFunction, JsUndefined, JsNull, JsValue, JsNumber, JsArray, JsString, Object, Value};
+use neon::js::binary::JsBuffer;
 use neon::js::class::Class;
 use neon::js::error::{JsError, Kind};
 use neon::mem::{Handle, PersistentHandle};
@@ -77,9 +76,9 @@ impl Task for ReadTask {
                 return send(&sender, Err(ErrorWrapper::new(error)));
             }
 
-            let mut stream = call.arguments.require(scope, 1)?.check::<JsBufferStream>()?;
-            let copied = stream.grab(|inner| {
-                inner.buf.clone()
+            let mut buffer = call.arguments.require(scope, 1)?.check::<JsBuffer>()?;
+            let copied = buffer.grab(|inner| {
+                inner.as_slice().to_vec()
             });
 
             debug!("sending read buffer");
@@ -165,14 +164,19 @@ impl Task for WriteTask {
             send(&sender, Ok(()))
         }))?;
 
-        let args: Vec<Handle<JsValue>> = Vec::new();
-        let mut buffer = JsBufferStream::class(scope)?
-            .constructor(scope)?
-            .construct(scope, args)?;
-
-        buffer.grab(move |inner| {
-            inner.buf.extend_from_slice(data.as_slice());
+        let mut buffer = JsBuffer::new(scope, data.len() as u32)?;
+        buffer.grab(move |mut inner| {
+            inner.as_mut_slice().clone_from_slice(&data);
         });
+
+        // let args: Vec<Handle<JsValue>> = Vec::new();
+        // let mut buffer = JsBufferStream::class(scope)?
+        //     .constructor(scope)?
+        //     .construct(scope, args)?;
+
+        // buffer.grab(move |inner| {
+        //     inner.buf.extend_from_slice(data.as_slice());
+        // });
 
         let partition = JsNumber::new(scope, file.partition.num() as f64).as_value(scope);
         let path = to_array(scope, &file.path)?.upcast();

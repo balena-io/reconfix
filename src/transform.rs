@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::cmp::Ordering;
 
 use error::*;
 use schema::{File, Location, Mapping, Property, PropertyDefinition, Schema};
@@ -78,40 +79,61 @@ fn sort_files<'a>(files: &'a BTreeMap<String, File>) -> Vec<(&'a str, &'a File)>
 }
 
 fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
-    let mut current: Option<Value> = None;
-
-    for mapping in mappings {
-        let value = match mapping {
-            &Mapping::Direct(ref ptr) => follow_pointer(wet, &ptr),
+    let mut candidates = mappings
+        .iter()
+        .filter_map(|mapping| match mapping {
+            &Mapping::Direct(ref ptr) => follow_pointer(wet, &ptr).map(|val| (None, val)),
             &Mapping::Template {
                 ref value,
                 ref template,
             } => {
                 if ::template::matches(wet, template) {
-                    Some(value)
+                    Some((Some(::template::degree(template)), value))
                 } else {
                     None
                 }
             }
-        };
+        })
+        .collect::<Vec<_>>();
 
-        let next = match (current, value) {
-            (Some(c), Some(v)) => {
-                if c.eq(v) {
-                    Some(c)
-                } else {
-                    return Err("found non-matching values".into());
+    candidates.sort_unstable_by(|left, right| match (left.0, right.0) {
+        (Some(x), Some(y)) => y.cmp(&x),
+        (None, Some(_)) => Ordering::Less,
+        (Some(_), None) => Ordering::Greater,
+        (None, None) => Ordering::Equal,
+    });
+
+    candidates
+        .into_iter()
+        .fold(Ok(None), |state, candidate| match state {
+            Ok(None) => Ok(Some(candidate)),
+            Err(e) => Err(e),
+            Ok(Some(current)) => {
+                match (current, candidate) {
+                    ((None, left), (None, right)) => {
+                        if left.eq(right) {
+                            Ok(Some((None, left)))
+                        } else {
+                            Err("conflicting direct mapped values".into())
+                        }
+                    }
+                    ((Some(degree_x), x), (Some(degree_y), y)) => match degree_x.cmp(&degree_y) {
+                        Ordering::Less => Ok(Some((Some(degree_y), y))),
+                        Ordering::Greater => Ok(Some((Some(degree_x), x))),
+                        Ordering::Equal => {
+                            if x == y {
+                                Ok(Some((Some(degree_x), x)))
+                            } else {
+                                Err("cannot resolve templates with differing values and equal degree".into())
+                            }
+                        }
+                    },
+                    ((Some(_), _), x) => Ok(Some(x)),
+                    (x, (Some(_), _)) => Ok(Some(x)),
                 }
             }
-            (Some(c), None) => Some(c),
-            (None, Some(v)) => Some(v.clone()),
-            _ => None,
-        };
-
-        current = next;
-    }
-
-    Ok(current)
+        })
+        .map(|o| o.map(|(_, value)| value.clone()))
 }
 
 fn generate_conditions(prefix: &Pointer, when: &JsObject, conditions: &mut Vec<(Pointer, Value)>) {
@@ -137,8 +159,14 @@ fn generate_all_conditions(prop: &Property) -> Result<Vec<(Pointer, Value)>> {
 fn condition_match(conditions: &[(Pointer, Value)], values: &[(Pointer, Value)]) -> bool {
     for &(ref cond_ptr, ref cond_val) in conditions.iter() {
         let result = match values.iter().find(|&&(ref ptr, _)| ptr == cond_ptr) {
-            Some(&(_, ref val)) => val == cond_val,
-            None => false,
+            Some(&(_, ref val)) => {
+                debug!("{}: expected '{}', actual '{}'", cond_ptr, cond_val, val);
+                val == cond_val
+            }
+            None => {
+                debug!("{}: expected '{}' but value not found", cond_ptr, cond_val);
+                false
+            }
         };
 
         if !result {
@@ -153,8 +181,14 @@ fn condition_match_tree(conditions: &[(Pointer, Value)], tree: &JsObject) -> boo
     let tree = Value::Object(tree.clone());
     for &(ref ptr, ref val) in conditions {
         let result = match ptr.search(&tree) {
-            Some(v) => v == val,
-            None => false,
+            Some(v) => {
+                debug!("{}: expected '{}', actual '{}'", ptr, val, v);
+                v == val
+            }
+            None => {
+                debug!("{}: expected '{}' but value not found", ptr, val);
+                false
+            }
         };
 
         if !result {
@@ -194,6 +228,7 @@ fn generate_dry_values(
     for prop in props.iter() {
         let conditions = generate_all_conditions(prop)?;
         if !condition_match(conditions.as_slice(), dry) {
+            debug!("condition did not match");
             continue;
         }
 
@@ -397,6 +432,7 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
     for mapping in mappings {
         match mapping {
             &Mapping::Direct(ref ptr) => {
+                debug!("inserting '{}' at '{}'", dry, ptr);
                 let value = follow_pointer_mut(wet, &ptr);
                 *value = dry.clone();
             }
@@ -405,6 +441,7 @@ fn apply_mappings(dry: &Value, wet: &mut Value, mappings: &[Mapping]) -> Result<
                 ref template,
             } => {
                 if value.eq(dry) {
+                    debug!("matched template with value '{}'", value);
                     let template_obj = template.as_object().ok_or("template must be an object")?;
                     if let &mut Value::Object(ref mut wet_obj) = wet {
                         insert_template(wet_obj, &template_obj)?;
@@ -467,22 +504,6 @@ mod tests {
     use serde_json::to_string;
     use serde_json::Value;
 
-    fn parse_data<T, F>(data: &str, convert: F) -> (T, Value, Option<Value>)
-    where
-        F: FnOnce(&Value) -> T,
-    {
-        let lines = read_sections(data.as_bytes());
-        let schema = lines[1].as_value().expect("Invalid JSON on line 2!");
-        let tree = lines[2]
-            .as_value()
-            .map(|x| x.clone())
-            .expect("Invalid JSON on line 3!");
-        let value = lines[3].as_value().map(|x| x.clone());
-
-        let parsed = convert(schema);
-        (parsed, tree, value)
-    }
-
     fn generate_dry(wet: &Value, props: &[Property]) -> Option<Value> {
         let mut buffer = Vec::new();
         let prefix = Pointer::new();
@@ -506,8 +527,8 @@ mod tests {
         use super::*;
         use serde_json::Value;
 
-        fn parse_properties(data: &str) -> (Vec<Property>, Value, Option<Value>) {
-            parse_data(data, |json| {
+        fn parse_properties(data: &str) -> (String, Vec<Property>, Value, Option<Value>) {
+            parse_test_data(data, |json| {
                 json.as_array()
                     .expect("Properties must be an array")
                     .into_iter()
@@ -522,7 +543,7 @@ mod tests {
                 fn $name() {
                     let file = include_str!(concat!("../tests/testdata/config/",
                                                             stringify!($name)));
-                    let (props, dry, wet) = parse_properties(file);
+                    let (_, props, dry, wet) = parse_properties(file);
 
                     let dry = dry.as_object().expect("Dry value must be an object");
                     let wet = wet.unwrap();
@@ -545,7 +566,7 @@ mod tests {
                     let file = include_str!(concat!("../tests/testdata/config/",
                                                             stringify!($name)));
 
-                    let (props, wet, dry) = parse_properties(file);
+                    let (_, props, wet, dry) = parse_properties(file);
 
                     let result = generate_dry(&wet, props.as_slice());
 
@@ -561,8 +582,8 @@ mod tests {
         use super::*;
         use serde_json::Value;
 
-        fn parse_mappings(data: &str) -> (Vec<Mapping>, Value, Option<Value>) {
-            parse_data(data, |json| {
+        fn parse_mappings(data: &str) -> (String, Vec<Mapping>, Value, Option<Value>) {
+            parse_test_data(data, |json| {
                 json.as_array()
                     .expect("List of mappings required!")
                     .into_iter()
@@ -577,7 +598,7 @@ mod tests {
                 fn $name() {
                     let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let (mappings, tree, value) = parse_mappings(file);
+                    let (_, mappings, tree, value) = parse_mappings(file);
 
                     let value = value.unwrap();
                     let mut wet = json!({});
@@ -592,14 +613,7 @@ mod tests {
             )* )
         }
 
-        mapping_bidi_gen!(
-            bidi_1,
-            bidi_2,
-            bidi_3,
-            bidi_4,
-            bidi_5,
-            bidi_6 // bidi_7 TODO: clarify the 'degree' heuristic
-        );
+        mapping_bidi_gen!(bidi_1, bidi_2, bidi_3, bidi_4, bidi_5, bidi_6, bidi_7);
 
         macro_rules! mapping_gtv_gen {
             ($($name:ident),*) => ( $(
@@ -607,10 +621,10 @@ mod tests {
                 fn $name() {
                     let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let (mappings, tree, value) = parse_mappings(file);
+                    let (msg, mappings, tree, value) = parse_mappings(file);
 
                     let extracted = extract_value(&tree, mappings.as_slice()).ok().and_then(|x| x);
-                    assert_eq!(value, extracted);
+                    assert_eq!(value, extracted, "{}", msg);
                 }
             )* )
         }
@@ -623,7 +637,7 @@ mod tests {
                 fn $name() {
                     let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let (mappings, value, tree) = parse_mappings(file);
+                    let (_, mappings, value, tree) = parse_mappings(file);
 
                     let mut wet = json!({});
                     let result = apply_mappings(&value, &mut wet, mappings.as_slice())
@@ -641,7 +655,7 @@ mod tests {
                 fn $name() {
                     let file = include_str!(concat!("../tests/testdata/mapping/",
                                                             stringify!($name)));
-                    let (mappings, tree, value) = parse_mappings(file);
+                    let (_, mappings, tree, value) = parse_mappings(file);
 
                     let extracted = extract_value(&tree, mappings.as_slice()).ok().and_then(|x| x);
                     assert_eq!(value, extracted);
@@ -655,7 +669,8 @@ mod tests {
             unmap_3,
             unmap_4,
             unmap_5,
-            unmap_6
+            unmap_6,
+            unmap_7
         );
     }
 

@@ -99,18 +99,17 @@ pub fn degree(pattern: &Value) -> u64 {
 mod tests {
 
     use super::matches;
+    use test::*;
     use serde_json::Value;
 
-    fn template_matches(data: Vec<String>) -> Option<String> {
-        let msg = &data[0];
-        let value = data[1].parse::<Value>().expect("Invalid JSON value!");
-        let pattern = data[2].parse::<Value>().expect("Invalid JSON pattern!");
-        let expected = &*data[3];
-        let result = matches(&value, &pattern);
+    fn template_matches(data: &str) {
+        let (msg, value, pattern, expected) =
+            parse_test_data(data, |x| Result::Ok::<Value, ()>(x.clone()));
+        let result = matches(&value.unwrap(), &pattern);
         match (expected, result) {
-            ("true", true) => None,
-            ("false", false) => None,
-            _ => Some(msg.clone()),
+            (Some(Value::Bool(x)), y) => assert_eq!(x, y, "{}", msg),
+            (Some(x), _) => assert!(false, "{}: invalid expected value '{}'", msg, x),
+            _ => assert!(false, "{}: missing expected value", msg),
         }
     }
 
@@ -120,10 +119,8 @@ mod tests {
             fn $name() {
                 let file_contents = include_str!(concat!("../tests/testdata/template/",
                                                          stringify!($name)));
-                match template_matches(file_contents.split('\n').map(String::from).collect()) {
-                    None => { },
-                    Some(s) => assert!(false, s),
-                }
+                template_matches(file_contents);
+
             }
         )* )
     }

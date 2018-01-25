@@ -1,6 +1,8 @@
 use std::io::{self, BufRead, BufReader};
 use std::cmp;
 
+extern crate env_logger;
+
 use serde_json;
 use serde_json::{from_str, Value};
 
@@ -60,6 +62,27 @@ where
     }
 
     items
+}
+
+pub fn parse_test_data<T, F>(data: &str, convert: F) -> (String, T, Value, Option<Value>)
+where
+    F: FnOnce(&Value) -> T,
+{
+    let _ = env_logger::init();
+    let lines = read_sections(data.as_bytes());
+    let title = lines[0]
+        .as_comment()
+        .expect("Invalid title on line 1!")
+        .to_string();
+    let schema = lines[1].as_value().expect("Invalid JSON on line 2!");
+    let tree = lines[2]
+        .as_value()
+        .map(|x| x.clone())
+        .expect("Invalid JSON on line 3!");
+    let value = lines[3].as_value().map(|x| x.clone());
+
+    let parsed = convert(schema);
+    (title, parsed, tree, value)
 }
 
 /// Read a new section, first attempting to read single-line data, then multi-line.

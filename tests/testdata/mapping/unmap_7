@@ -1,0 +1,7 @@
+# match template with higher degree
+[
+    {"value":1, "template":{"foo":1}},
+    {"value":2, "template":{"foo":1,"bar":2}}
+]
+{"foo":1,"bar":2}
+2

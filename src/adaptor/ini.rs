@@ -5,7 +5,7 @@ use std::str;
 use adaptor::Adaptor;
 use error::*;
 
-use nom::{alphanumeric, multispace, space, IResult};
+use nom::{self, multispace, space, IResult, Needed};
 
 use serde_json::{Map, Number, Value};
 use serde_json::map::Entry;
@@ -270,10 +270,39 @@ named!(
     map!(many0!(alt!(comment | multispace)), |_| &b""[..])
 );
 
+/// Parses a key element terminated by whitespace or an `=` character.
+fn key(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    // Find the longest valid utf-8 string in the current slice.
+    let text = match str::from_utf8(i) {
+        Ok(s) => s,
+        Err(e) => {
+            let boundary = e.valid_up_to();
+            if boundary > 0 {
+                // Rust guarantees that boundary is safe
+                unsafe { str::from_utf8_unchecked(&i[..boundary]) }
+            } else {
+                return IResult::Incomplete(Needed::Unknown);
+            }
+        }
+    };
+
+    // Search for the byte index of a terminating character.
+    let terminator = text.char_indices()
+        .find(|&(_, elem)| elem.is_whitespace() || elem == '=')
+        .map(|(index, _)| index);
+
+    match terminator {
+        // We don't allow zero length keys
+        Some(0) => IResult::Error(nom::ErrorKind::Custom(0)),
+        Some(index) => IResult::Done(&i[index..], &i[..index]),
+        None => IResult::Incomplete(Needed::Unknown),
+    }
+}
+
 /// Parses a `key = value` pair and returns a tuple
 named!(key_value_pair <&[u8],(&str,&str)>,
     do_parse!(
-        key: map_res!(alphanumeric, str::from_utf8)
+        key: map_res!(key, str::from_utf8)
         >> opt!(space)
         >> char!('=')
         >> not!(char!('='))
@@ -582,6 +611,24 @@ key2 = value2\n"[..];
     }
 
     #[test]
+    fn parse_key_value_spaced_test() {
+        let pair = &b"parameter = value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Done(&b""[..], ("parameter", "value")));
+    }
+
+    #[test]
+    fn parse_key_value_pair_dash_test() {
+        let pair = &b"test-param = value"[..];
+
+        let res = key_value_pair(pair);
+        print_output(&res);
+        assert_eq!(res, IResult::Done(&b""[..], ("test-param", "value")));
+    }
+
+    #[test]
     fn parse_key_value_pair_duplicate_equals_test() {
         let pair = &b"parameter==value"[..];
 
@@ -596,7 +643,7 @@ key2 = value2\n"[..];
 
         let res = key_value_pair(pair);
         print_output(&res);
-        assert_eq!(res, IResult::Error(ErrorKind::AlphaNumeric));
+        assert_eq!(res, IResult::Error(ErrorKind::Custom(0)));
     }
 
     #[test]
@@ -605,7 +652,7 @@ key2 = value2\n"[..];
 
         let res = key_value_pair(pair);
         print_output(&res);
-        assert_eq!(res, IResult::Error(ErrorKind::AlphaNumeric));
+        assert_eq!(res, IResult::Error(ErrorKind::Custom(0)));
     }
 
     #[test]
@@ -614,7 +661,7 @@ key2 = value2\n"[..];
 
         let res = key_value_pair(pair);
         print_output(&res);
-        assert_eq!(res, IResult::Error(ErrorKind::AlphaNumeric));
+        assert_eq!(res, IResult::Error(ErrorKind::Custom(0)));
     }
 
     #[test]

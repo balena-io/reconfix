@@ -1,4 +1,4 @@
-return true if a string wildcard matches
+# return true if a string wildcard matches
 {"foo":{"bar":"foo bar"}}
 {"foo":{"bar":"[[string]]"}}
 true

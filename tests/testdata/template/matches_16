@@ -1,4 +1,4 @@
-return false if an array wildcard does not match
+# return false if an array wildcard does not match
 {"foo":{"bar":{"baz":[1,2,3]}}}
 {"foo":{"bar":"[[array]]"}}
 false

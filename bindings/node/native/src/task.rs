@@ -92,6 +92,7 @@ impl Task for ReadTask {
 
         debug!("invoking read dispatcher callback");
         callback.call(scope, JsUndefined::new(), args)?;
+        debug!("read dispatcher callback returned");
 
         let sender = self.tx.clone();
         self.schedule(noop(scope, sender)?);
@@ -186,6 +187,7 @@ impl Task for WriteTask {
 
         debug!("invoking write dispatcher callback");
         callback.call(scope, JsUndefined::new(), args)?;
+        debug!("write dispatcher callback returned");
 
         let sender = self.tx.clone();
         self.schedule(noop(scope, sender)?);

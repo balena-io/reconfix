@@ -64,6 +64,15 @@ where
     items
 }
 
+/// Helper function for parsing the multi-line test files. Assumes they follow the format:
+///
+/// 1. Test name in a `# comment`
+/// 2. Schema JSON
+/// 3. Input JSON
+/// 4. Expected output JSON
+///
+/// A callback is provided for parsing the schema into a different structure before returning
+/// values to the calling test.
 pub fn parse_test_data<T, F>(data: &str, convert: F) -> (String, T, Value, Option<Value>)
 where
     F: FnOnce(&Value) -> T,

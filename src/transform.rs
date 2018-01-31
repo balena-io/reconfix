@@ -78,7 +78,12 @@ fn sort_files<'a>(files: &'a BTreeMap<String, File>) -> Vec<(&'a str, &'a File)>
     ordered
 }
 
+/// Given the wet JSON state and a list of mappings, returns the matched value
+/// or `None` if no values matched.
 fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
+    // Generate a list of tuples containing the candidates for matching. The first
+    // tupel value is the degree of the template or `None` for direct mappings.
+    // The second value is the result candidate.
     let mut candidates = mappings
         .iter()
         .filter_map(|mapping| match mapping {
@@ -96,20 +101,27 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
         })
         .collect::<Vec<_>>();
 
+    // Sort the candidates by preference.
     candidates.sort_unstable_by(|left, right| match (left.0, right.0) {
-        (Some(x), Some(y)) => y.cmp(&x),
+        // Prefer direct mappings over template mappings.
         (None, Some(_)) => Ordering::Less,
         (Some(_), None) => Ordering::Greater,
         (None, None) => Ordering::Equal,
+        // Prefer higher degree template mappings to lower ones.
+        (Some(x), Some(y)) => y.cmp(&x),
     });
 
+    // Scan for the best candidate match, returning errors in certain cases.
     candidates
         .into_iter()
         .fold(Ok(None), |state, candidate| match state {
+            // Set the first element to be the current best candidate.
             Ok(None) => Ok(Some(candidate)),
+            // Bail out in error condition.
             Err(e) => Err(e),
             Ok(Some(current)) => {
                 match (current, candidate) {
+                    // If there are multiple direct mappings, the values must agree.
                     ((None, left), (None, right)) => {
                         if left.eq(right) {
                             Ok(Some((None, left)))
@@ -117,9 +129,11 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
                             Err("conflicting direct mapped values".into())
                         }
                     }
+                    // Compare degree of template mappings to find prefered value.
                     ((Some(degree_x), x), (Some(degree_y), y)) => match degree_x.cmp(&degree_y) {
                         Ordering::Less => Ok(Some((Some(degree_y), y))),
                         Ordering::Greater => Ok(Some((Some(degree_x), x))),
+                        // If the degrees are equal and the values are different, return an error.
                         Ordering::Equal => {
                             if x == y {
                                 Ok(Some((Some(degree_x), x)))
@@ -128,6 +142,7 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
                             }
                         }
                     },
+                    // Prefer direct mappings over template mappings.
                     ((Some(_), _), x) => Ok(Some(x)),
                     (x, (Some(_), _)) => Ok(Some(x)),
                 }
@@ -136,6 +151,8 @@ fn extract_value(wet: &Value, mappings: &[Mapping]) -> Result<Option<Value>> {
         .map(|o| o.map(|(_, value)| value.clone()))
 }
 
+/// Recursive function for generating condition pairs. Each pair represents a JSON pointer and the value
+/// that should be found at that location.
 fn generate_conditions(prefix: &Pointer, when: &JsObject, conditions: &mut Vec<(Pointer, Value)>) {
     for (key, value) in when {
         let ptr = prefix.extend(key.as_str());
@@ -146,6 +163,7 @@ fn generate_conditions(prefix: &Pointer, when: &JsObject, conditions: &mut Vec<(
     }
 }
 
+/// Helper function to begin the recursive call for generating condition pairs.
 fn generate_all_conditions(prop: &Property) -> Result<Vec<(Pointer, Value)>> {
     let mut buffer = Vec::new();
     if let Some(ref when) = prop.when {
@@ -156,6 +174,7 @@ fn generate_all_conditions(prop: &Property) -> Result<Vec<(Pointer, Value)>> {
     Ok(buffer)
 }
 
+/// Verify that a list of JSON pointers and values satisfies a list of condition pairs.
 fn condition_match(conditions: &[(Pointer, Value)], values: &[(Pointer, Value)]) -> bool {
     for &(ref cond_ptr, ref cond_val) in conditions.iter() {
         let result = match values.iter().find(|&&(ref ptr, _)| ptr == cond_ptr) {
@@ -177,6 +196,7 @@ fn condition_match(conditions: &[(Pointer, Value)], values: &[(Pointer, Value)])
     true
 }
 
+/// Verify that a JSON object satisfies a list of condition pairs.
 fn condition_match_tree(conditions: &[(Pointer, Value)], tree: &JsObject) -> bool {
     let tree = Value::Object(tree.clone());
     for &(ref ptr, ref val) in conditions {
@@ -199,10 +219,12 @@ fn condition_match_tree(conditions: &[(Pointer, Value)], tree: &JsObject) -> boo
     true
 }
 
+/// Check if a JSON value satisfies a property definition's type constraints.
 fn valid_type(def: &PropertyDefinition, val: &Value) -> bool {
     def.types.iter().any(|t| t.is_type(&val))
 }
 
+/// Flatten a list of JSON pointers and values into a JSON object.
 fn generate_dry_object(entries: Vec<(Pointer, Value)>) -> Result<Value> {
     let mut tree = json!({});
     for (ptr, val) in entries {
@@ -218,7 +240,7 @@ fn generate_dry_object(entries: Vec<(Pointer, Value)>) -> Result<Value> {
 }
 
 /// Recursively process properties, extracting wet values and inserting them
-/// into the dry tree.
+/// into the list of dry values.
 fn generate_dry_values(
     root: &Pointer,
     wet: &Value,
@@ -290,7 +312,7 @@ pub fn transform_to_wet(config: Value, schema: &Schema) -> Result<Vec<Entry>> {
 
     let output = files
         .into_iter()
-        .map(|(name, (format, wet))| Entry {
+        .map(|(name, (_, wet))| Entry {
             name: name.to_string(),
             content: wet,
         })
@@ -504,6 +526,7 @@ mod tests {
     use serde_json::to_string;
     use serde_json::Value;
 
+    /// Wrapper function for simplifying test function calls.
     fn generate_dry(wet: &Value, props: &[Property]) -> Option<Value> {
         let mut buffer = Vec::new();
         let prefix = Pointer::new();
@@ -516,6 +539,7 @@ mod tests {
         generate_dry_object(buffer).ok()
     }
 
+    /// Wrapper function for simplifying test function calls.
     fn generate_dry_obj(wet: &Value, props: &[Property]) -> Option<JsObject> {
         match generate_dry(wet, props) {
             Some(Value::Object(o)) => Some(o),

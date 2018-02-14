@@ -1,6 +1,6 @@
 {
-  "name": "reconfix-preview",
-  "version": "0.2.1",
+  "name": "reconfix",
+  "version": "0.3.0",
   "description": "A Node.js wrapper for the Reconfix library.",
   "main": "bindings/node/lib/index.js",
   "author": "Aaron Brodersen <aaron@resin.io>",

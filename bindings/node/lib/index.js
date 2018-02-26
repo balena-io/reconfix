@@ -1,46 +1,6 @@
 
 const native = require('../native');
-const stream = require('stream');
 const Promise = require('bluebird');
-
-class BufferStream extends stream.Duplex {
-    constructor(options) {
-        super(options);
-        this.inner = options.inner;
-    }
-
-    _read(size) {
-        let result = this.inner.read(size);
-        this.push(result);
-    }
-
-    _write(chunk, encoding, callback) {
-        this.inner.write(chunk, encoding);
-        callback(null);
-    }
-}
-
-function bufferRead(stream) {
-    return new Promise((resolve, reject) => {
-        const buffer = new BufferStream({ 
-            inner: new native.BufferStream() 
-        });
-        stream.on('error', reject);
-        stream.on('end', () => resolve(buffer.inner));
-
-        stream.pipe(buffer);
-    });
-}
-
-function bufferWrite(data, stream) {
-    return new Promise((resolve, reject) => {
-        stream.on('error', reject);
-        stream.on('finish', () => resolve());
-
-        let buffer = new BufferStream({ inner: data });
-        buffer.pipe(stream);
-    })
-}
 
 class Reconfix {
     constructor(options) {
@@ -72,4 +32,4 @@ class Reconfix {
     }
 }
 
-module.exports.Reconfix = Reconfix;
+module.exports = Reconfix;

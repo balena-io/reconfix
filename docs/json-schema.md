@@ -259,7 +259,7 @@ Schema:
                 "location": {
                     "partition": 1,
                     "path": "/system-connections",
-                    "fileset": true,
+                    "fileset": true
                 }
             }
         }
@@ -275,9 +275,9 @@ Schema:
                 ],
                 "output": {
                     "file": { "$ref": "#/reconfix/files/config_json" },
-                    "path": "/persistentLogging",
+                    "path": "/persistentLogging"
                 }
-            },
+            }
         },
         "wifi": {
             "type": "array",
@@ -292,19 +292,19 @@ Schema:
                         "wifi": {
                             "hidden": true,
                             "mode": "infrastructure",
-                            "ssid": "[[string]]",
+                            "ssid": "[[string]]"
                         },
                         "wifi-security": {
                             "auth-alg": "open",
                             "key-mgmt": "wpa-psk",
-                            "psk": "[[string]]",
+                            "psk": "[[string]]"
                         },
                         "ipv4": {
-                            "method": "auto",
+                            "method": "auto"
                         },
                         "ipv6": {
                             "addr-gen-mode": "stable-privacy",
-                            "method": "auto",
+                            "method": "auto"
                         }
                     }
                 },
@@ -313,8 +313,9 @@ Schema:
                         "type": "string",
                         "reconfix": {
                             "output": {
-                                "file": {"$ref": "#/reconfix/files/system_connections",},
+                                "file": {"$ref": "#/reconfix/files/system_connections"},
                                 "path": "/[[1/name]]/connection/id"
+                            }
                         }
                     },
                     "ssid": {

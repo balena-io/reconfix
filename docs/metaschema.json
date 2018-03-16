@@ -1,0 +1,146 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://resin.io/reconfix/schema#",
+    "title": "Reconfix schema meta-schema",
+    "definitions": {
+        "schemaArray": {
+            "allOf": [
+                { "$ref": "http://json-schema.org/draft-07/schema#/definitions/schemaArray" },
+                {
+                    "items": { "$ref": "#" }
+                }
+            ]
+        },
+        "file": {
+            "type": "object",
+            "required": ["format", "location"],
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "enum": [
+                        "json",
+                        "ini"
+                    ]
+                },
+                "location": {
+                    "type": "object",
+                    "anyOf": [
+                        {
+                            "required": ["partition", "path"],
+                            "properties": {
+                                "partition": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "path": {
+                                    "type": "string"
+                                },
+                                "fileset": {
+                                    "type": "boolean"
+                                }
+                            }
+                        },
+                        {
+                            "required": ["file", "path"],
+                            "properties": {
+                                "file": { "$ref": "#/definitions/file" },
+                                "path": {
+                                    "type": "string",
+                                    "format": "json-pointer"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "identityMap": {
+            "const": "identity"
+        }
+    },
+    "allOf": [ { "$ref": "http://json-schema.org/draft-07/schema#" } ],
+    "properties": {
+        "additionalItems": { "$ref": "#" },
+        "additionalProperties": { "$ref": "#"},
+        "dependencies": {
+            "additionalProperties": {
+                "anyOf": [
+                    { "$ref": "#" },
+                    { "type": "array" }
+                ]
+            }
+        },
+        "items": {
+            "anyOf": [
+                { "$ref": "#" },
+                { "$ref": "#/definitions/schemaArray" }
+            ]
+        },
+        "definitions": {
+            "additionalProperties": { "$ref": "#" }
+        },
+        "patternProperties": {
+            "additionalProperties": { "$ref": "#" }
+        },
+        "properties": {
+            "additionalProperties": { "$ref": "#" }
+        },
+        "if": {"$ref": "#"},
+        "then": {"$ref": "#"},
+        "else": {"$ref": "#"},
+        "allOf": { "$ref": "#/definitions/schemaArray" },
+        "anyOf": { "$ref": "#/definitions/schemaArray" },
+        "oneOf": { "$ref": "#/definitions/schemaArray" },
+        "not": { "$ref": "#" },
+        "contains": { "$ref": "#" },
+        "propertyNames": { "$ref": "#" },
+
+        "reconfix": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "object",
+                    "additionalProperties": { "$ref": "#/definitions/file" }
+                },
+                "transforms": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["output"],
+                        "properties": {
+                            "const": true,
+                            "map": { 
+                                "anyOf": [
+                                    { "$ref": "#/definitions/identityMap" },
+                                    {
+                                        "type": "array",
+                                        "items": {
+                                            "anyOf": [
+                                                { "$ref": "#/definitions/identityMap" },
+                                                { 
+                                                    "type": "array",
+                                                    "items": [true, true]
+                                                }
+                                            ]
+                                        }   
+                                    }
+                                ]
+                            },
+                            "output": {
+                                "type": "object",
+                                "properties": {
+                                    "file": { "$ref": "#/definitions/file" },
+                                    "path": {
+                                        "type": "string",
+                                        "format": "json-pointer"
+                                    }
+                                }
+                            },
+                            "when": { "$ref": "http://json-schema.org/draft-07/schema#" }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

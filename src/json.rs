@@ -7,7 +7,7 @@ use error::*;
 use serde_json::Value;
 type JsObject = ::serde_json::map::Map<String, Value>;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Pointer {
     parts: Vec<String>,
 }

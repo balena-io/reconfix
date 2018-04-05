@@ -1,0 +1,14 @@
+{
+    "reconfix": {
+        "targets": {
+            "disk_file": {
+                "type": "file",
+                "format": "json",
+                "location": {
+                    "partition": "boot",
+                    "path": "/foo/bar"
+                }
+            }
+        }
+    }
+}

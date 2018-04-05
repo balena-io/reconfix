@@ -1,0 +1,14 @@
+{
+    "reconfix": {
+        "targets": {
+            "nested_file": {
+                "type": "file",
+                "format": "ini",
+                "location": {
+                    "file": "#/another/file",
+                    "path": "/foo/bar"
+                }
+            }
+        }
+    }
+}

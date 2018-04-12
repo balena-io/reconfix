@@ -30,6 +30,16 @@ impl Layer {
         }
         layer
     }
+
+    pub fn add_single(&mut self, ptr: &JsonPointer, value: Leaf) {
+        self.values.insert(ptr.clone(), value);
+    }
+
+    pub fn add_many(&mut self, ptr: &JsonPointer, value: &Value) {
+        for (ptr, literal) in produce_literals(ptr.clone(), value) {
+            self.values.insert(ptr, Leaf::Literal(literal));
+        }
+    }
 }
 
 fn produce_literals(ptr: JsonPointer, value: &Value) -> Vec<(JsonPointer, Literal)> {

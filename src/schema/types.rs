@@ -1,11 +1,13 @@
 
 use std::collections::BTreeMap;
 
+use ::json::Pointer as JsonPointer;
+
 use serde_json::Value;
 
 pub type Map<K, V> = BTreeMap<K, V>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Type {
     Array,
@@ -30,7 +32,7 @@ pub enum TypeKind<T> {
     Set(Vec<T>),
 }
 
-#[derive(Clone, Debug, Deserialize, Default, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ObjectSchema {
     #[serde(rename = "$id")]
@@ -105,13 +107,15 @@ pub struct ObjectSchema {
     pub reconfix: Option<Reconfix>,
 }
 
-#[derive(Clone, Debug, Deserialize, Default, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Default, PartialEq, Serialize)]
 pub struct Reconfix {
     #[serde(default)]
     pub targets: Map<String, Target>,
+    #[serde(default)]
+    pub transforms: Vec<Transform>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "type")]
 pub enum Target {
     #[serde(rename = "file")]
@@ -123,14 +127,14 @@ pub enum Target {
     NetworkManager,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Format {
     Json,
     Ini,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Location {
     Disk {
@@ -143,9 +147,27 @@ pub enum Location {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Partition {
     Number(u8),
     String(String),
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Transform {
+    pub map: Option<TypeKind<Case>>,
+    pub output: Output,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Case {
+    Identity,
+    Tuple(Value, Schema),
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Output {
+    pub target: String,
+    pub path: String,
 }

@@ -7,6 +7,8 @@ use error::*;
 use serde_json::Value;
 type JsObject = ::serde_json::map::Map<String, Value>;
 
+use nom::{self, rest_s, IResult};
+
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Pointer {
     parts: Vec<String>,
@@ -45,13 +47,19 @@ impl FromStr for Pointer {
     type Err = PointerParseError;
 
     fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
-        if !s.starts_with("/") {
+        if !s.starts_with("/") && s.len() > 0 {
             return Err(PointerParseError);
         }
 
         let parts = s.trim_left_matches('/').split('/').map(unescape).collect();
 
         Ok(Pointer { parts: parts })
+    }
+}
+
+impl Into<Vec<String>> for Pointer {
+    fn into(self) -> Vec<String> {
+        self.parts
     }
 }
 
@@ -182,5 +190,109 @@ impl<'a> OccupiedEntry<'a> {
 
     pub fn insert(self, v: Value) -> Value {
         mem::replace(self.value, v)
+    }
+}
+
+pub struct RelativePointer {
+    up: u64,
+    down: Down,
+}
+
+enum Down {
+    Position,
+    Pointer(Pointer),
+}
+
+fn down_from_str(input: &str) -> ::std::result::Result<Down, PointerParseError> {
+    match input {
+        "#" => Ok(Down::Position),
+        ptr => Ok(Down::Pointer(Pointer::from_str(ptr)?))
+    }
+}
+
+fn is_digit(i: char) -> bool {
+    i.is_digit(10)
+}
+
+named!(rel_pointer_parser<&str, (u64, Down)>,
+    do_parse!(
+        up: map_res!(take_while1_s!(is_digit), u64::from_str)
+        >> down: map_res!(rest_s, down_from_str)
+        >> (up, down)
+    )
+);
+
+impl FromStr for RelativePointer {
+    type Err = PointerParseError;
+
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+        let (up, down) = match rel_pointer_parser(s) {
+            IResult::Done(_, o) => o,
+            _ => return Err(PointerParseError),
+        };
+
+        Ok(RelativePointer { up: up, down: down })
+    }
+}
+
+impl RelativePointer {
+    pub fn normalize(&self, ptr: &Pointer) -> Option<Pointer> {
+        match self.down {
+            Down::Position => None,
+            Down::Pointer(ref rel) => {
+                let mut parts: Vec<String> = ptr.clone().into();
+                for i in 0..self.up {
+                    if let None = parts.pop() {
+                        return None;
+                    }
+                }
+
+                for part in rel.parts.iter() {
+                    parts.push(part.clone());
+                }
+
+                Some(Pointer { parts: parts })
+            }
+        }
+    }
+
+    pub fn resolve(&self, value: &Value, ptr: &Pointer) -> Option<Value> {
+        match self.down {
+            Down::Position => {
+                let len = ptr.parts.len() as u64;
+                if self.up <= len {
+                    let boundary = (len - self.up) as usize;
+                    let slice = &ptr.parts[0..boundary];
+                    let new_ptr = Pointer { parts: slice.to_vec() };
+                    let key = &ptr.parts[boundary-1];
+                    match new_ptr.search(value) {
+                        Some(&Value::Object(_)) => Some(Value::String(key.to_string())),
+                        Some(&Value::Array(_)) => match u64::from_str(key) {
+                            Ok(idx) => Some(Value::Number(idx.into())),
+                            _ => None,
+                        }
+                        _ => None,
+                    }
+                } else { None }
+            },
+            Down::Pointer(_) => {
+                self.normalize(ptr)
+                    .and_then(|ptr| ptr.search(value))
+                    .map(|v| v.clone())
+            }
+        }
+    }
+}
+
+mod test {
+    use super::*;
+
+    #[test]
+    fn relative_resolve_self() {
+        let rel = RelativePointer::from_str("0").unwrap();
+        let ptr = Pointer::from_str("/foo").unwrap();
+        let input = json!({"foo": "bar"});
+        let result = rel.resolve(&input, &ptr).unwrap();
+        assert_eq!("bar", result);
     }
 }

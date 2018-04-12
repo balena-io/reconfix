@@ -1,14 +1,17 @@
 
-use super::types::{Schema, ObjectSchema, TypeKind};
+use super::types::{Schema, ObjectSchema, TypeKind, Case};
+use ::json::Pointer;
 use ::error::*;
 
 use std::fmt;
 use std::io::Read;
 use std::marker;
 use std::result;
+use std::str::FromStr;
 
-use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess, SeqAccess, IntoDeserializer};
-use serde_json;
+use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess, SeqAccess, IntoDeserializer, Unexpected};
+use serde::ser::{Serialize, Serializer, SerializeTuple};
+use serde_json::{self, Value};
 
 pub fn from_reader<R>(rdr: R) -> Result<Schema> 
     where R: Read
@@ -45,6 +48,17 @@ impl<'de> Deserialize<'de> for super::types::Schema {
         where D: Deserializer<'de>
     {
         deserializer.deserialize_any(SchemaVisitor)
+    }
+}
+
+impl Serialize for super::types::Schema {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error> 
+        where S: Serializer
+    {
+        match *self {
+            Schema::Boolean(ref b) => b.serialize(serializer),
+            Schema::Object(ref o) => o.serialize(serializer),
+        }
     }
 }
 
@@ -128,6 +142,92 @@ impl<'de, T> Deserialize<'de> for super::types::TypeKind<T>
         deserializer.deserialize_any(visitor)
     }
 }
+
+impl<T> Serialize for super::types::TypeKind<T> 
+    where T: Serialize
+{
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error> 
+        where S: Serializer
+    {
+        match *self {
+            TypeKind::Single(ref x) => x.serialize(serializer),
+            TypeKind::Set(ref x) => x.serialize(serializer),
+        }
+    }
+}
+
+struct CaseVisitor;
+
+impl<'de> Visitor<'de> for CaseVisitor {
+    type Value = Case;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "'identity' or tuple")
+    }
+
+    fn visit_str<E>(self, v: &str) -> result::Result<Self::Value, E> 
+        where E: de::Error
+    {
+        match v {
+            "identity" => Ok(Case::Identity),
+            x => Err(de::Error::invalid_value(Unexpected::Str(x), &"identity")),
+        }
+    }
+
+    fn visit_seq<V>(self, mut seq: V) -> result::Result<Self::Value, V::Error>
+        where V: SeqAccess<'de>
+    {
+        let left: Value = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(0, &"exactly 2 items"))?;
+        let right: Schema = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(1, &"exactly 2 items"))?;
+        
+        Ok(Case::Tuple(left, right))
+    }
+
+}
+
+impl<'de> Deserialize<'de> for super::types::Case {
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        deserializer.deserialize_any(CaseVisitor)
+    }
+}
+
+impl Serialize for super::types::Case {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error> 
+        where S: Serializer
+    {
+        match *self {
+            Case::Identity => "identity".serialize(serializer),
+            Case::Tuple(ref l, ref r) => {
+                let mut tuple = serializer.serialize_tuple(2)?;
+                tuple.serialize_element(l)?;
+                tuple.serialize_element(r)?;
+                tuple.end()
+            },
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Pointer {
+    fn deserialize<D>(deserialzier: D) -> result::Result<Self, D::Error> 
+        where D: Deserializer<'de>
+    {
+        let s = String::deserialize(deserialzier)?;
+        FromStr::from_str(&s).map_err(de::Error::custom)
+    }
+}
+
+impl<'de> Serialize for Pointer {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error> 
+        where S: Serializer
+    {
+        self.to_string().serialize(serializer)
+    }
+}
+
 
 
 #[cfg(test)]

@@ -66,18 +66,24 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
 
     let mut layer = Layer::new();
 
-    for input in inputs {
+    for (index, input) in inputs.iter().enumerate() {
+        let dry_pointer = transform.source.get_pointer_for_index(index as u64)
+            .chain_err(|| "unable to generate dry JSON pointer")?;
+
+        let wet_pointer = transform.destination.get_pointer(dry, &dry_pointer)
+            .chain_err(|| "unable to generate wet JSON pointer")?;
+
         let mut found = false;
         for element in &transform.map {
             match *element {
                 Case::Identity => {
-                    layer.add_many(&transform.destination, input);
+                    layer.add_many(&wet_pointer, input);
                 },
-                Case::Template { ref dry, ref template } if dry == input => {
-                    layer.add_single(&transform.destination, Leaf::Schema(template.clone()));
+                Case::Template { ref dry, ref template } if dry.eq(*input) => {
+                    layer.add_single(&wet_pointer, Leaf::Schema(template.clone()));
                 },
-                Case::Value { ref dry, ref wet } if dry == input => {
-                    layer.add_many(&transform.destination, wet);
+                Case::Value { ref dry, ref wet } if dry.eq(*input) => {
+                    layer.add_many(&wet_pointer, wet);
                 },
                 _ => continue,
             }
@@ -95,33 +101,54 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
 }
 
 fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> {
-    unimplemented!()
-    // let output = match transform.destination.search(wet) {
-    //     Some(v) => v,
-    //     None => bail!("unable to find value at transform destination '{}'", transform.destination),
-    // };
+    let matches = transform.destination.get_match_matrix(&wet);
+    let mut layer = Layer::new();
 
-    // for element in &transform.map {
-    //     let layer = match *element {
-    //         Case::Identity => Some(Layer::from_value(&transform.source, output)),
-    //         Case::Value { ref dry, ref wet } if wet == output => {
-    //             Some(Layer::from_value(&transform.source, dry))
-    //         },
-    //         Case::Template { ref dry, ref template } => {
-    //             match validate(output, template)? {
-    //                 true => Some(Layer::from_value(&transform.source, dry)),
-    //                 false => None,
-    //             }
-    //         },
-    //         _ => None,
-    //     };
+    for (idx, match_set) in matches.iter().enumerate() {
+        let dry_pointer = transform.source.get_pointer_for_index(idx as u64)
+            .chain_err(|| "unable to resolve dry JSON pointer")?;
+        let parameters = match_set.apply_matches(&dry_pointer)
+            .chain_err(|| "unable to resolve path parameters")?;
 
-    //     if let Some(layer) = layer {
-    //         return Ok(layer);
-    //     }
-    // }
+        for (ptr, val) in parameters {
+            layer.add_many(&ptr, &val);
+        }
 
-    // bail!("unable to match wet value at '{}'", transform.destination);
+        let wet_pointer = transform.destination.get_match_pointer(match_set)
+            .chain_err(|| "unable to generate wet JSON pointer")?;
+        let output = match wet_pointer.search(wet) {
+            Some(v) => v,
+            None => bail!("unable to find value at transform destination '{}'", wet_pointer),
+        };
+
+        let mut found = false;
+        for element in &transform.map {
+            match *element {
+                Case::Identity => {
+                    layer.add_many(&dry_pointer, output);
+                },
+                Case::Value { ref dry, ref wet } if wet == output => {
+                    layer.add_many(&dry_pointer, dry);
+                },
+                Case::Template { ref dry, ref template } => {
+                    match validate(output, template)? {
+                        true => layer.add_many(&dry_pointer, dry),
+                        false => continue,
+                    }
+                },
+                _ => continue,
+            }
+
+            found = false;
+            break;
+        }
+
+        if !found {
+            bail!("unable to match wet value at '{}'", wet_pointer);
+        }
+    }
+
+    Ok(layer)
 }
 
 fn flatten_layers(layers: Vec<Layer>) -> Result<Value> {

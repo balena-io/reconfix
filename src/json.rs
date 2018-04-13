@@ -16,12 +16,8 @@ pub struct Pointer {
 
 impl fmt::Display for Pointer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "/")?;
-        if let Some((last, rest)) = self.parts.split_last() {
-            for name in rest {
-                write!(f, "{}/", escape(name))?;
-            }
-            write!(f, "{}", escape(last))?;
+        for part in self.parts.iter() {
+            write!(f, "/{}", escape(part.as_ref()))?;
         }
 
         Ok(())
@@ -47,19 +43,29 @@ impl FromStr for Pointer {
     type Err = PointerParseError;
 
     fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
-        if !s.starts_with("/") && s.len() > 0 {
-            return Err(PointerParseError);
-        }
+        let parts = match parse_ptr(s) {
+            IResult::Done(_, p) => p,
+            _ => return Err(PointerParseError),
+        };
 
-        let parts = s.trim_left_matches('/').split('/').map(unescape).collect();
-
-        Ok(Pointer { parts: parts })
+        let unescaped = parts.into_iter().map(unescape).collect();
+        Ok(Pointer { parts: unescaped })
     }
 }
+
+named!(parse_ptr<&str, Vec<&str>>,
+    many0!(preceded!(tag_s!("/"), is_not_s!("/")))
+);
 
 impl Into<Vec<String>> for Pointer {
     fn into(self) -> Vec<String> {
         self.parts
+    }
+}
+
+impl From<Vec<String>> for Pointer {
+    fn from(parts: Vec<String>) -> Self {
+        Pointer { parts: parts }
     }
 }
 
@@ -113,6 +119,10 @@ impl Pointer {
             None => None,
             Some(json) => match json {
                 &Value::Object(ref obj) => obj.get(name),
+                &Value::Array(ref arr) => match u64::from_str(name) {
+                    Ok(idx) => arr.get(idx as usize),
+                    _ => None,
+                }
                 _ => None,
             },
         })
@@ -193,11 +203,13 @@ impl<'a> OccupiedEntry<'a> {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct RelativePointer {
     up: u64,
     down: Down,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 enum Down {
     Position,
     Pointer(Pointer),
@@ -235,23 +247,57 @@ impl FromStr for RelativePointer {
     }
 }
 
+impl fmt::Display for RelativePointer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.up)?;
+        match self.down {
+            Down::Position => write!(f, "#"),
+            Down::Pointer(ref p) => write!(f, "{}", p),
+        }
+    }
+}
+
 impl RelativePointer {
+    pub fn new(parent: u64, parts: &[&str]) -> RelativePointer {
+        let parts = parts.iter().map(|s| s.to_string()).collect();
+        RelativePointer {
+            up: parent,
+            down: Down::Pointer(Pointer { parts: parts })
+        }
+    }
+
+    pub fn position(parent: u64) -> RelativePointer {
+        RelativePointer {
+            up: parent,
+            down: Down::Position,
+        }
+    }
+
+    fn get_pivot(&self, ptr: &Pointer) -> Option<Pointer> {
+        let len = ptr.parts.len() as u64;
+        if self.up <= len {
+            let boundary = (len - self.up) as usize;
+            let slice = &ptr.parts[0..boundary];
+            Some(Pointer { parts: slice.to_vec() })
+        } else {
+            None
+        }
+    } 
+
     pub fn normalize(&self, ptr: &Pointer) -> Option<Pointer> {
         match self.down {
             Down::Position => None,
             Down::Pointer(ref rel) => {
-                let mut parts: Vec<String> = ptr.clone().into();
-                for i in 0..self.up {
-                    if let None = parts.pop() {
-                        return None;
-                    }
-                }
+                let mut pivot = match self.get_pivot(ptr) {
+                    Some(p) => p,
+                    None => return None,
+                };
 
                 for part in rel.parts.iter() {
-                    parts.push(part.clone());
+                    pivot.push(part.clone());
                 }
 
-                Some(Pointer { parts: parts })
+                Some(pivot)
             }
         }
     }
@@ -259,21 +305,26 @@ impl RelativePointer {
     pub fn resolve(&self, value: &Value, ptr: &Pointer) -> Option<Value> {
         match self.down {
             Down::Position => {
-                let len = ptr.parts.len() as u64;
-                if self.up <= len {
-                    let boundary = (len - self.up) as usize;
-                    let slice = &ptr.parts[0..boundary];
-                    let new_ptr = Pointer { parts: slice.to_vec() };
-                    let key = &ptr.parts[boundary-1];
-                    match new_ptr.search(value) {
-                        Some(&Value::Object(_)) => Some(Value::String(key.to_string())),
-                        Some(&Value::Array(_)) => match u64::from_str(key) {
-                            Ok(idx) => Some(Value::Number(idx.into())),
-                            _ => None,
-                        }
+                let pivot = match self.get_pivot(ptr) {
+                    Some(p) => p,
+                    None => return None,
+                };
+
+                let (key, parent) = match pivot.parts.split_last() {
+                    Some(p) => p,
+                    None => return None,
+                };
+
+                let parent_ptr = Pointer { parts: parent.to_vec() };
+
+                match parent_ptr.search(value) {
+                    Some(&Value::Object(_)) => Some(Value::String(key.to_string())),
+                    Some(&Value::Array(_)) => match u64::from_str(key) {
+                        Ok(idx) => Some(Value::Number(idx.into())),
                         _ => None,
                     }
-                } else { None }
+                    _ => None,
+                }
             },
             Down::Pointer(_) => {
                 self.normalize(ptr)
@@ -288,10 +339,123 @@ mod test {
     use super::*;
 
     #[test]
+    fn pointer_parse_empty() {
+        let expected = Pointer::new();
+        let actual = Pointer::from_str("").unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn pointer_parse_single_empty() {
+        let mut expected = Pointer::new();
+        expected.push("");
+        let actual = Pointer::from_str("/").unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn pointer_parse_single_key() {
+        let mut expected = Pointer::new();
+        expected.push("foo");
+        let actual = Pointer::from_str("/foo").unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn pointer_resolve_object_key() {
+        let input = json!({"foo": "bar"});
+        let mut ptr = Pointer::new();
+        ptr.push("foo");
+        let result = ptr.search(&input).unwrap();
+        assert_eq!("bar", result);
+    }
+
+    #[test]
+    fn pointer_resolve_array_index() {
+        let input = json!(["foo", "bar"]);
+        let mut ptr = Pointer::new();
+        ptr.push("1");
+        let result = ptr.search(&input).unwrap();
+        assert_eq!("bar", result);
+    }
+
+    #[test]
+    fn pointer_resolve_root() {
+        let input = json!(4);
+        let ptr = Pointer::new();
+        let result = ptr.search(&input).unwrap();
+        assert_eq!(&input, result);
+    }
+
+    #[test]
+    fn relative_parse_self() {
+        let expected = RelativePointer::new(0, &[]);
+        let actual = RelativePointer::from_str("0").unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn relative_parse_self_position() {
+        let expected = RelativePointer::position(0);
+        let actual = RelativePointer::from_str("0#").unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn relative_parse_parent() {
+        let expected = RelativePointer::new(1, &[]);
+        let actual = RelativePointer::from_str("1").unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn relative_parse_parent_position() {
+        let expected = RelativePointer::position(1);
+        let actual = RelativePointer::from_str("1#").unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
     fn relative_resolve_self() {
-        let rel = RelativePointer::from_str("0").unwrap();
+        let rel = RelativePointer::new(0, &[]);
         let ptr = Pointer::from_str("/foo").unwrap();
         let input = json!({"foo": "bar"});
+        let result = rel.resolve(&input, &ptr).unwrap();
+        assert_eq!("bar", result);
+    }
+
+    #[test]
+    fn relative_resolve_self_position_object() {
+        let rel = RelativePointer::position(0);
+        let ptr = Pointer::from_str("/foo").unwrap();
+        let input = json!({"foo": "bar"});
+        let result = rel.resolve(&input, &ptr).unwrap();
+        assert_eq!("foo", result);
+    }
+
+    #[test]
+    fn relative_resolve_self_position_array() {
+        let rel = RelativePointer::position(0);
+        let ptr = Pointer::from_str("/1").unwrap();
+        let input = json!(["foo", "bar"]);
+        let result = rel.resolve(&input, &ptr).unwrap();
+        assert_eq!(1, result);
+    }
+
+    #[test]
+    fn relative_resolve_sibling_object() {
+        let rel = RelativePointer::new(1, &["baz"]);
+        let ptr = Pointer::from_str("/foo/bar").unwrap();
+        let input = json!({"foo": {"bar": "alice", "baz": "bob"}});
+        let result = rel.resolve(&input, &ptr).unwrap();
+        assert_eq!("bob", result);
+    }
+
+    #[test]
+    fn relative_resolve_sibling_array() {
+        let rel = RelativePointer::new(1, &["0"]);
+        let ptr = Pointer::from_str("/foo/1").unwrap();
+        let input = json!({"foo": ["bar", "baz"]});
         let result = rel.resolve(&input, &ptr).unwrap();
         assert_eq!("bar", result);
     }

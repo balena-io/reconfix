@@ -81,7 +81,7 @@ fn get_transforms(obj: &ObjectSchema, ctx: &Context) -> Result<Vec<Transform>> {
             Schema::Boolean(_) => continue,
         };
 
-        let prop_ctx = ctx.add_component(Component::Property(Key::Single(name.clone())));
+        let prop_ctx = ctx.add_component(Component::Property(name.to_string()));
         let prop_transforms = get_transforms(&prop_obj, &prop_ctx)?;
         transforms.extend(prop_transforms);
     }
@@ -135,8 +135,8 @@ fn convert_transform(transform: &schema::Transform, ctx: &Context) -> Result<Tra
         None => vec![Case::Identity],
     };
 
-    let destination = JsonPointer::from_str(transform.output.path.as_ref())
-        .chain_err(|| "unable to parse JSON pointer")?;
+    let destination = Destination::from_str(transform.output.path.as_ref())
+        .map_err(|_| "unable to parse destination descriptor")?;
 
     Ok(Transform {
         source: ctx.selector.clone(),

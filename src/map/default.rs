@@ -15,7 +15,7 @@ use valico::json_schema;
 
 type Map<K, V> = ::std::collections::BTreeMap<K, V>;
 
-struct DefaultMapper;
+pub struct DefaultMapper;
 
 impl Mapper for DefaultMapper {
     fn forward_map(&self, dry: &Value, transforms: &[Transform]) -> Result<Map<Target, Value>> {

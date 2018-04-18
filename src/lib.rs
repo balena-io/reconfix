@@ -58,17 +58,23 @@ mod error {
 }
 
 pub use error::*;
-pub use common::FileNode;
+pub use common::{FileNode, Partition};
 pub use io::Plugin;
 
-// use common::{deserialize, serialize};
+use common::{deserialize, serialize};
+use json::Entry;
 // use transform::{transform_to_dry, transform_to_wet, Entry};
 // use schema::{Location, Schema};
 use schema::types::Schema;
 use schema::parse;
+use transform::Generator;
+use transform::types::{Transform, Target, DiskFile, Location, Format};
+use map::Mapper;
+use map::default::DefaultMapper;
 use io::host::HostFile;
 
 use std::ops::{Deref, DerefMut};
+use std::collections::BTreeMap;
 
 use futures::{Future, Stream};
 use futures::stream;
@@ -149,69 +155,136 @@ fn read_values<P: Plugin + DerefMut>(schema: Schema, mut plugin: P) -> Result<Va
 where
     for<'a> &'a mut <P as Deref>::Target: Plugin,
 {
-    unimplemented!()
-    // let data = schema
-    //     .files
-    //     .iter()
-    //     .map(|(name, file)| (name.clone(), file.location.clone(), file.format.clone()));
+    let generator = transform::generator::DefaultGenerator;
+    let transforms = generator.generate(&schema)
+        .chain_err(|| "unable to generate transforms")?;
 
-    // let entries = stream::iter_ok(data)
-    //     .filter_map(|(name, location, format)| match location {
-    //         Location::Dependent { .. } => None,
-    //         Location::Independent(node) => Some((name, node, format)),
-    //     })
-    //     .and_then(|(name, node, format)| {
-    //         (&mut *plugin)
-    //             .read(node)
-    //             .map(|content| (name, content, format))
-    //             .map_err(|e| ErrorKind::Plugin(e).into())
-    //     })
-    //     .and_then(|(name, content, format)| {
-    //         let wet = deserialize(content.as_slice(), &format)?;
+    let targets = get_targets(&transforms);
 
-    //         Ok(Entry {
-    //             name: name.to_string(),
-    //             content: wet,
-    //         })
-    //     })
-    //     .collect()
-    //     .and_then(|entries| transform_to_dry(entries, &schema));
+    let mut entries = BTreeMap::new();
+    let mut phy_files = BTreeMap::new();
 
-    // entries.wait()
+    for target in targets.iter() {
+        match *target {
+            Target::NetworkManager => {
+                bail!("networkmanager backend not supported")
+            },
+            Target::File(ref file) => {
+                let format = match file.format {
+                    Format::Ini => common::FileFormat::Ini,
+                    Format::Json => common::FileFormat::Json,
+                };
+                match file.location {
+                    Location::Disk(ref d) => {
+                        let node = get_node(d)?;
+                        let content: Vec<u8> = (&mut *plugin)
+                            .read(node)
+                            .map_err(|e| ErrorKind::Plugin(e))?;
+                        
+                        let wet = deserialize(content.as_slice(), &format)?;
+                        phy_files.insert(d, wet.clone());
+                        entries.insert(target.clone(), wet);
+                    },
+                    Location::Nested(ref n) => {
+                        let phy = phy_files.get(&n.file)
+                            .ok_or_else(|| "unable to find nested file")?;
+                        let wet = n.path.search(phy)
+                            .ok_or_else(|| "unable to find search nested path")?;
+                        entries.insert(target.clone(), wet.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    let mapper = map::default::DefaultMapper;
+    let dry = mapper.reverse_map(&entries, &transforms)
+        .chain_err(|| "unable to perform reverse map")?;
+
+    Ok(dry)
 }
 
 fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P) -> Result<()>
 where
     for<'a> &'a mut <P as Deref>::Target: Plugin,
 {
-    unimplemented!()
-    // let entries = transform_to_wet(dry, &schema)?;
-    // //let plugin = &mut plugin;
+    let generator = transform::generator::DefaultGenerator;
+    let transforms = generator.generate(&schema)
+        .chain_err(|| "unable to generate transforms")?;
 
-    // let future = stream::iter_ok(entries)
-    //     .and_then(|entry| {
-    //         schema
-    //             .files
-    //             .get(&entry.name)
-    //             .ok_or_else(|| "missing file entry".into())
-    //             .map(|file| (entry, file))
-    //     })
-    //     .filter_map(|(entry, file)| match file.location {
-    //         Location::Independent(ref node) => Some((entry, node, &file.format)),
-    //         _ => None,
-    //     })
-    //     .and_then(|(entry, node, format)| {
-    //         let mut buf = Vec::new();
-    //         serialize(entry.content, format, true, &mut buf)?;
-    //         Ok((node, buf))
-    //     })
-    //     .and_then(|(node, buf)| {
-    //         (&mut *plugin)
-    //             .write(node.clone(), buf)
-    //             .map_err(|e| ErrorKind::Plugin(e).into())
-    //     })
-    //     .collect()
-    //     .map(|_| ());
+    let mapper = map::default::DefaultMapper;
+    let entries = mapper.forward_map(&dry, &transforms)
+        .chain_err(|| "unable to perform forward map")?;
 
-    // future.wait()
+    let mut disk_entries = BTreeMap::new();
+
+    for (target, value) in entries {
+        match target {
+            Target::NetworkManager => {
+                bail!("networkmanager backend not supported")
+            },
+            Target::File(file) => {
+                let format = match file.format {
+                    Format::Ini => common::FileFormat::Ini,
+                    Format::Json => common::FileFormat::Json,
+                };
+                match file.location {
+                    Location::Disk(d) => {
+                        disk_entries.insert(d, (format, value));
+                    },
+                    Location::Nested(ref n) => {
+                        let mut buffer = Vec::new();
+                        serialize(value, &format, false, &mut buffer)?;
+                        let content = String::from_utf8(buffer)
+                            .chain_err(|| "invalid utf8 output from serializer")?;
+                        let &mut (_, ref mut disk_file) = disk_entries.get_mut(&n.file)
+                            .ok_or_else(|| "nested file destination not found")?;
+                        match n.path.entry(disk_file)? {
+                            Entry::Vacant(e) => { e.insert(Value::String(content)); },
+                            _ => bail!("cannot overwrite value"),
+                        }
+                    },
+                }
+            }
+        }
+    }
+
+    for (disk_file, (format, value)) in disk_entries {
+        let mut buffer = Vec::new();
+        serialize(value, &format, true, &mut buffer)?;
+        let node = get_node(&disk_file)?;
+        (&mut *plugin)
+            .write(node, buffer)
+            .map_err(|e| ErrorKind::Plugin(e))?;
+    }
+
+    Ok(())
+}
+
+fn get_targets(transforms: &[Transform]) -> Vec<Target> {
+    let mut targets = transforms
+        .iter()
+        .map(|t| t.target.clone())
+        .collect::<Vec<_>>();
+    
+    targets.sort_unstable();
+    targets.dedup();
+
+    targets
+}
+
+fn get_node(file: &DiskFile) -> Result<FileNode> {
+    let parts = file.path
+        .trim_left_matches('/')
+        .split("/")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>();
+    let partition = match file.partition {
+        transform::types::Partition::Number(p) => p,
+        _ => bail!("unsupported parition identifier"),
+    };
+    Ok(FileNode {
+        path: parts,
+        partition: Partition::new(partition),
+    })
 }

@@ -10,10 +10,12 @@ use serde_json::Value;
 pub struct Partition(u8);
 
 impl Partition {
+    /// Constructor for a partition
     pub fn new(p: u8) -> Partition {
         Partition(p)
     }
 
+    /// Get the partition number for a partition
     pub fn num(&self) -> u8 {
         self.0
     }

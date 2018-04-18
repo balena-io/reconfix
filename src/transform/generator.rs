@@ -4,15 +4,12 @@ use std::cmp::Ordering;
 use std::str::FromStr;
 
 use error::*;
+use super::Generator;
 use super::types::*;
 use schema::types::{self as schema, Schema, ObjectSchema, Map, TypeKind};
 use json::Pointer as JsonPointer;
 
 use uuid::Uuid;
-
-trait Generator {
-    fn generate(&self, schema: &Schema) -> Result<Vec<Transform>>;
-}
 
 pub struct DefaultGenerator;
 
@@ -87,20 +84,20 @@ fn get_transforms(obj: &ObjectSchema, ctx: &Context) -> Result<Vec<Transform>> {
     }
 
     match obj.items {
-        Some(TypeKind::Single(Schema::Object(ref obj))) => {
-            let item_ctx = ctx.add_component(Component::Item(Index::Wildcard));
-            let item_transforms = get_transforms(obj.as_ref(), &item_ctx)?;      
-            transforms.extend(item_transforms); 
-        },
-        Some(TypeKind::Set(ref schemas)) => {
-            for (index, schema) in schemas.iter().enumerate() {
-                if let Schema::Object(ref obj) = *schema {
-                    let item_ctx = ctx.add_component(Component::Item(Index::Single(index as u64)));
-                    let item_transforms = get_transforms(obj.as_ref(), &item_ctx)?;      
-                    transforms.extend(item_transforms); 
-                }
-            }
-        }, 
+        // Some(TypeKind::Single(Schema::Object(ref obj))) => {
+        //     let item_ctx = ctx.add_component(Component::Item(Index::Wildcard));
+        //     let item_transforms = get_transforms(obj.as_ref(), &item_ctx)?;      
+        //     transforms.extend(item_transforms); 
+        // },
+        // Some(TypeKind::Set(ref schemas)) => {
+        //     for (index, schema) in schemas.iter().enumerate() {
+        //         if let Schema::Object(ref obj) = *schema {
+        //             let item_ctx = ctx.add_component(Component::Item(Index::Single(index as u64)));
+        //             let item_transforms = get_transforms(obj.as_ref(), &item_ctx)?;      
+        //             transforms.extend(item_transforms); 
+        //         }
+        //     }
+        // }, 
         _ => (),
     }
 

@@ -62,6 +62,7 @@ pub struct NestedFile {
     pub path: JsonPointer,
 }
 
+#[derive(Debug)]
 pub enum Case {
     Identity,
     Template { dry: Value, template: Schema },

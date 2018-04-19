@@ -8,7 +8,6 @@ mod common;
 mod json;
 mod adaptor;
 mod schema;
-mod template;
 mod transform;
 mod map;
 mod io;
@@ -58,7 +57,7 @@ mod error {
 }
 
 pub use error::*;
-pub use common::{FileNode, Partition};
+pub use common::{FileNode, Partition, FileFormat};
 pub use io::Plugin;
 
 use common::{deserialize, serialize};
@@ -151,9 +150,8 @@ impl Reconfix {
     }
 }
 
-fn read_values<P: Plugin + DerefMut>(schema: Schema, mut plugin: P) -> Result<Value>
-where
-    for<'a> &'a mut <P as Deref>::Target: Plugin,
+fn wet_to_dry<F>(schema: Schema, mut wet: F) -> Result<Value> 
+    where F: FnMut(&DiskFile, &FileFormat) -> Result<Value>
 {
     let generator = transform::generator::DefaultGenerator;
     let transforms = generator.generate(&schema)
@@ -161,8 +159,8 @@ where
 
     let targets = get_targets(&transforms);
 
-    let mut entries = BTreeMap::new();
     let mut phy_files = BTreeMap::new();
+    let mut entries = BTreeMap::new();
 
     for target in targets.iter() {
         match *target {
@@ -176,19 +174,14 @@ where
                 };
                 match file.location {
                     Location::Disk(ref d) => {
-                        let node = get_node(d)?;
-                        let content: Vec<u8> = (&mut *plugin)
-                            .read(node)
-                            .map_err(|e| ErrorKind::Plugin(e))?;
-                        
-                        let wet = deserialize(content.as_slice(), &format)?;
-                        phy_files.insert(d, wet.clone());
-                        entries.insert(target.clone(), wet);
+                        let content = wet(d, &format)?;
+                        phy_files.insert(d.clone(), content.clone());
+                        entries.insert(target.clone(), content.clone());
                     },
                     Location::Nested(ref n) => {
-                        let phy = phy_files.get(&n.file)
+                        let content = phy_files.get(&n.file)
                             .ok_or_else(|| "unable to find nested file")?;
-                        let wet = n.path.search(phy)
+                        let wet = n.path.search(&content)
                             .ok_or_else(|| "unable to find search nested path")?;
                         entries.insert(target.clone(), wet.clone());
                     }
@@ -204,10 +197,22 @@ where
     Ok(dry)
 }
 
-fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P) -> Result<()>
+fn read_values<P: Plugin + DerefMut>(schema: Schema, mut plugin: P) -> Result<Value>
 where
     for<'a> &'a mut <P as Deref>::Target: Plugin,
 {
+    wet_to_dry(schema, |file, format| {
+        let node = get_node(file)?;
+        let content: Vec<u8> = (&mut *plugin)
+            .read(node)
+            .map_err(|e| ErrorKind::Plugin(e))?;
+        
+        let wet = deserialize(content.as_slice(), &format)?;
+        Ok(wet)
+    })
+}
+
+fn dry_to_wet(schema: Schema, dry: Value) -> Result<Vec<(DiskFile, FileFormat, Value)>> {
     let generator = transform::generator::DefaultGenerator;
     let transforms = generator.generate(&schema)
         .chain_err(|| "unable to generate transforms")?;
@@ -249,7 +254,21 @@ where
         }
     }
 
-    for (disk_file, (format, value)) in disk_entries {
+    let list = disk_entries
+        .into_iter()
+        .map(|(file, (format, value))| (file, format, value))
+        .collect::<Vec<_>>();
+
+    Ok(list)
+}
+
+fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P) -> Result<()>
+where
+    for<'a> &'a mut <P as Deref>::Target: Plugin,
+{
+    let disk_entries = dry_to_wet(schema, dry)?;
+
+    for (disk_file, format, value) in disk_entries {
         let mut buffer = Vec::new();
         serialize(value, &format, true, &mut buffer)?;
         let node = get_node(&disk_file)?;
@@ -287,4 +306,58 @@ fn get_node(file: &DiskFile) -> Result<FileNode> {
         path: parts,
         partition: Partition::new(partition),
     })
+}
+
+mod tests {
+    use super::*;
+    use serde_json::Value;
+
+    fn end_to_end_test(data: &str) {
+        let json: Value = ::serde_json::from_str(data).expect("unable to parse json file");
+        let schema_json = json.get("schema").expect("unable to read schema");
+        let schema_ast = ::schema::parse::from_value(schema_json.clone()).expect("unable to parse schema AST");
+        let dry_expected = json.get("dry").expect("unable to read dry");
+        let wet_expected = json.get("wet")
+            .and_then(|x| x.as_object())
+            .expect("unable to read wet");
+        
+        let wet_actual = dry_to_wet(schema_ast.clone(), dry_expected.clone()).expect("unable to convert dry to wet");
+        let dry_actual = wet_to_dry(schema_ast.clone(), |file, _| {
+            let content = wet_expected
+                .get(&file.path)
+                .expect("unable to find wet json");
+            Ok(content.clone())
+        }).expect("unable to convert wet to dry");
+
+        assert_eq!(dry_expected.clone(), dry_actual);
+
+        let mut wet_actual_map = wet_actual
+            .into_iter()
+            .map(|(disk, _, content)| (disk.path, content))
+            .collect::<BTreeMap<_, _>>();
+
+        for (path, content_expected) in wet_expected {
+            let content_actual = wet_actual_map
+                .remove(path)
+                .expect("unable to find wet json");
+            
+            assert_eq!(content_expected.clone(), content_actual);
+        }
+    }
+
+    macro_rules! end_to_end_gen {
+        ($($name:ident),*) => ( $(
+            #[test]
+            fn $name() {
+                let file_contents = include_str!(concat!("../tests/e2e/json/", stringify!($name), ".json"));
+                end_to_end_test(file_contents);
+            }
+        )* )
+    }
+
+    end_to_end_gen!(
+        identity_map,
+        template_map,
+        const_map
+    );
 }

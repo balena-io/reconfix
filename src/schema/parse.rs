@@ -20,6 +20,18 @@ pub fn from_reader<R>(rdr: R) -> Result<Schema>
         .chain_err(|| "unable to parse schema")
 }
 
+pub fn from_value(value: Value) -> Result<Schema> {
+    serde_json::from_value(value)
+        .chain_err(|| "unable to parse schema")
+}
+
+pub fn deserialize_some<'de, T, D>(deserializer: D) -> result::Result<Option<T>, D::Error>
+    where T: Deserialize<'de>,
+          D: Deserializer<'de>
+{
+    Deserialize::deserialize(deserializer).map(Some)
+}
+
 struct SchemaVisitor;
 
 impl<'de> Visitor<'de> for SchemaVisitor {

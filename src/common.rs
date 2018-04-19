@@ -33,11 +33,14 @@ pub struct FileNode {
 /// Supported output file formats
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub enum FileFormat {
+    /// Represents an INI file
     Ini,
+    /// Represents a JSON file
     Json,
 }
 
 impl FileFormat {
+    /// Parses a string representation of a `FileFormat`
     pub fn from_str(s: &str) -> Result<FileFormat> {
         match s {
             "ini" => Ok(FileFormat::Ini),

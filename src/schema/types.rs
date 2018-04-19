@@ -35,75 +35,97 @@ pub enum TypeKind<T> {
 #[derive(Clone, Debug, Deserialize, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ObjectSchema {
-    #[serde(rename = "$id")]
+    #[serde(rename = "$id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "$schema")]
+    #[serde(rename = "$schema", skip_serializing_if = "Option::is_none")]
     pub schema: Option<String>,
-    #[serde(rename = "$ref")]
+    #[serde(rename = "$ref", skip_serializing_if = "Option::is_none")]
     pub ref_: Option<String>,
-    #[serde(rename = "$comment")]
+    #[serde(rename = "$comment", skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Value>,
-    #[serde(default)]
-    pub read_only: bool,
-    #[serde(default)]
-    pub examples: Vec<Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub read_only: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub examples: Option<Vec<Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub multiple_of: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub maximum: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclusive_maximum: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub minimum: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclusive_minimum: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_length: Option<u64>,
-    #[serde(default)]
-    pub min_length: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_length: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub additional_items: Option<Schema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<TypeKind<Schema>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_items: Option<u64>,
-    #[serde(default)]
-    pub min_items: u64,
-    #[serde(default)]
-    pub unique_items: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_items: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unique_items: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub contains: Option<Schema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_properties: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_properties: Option<u64>,
-    #[serde(default)]
-    pub required: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<Schema>,
-    #[serde(default)]
-    pub definitions: Map<String, Schema>,
-    #[serde(default)]
-    pub properties: Map<String, Schema>,
-    #[serde(default)]
-    pub pattern_properties: Map<String, Schema>,
-    #[serde(default)]
-    pub dependencies: Map<String, Schema>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definitions: Option<Map<String, Schema>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<Map<String, Schema>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pattern_properties: Option<Map<String, Schema>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dependencies: Option<Map<String, Schema>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub property_names: Option<Schema>,
-    #[serde(rename = "const")]
+    #[serde(rename = "const", skip_serializing_if = "Option::is_none")]
     pub const_: Option<Value>,
-    #[serde(rename = "enum")]
-    #[serde(default)]
-    pub enum_: Vec<Value>,
-    #[serde(rename = "type")]
+    #[serde(default, rename = "enum", skip_serializing_if = "Option::is_none")]
+    pub enum_: Option<Vec<Value>>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<TypeKind<Type>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_media_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_encoding: Option<String>,
-    #[serde(rename = "if")]
+    #[serde(rename = "if", skip_serializing_if = "Option::is_none")]
     pub if_: Option<Schema>,
-    #[serde(rename = "then")]
+    #[serde(rename = "then", skip_serializing_if = "Option::is_none")]
     pub then_: Option<Schema>,
-    #[serde(rename = "else")]
+    #[serde(rename = "else", skip_serializing_if = "Option::is_none")]
     pub else_: Option<Schema>,
-    #[serde(default)]
-    pub all_of: Vec<Schema>,
-    #[serde(default)]
-    pub any_of: Vec<Schema>,
-    #[serde(default)]
-    pub one_of: Vec<Schema>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub all_of: Option<Vec<Schema>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub any_of: Option<Vec<Schema>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub one_of: Option<Vec<Schema>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub not: Option<Schema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reconfix: Option<Reconfix>,
 }
 

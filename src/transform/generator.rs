@@ -72,15 +72,17 @@ fn get_transforms(obj: &ObjectSchema, ctx: &Context) -> Result<Vec<Transform>> {
         ctx = Cow::Owned(exp_ctx);
     }
 
-    for (name, schema) in obj.properties.iter() {
-        let prop_obj = match *schema {
-            Schema::Object(ref o) => o,
-            Schema::Boolean(_) => continue,
-        };
+    if let Some(ref properties) = obj.properties {
+        for (name, schema) in properties.iter() {
+            let prop_obj = match *schema {
+                Schema::Object(ref o) => o,
+                Schema::Boolean(_) => continue,
+            };
 
-        let prop_ctx = ctx.add_component(Component::Property(name.to_string()));
-        let prop_transforms = get_transforms(&prop_obj, &prop_ctx)?;
-        transforms.extend(prop_transforms);
+            let prop_ctx = ctx.add_component(Component::Property(name.to_string()));
+            let prop_transforms = get_transforms(&prop_obj, &prop_ctx)?;
+            transforms.extend(prop_transforms);
+        }
     }
 
     match obj.items {

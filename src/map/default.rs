@@ -1,6 +1,7 @@
 
 use std::cmp::Ordering;
 use std::collections::btree_map::Entry;
+use std::mem;
 
 use ::transform::types::*;
 use ::schema::types::{Schema, ObjectSchema};
@@ -122,8 +123,8 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
         };
 
         let mut found = false;
-        for element in &transform.map {
-            match *element {
+        for case in &transform.map {
+            match *case {
                 Case::Identity => {
                     layer.add_many(&dry_pointer, output);
                 },
@@ -139,7 +140,7 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
                 _ => continue,
             }
 
-            found = false;
+            found = true;
             break;
         }
 
@@ -156,10 +157,10 @@ fn flatten_layers(layers: Vec<Layer>) -> Result<Value> {
     let schema = normalize_schemas(schemas);
     let value = flatten_literals(literals)?;
 
-    if validate(&value, &schema)? {
+    if !validate(&value, &schema)? {
         bail!("JSON failed validation");
     }
-        
+    
     Ok(value)
 }
 
@@ -204,7 +205,6 @@ fn seperate(layers: Vec<Layer>) -> (Vec<(Pointer, Literal)>, Vec<(Pointer, Schem
 }
 
 fn normalize_schemas(schemas: Vec<(Pointer, Schema)>) -> Schema {
-
     let combined = schemas.into_iter().fold(None, |root, (ptr, schema)| {
         let mut parts: Vec<String> = ptr.into();
         parts.reverse();
@@ -238,41 +238,57 @@ fn normalize_schema(
     mut remaining: Vec<String>, 
     schema: Schema) 
 {
-    let entry = root.properties.entry(path);
-    let next = remaining.pop();
-    match (entry, next) {
-        (Entry::Occupied(mut e), Some(next)) => {
-            match e.get_mut() {
-                &mut Schema::Object(ref mut o) => {
-                    normalize_schema(&mut **o, next, remaining, schema)
-                },
-                _ => unimplemented!(),
-            }
-        },
-        (Entry::Vacant(e), Some(next)) => {
-            let mut obj: ObjectSchema = Default::default();
-            normalize_schema(&mut obj, next, remaining, schema);
-            e.insert(Schema::Object(Box::new(obj)));
-        },
-        (Entry::Vacant(e), None) => {
-            e.insert(schema);
-        },
-        _ => unimplemented!(),
+    let mut properties = mem::replace(&mut root.properties, None)
+        .unwrap_or_else(|| Map::new());
+    let mut required = mem::replace(&mut root.required, None)
+        .unwrap_or_else(|| Vec::new());
+    {
+        let entry = properties.entry(path.clone());
+        let next = remaining.pop();
+        match (entry, next) {
+            (Entry::Occupied(mut e), Some(next)) => {
+                match e.get_mut() {
+                    &mut Schema::Object(ref mut o) => {
+                        normalize_schema(&mut **o, next, remaining, schema)
+                    },
+                    _ => unimplemented!(),
+                }
+            },
+            (Entry::Vacant(e), Some(next)) => {
+                let mut obj: ObjectSchema = Default::default();
+                normalize_schema(&mut obj, next, remaining, schema);
+                e.insert(Schema::Object(Box::new(obj)));
+            },
+            (Entry::Vacant(e), None) => {
+                e.insert(schema);
+            },
+            _ => unimplemented!(),
+        }
     }
+
+    
+    required.push(path);
+    root.required = Some(required);
+    root.properties = Some(properties);
 }
 
 fn validate(value: &Value, schema: &Schema) -> Result<bool> {
     let schema_value = ::serde_json::to_value(schema)
         .chain_err(|| "unable to serialize schema fragment")?;
+    if let Value::Bool(ref b) = schema_value {
+        return Ok(*b);
+    }
+
     let mut scope = json_schema::Scope::new();
     let schema = match scope.compile_and_return(schema_value, true) {
         Ok(s) => s,
-        Err(_) => bail!("unable to compile schema fragment"),
+        Err(e) => {
+            bail!("unable to compile schema fragment: {:?}", e);
+        },
     };
 
     let state = schema.validate(&value);
-
-    Ok(!state.errors.is_empty())
+    Ok(state.errors.is_empty())
 }
 
 //     let combined = layers

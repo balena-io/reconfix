@@ -1,0 +1,74 @@
+{
+    "schema": {
+        "reconfix": {
+            "targets": {
+                "file1": {
+                    "type": "file",
+                    "format": "json",
+                    "location": {
+                        "partition": 0,
+                        "path": "/file1"
+                    }
+                }
+            }
+        },
+        "properties": {
+            "feature1": {
+                "properties": {
+                    "enable": {
+                        "reconfix": {
+                            "transforms": [
+                                {
+                                    "map": [
+                                        [true, { "const": "Yep"}],
+                                        [false, { "const": "Nope"}]
+                                    ],
+                                    "output": {
+                                        "target": "file1",
+                                        "path": "/foo/bar"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "feature2": {
+                "properties": {
+                    "enable": {
+                        "reconfix": {
+                            "transforms": [
+                                {
+                                    "map": [
+                                        [true, { "const": "Yep"}],
+                                        [false, { "const": "Nope"}]
+                                    ],
+                                    "output": {
+                                        "target": "file1",
+                                        "path": "/foo/baz"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "dry": {
+        "feature1": {
+            "enable": false
+        },
+        "feature2": {
+            "enable": true
+        }
+    },
+    "wet": {
+        "/file1": {
+            "foo": {
+                "bar": "Nope",
+                "baz": "Yep"
+            }
+        }
+    }
+}

@@ -71,9 +71,12 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
         let dry_pointer = transform.source.get_pointer_for_index(index as u64)
             .chain_err(|| "unable to generate dry JSON pointer")?;
 
+        debug!("dry pointer: '{}'", dry_pointer);
+
         let wet_pointer = transform.destination.get_pointer(dry, &dry_pointer)
             .chain_err(|| "unable to generate wet JSON pointer")?;
 
+        debug!("wet pointer: '{}'", wet_pointer);
 
         let mut found = false;
         for element in &transform.map {
@@ -82,8 +85,10 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
                     layer.add_many(&wet_pointer, input);
                 },
                 Case::Test { ref dry, ref test } if dry.eq(*input) => {
+                    debug!("matched a test statement with dry value: '{}'", dry);
                     for &(ref dest, ref value) in test.literals.iter() {
                         let ptr = wet_pointer.extend_all(dest);
+                        debug!("adding literal '{}', destination '{}'", value, ptr);
                         layer.add_many(&ptr, &value);
                     }
                     layer.add_single(&wet_pointer, Leaf::Schema(test.schema.clone()));
@@ -100,6 +105,8 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
         }
     }
 
+    debug!("layer: {:?}", layer);
+
     Ok(layer)
 }
 
@@ -113,6 +120,8 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
         let parameters = match_set.apply_matches(&dry_pointer)
             .chain_err(|| "unable to resolve path parameters")?;
 
+        debug!("dry pointer: '{}'", dry_pointer);
+
         for (ptr, val) in parameters {
             layer.add_many(&ptr, &val);
         }
@@ -124,6 +133,9 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
             None => bail!("unable to find value at transform destination '{}'", wet_pointer),
         };
 
+        debug!("wet pointer: '{}'", wet_pointer);
+        debug!("wet value: '{:?}'", output);
+
         let mut found = false;
         for case in &transform.map {
             match *case {
@@ -131,11 +143,17 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
                     layer.add_many(&dry_pointer, output);
                 },
                 Case::Test { ref dry, ref test } => {
+                    debug!("test literals: {:?}", test.literals);
                     let lit_pass = test.literals.iter().fold(true, |prev, &(ref dest, ref value)| {
-                        let normalized = wet_pointer.extend_all(dest);
-                        normalized.search(output)
-                            .map(|v| prev && v.eq(value))
-                            .unwrap_or(false)
+                        debug!("test value: {:?}", value);
+                        let local_ptr = Pointer::from(dest.clone());
+                        debug!("testing against wet path: '{}'", local_ptr);
+                        let test_result = match local_ptr.search(output) {
+                            Some(v) => v.eq(value),
+                            None => false,
+                        };
+
+                        prev && test_result
                     });
 
                     match lit_pass && validate(output, &test.schema)? {

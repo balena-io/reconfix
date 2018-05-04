@@ -6,38 +6,39 @@ use serde_json::Value;
 
 type Map<K, V> = ::std::collections::BTreeMap<K, V>;
 
+#[derive(Debug)]
 pub struct Layer {
-    pub values: Map<JsonPointer, Leaf>,
+    pub values: Vec<(JsonPointer, Leaf)>,
 }
 
 impl Layer {
     pub fn new() -> Layer {
         Layer {
-            values: Map::new(),
+            values: Vec::new(),
         }
     }
 
     pub fn single(ptr: &JsonPointer, value: Leaf) -> Layer {
         let mut layer = Layer::new();
-        layer.values.insert(ptr.clone(), value);
+        layer.values.push((ptr.clone(), value));
         layer
     }
 
     pub fn from_value(ptr: &JsonPointer, value: &Value) -> Layer {
         let mut layer = Layer::new();
         for (ptr, literal) in produce_literals(ptr.clone(), value) {
-            layer.values.insert(ptr, Leaf::Literal(literal));
+            layer.values.push((ptr, Leaf::Literal(literal)));
         }
         layer
     }
 
     pub fn add_single(&mut self, ptr: &JsonPointer, value: Leaf) {
-        self.values.insert(ptr.clone(), value);
+        self.values.push((ptr.clone(), value));
     }
 
     pub fn add_many(&mut self, ptr: &JsonPointer, value: &Value) {
         for (ptr, literal) in produce_literals(ptr.clone(), value) {
-            self.values.insert(ptr, Leaf::Literal(literal));
+            self.values.push((ptr, Leaf::Literal(literal)));
         }
     }
 }
@@ -57,11 +58,13 @@ fn produce_literals(ptr: JsonPointer, value: &Value) -> Vec<(JsonPointer, Litera
     }
 }
 
+#[derive(Debug)]
 pub enum Leaf {
     Literal(Literal),
     Schema(Schema),
 }
 
+#[derive(Debug)]
 pub enum Literal {
     String(String),
     Number(f64),

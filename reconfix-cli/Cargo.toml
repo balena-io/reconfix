@@ -1,0 +1,7 @@
+[package]
+name = "reconfix-cli"
+version = "0.1.0"
+authors = ["Aaron Brodersen <aaron@resin.io>"]
+
+[dependencies]
+reconfix = { path = ".." }

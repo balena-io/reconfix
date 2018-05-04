@@ -74,18 +74,20 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
         let wet_pointer = transform.destination.get_pointer(dry, &dry_pointer)
             .chain_err(|| "unable to generate wet JSON pointer")?;
 
+
         let mut found = false;
         for element in &transform.map {
             match *element {
                 Case::Identity => {
                     layer.add_many(&wet_pointer, input);
                 },
-                Case::Template { ref dry, ref template } if dry.eq(*input) => {
-                    layer.add_single(&wet_pointer, Leaf::Schema(template.clone()));
-                },
-                Case::Value { ref dry, ref wet } if dry.eq(*input) => {
-                    layer.add_many(&wet_pointer, wet);
-                },
+                Case::Test { ref dry, ref test } if dry.eq(*input) => {
+                    for &(ref dest, ref value) in test.literals.iter() {
+                        let ptr = wet_pointer.extend_all(dest);
+                        layer.add_many(&ptr, &value);
+                    }
+                    layer.add_single(&wet_pointer, Leaf::Schema(test.schema.clone()));
+                }
                 _ => continue,
             }
 
@@ -128,16 +130,19 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
                 Case::Identity => {
                     layer.add_many(&dry_pointer, output);
                 },
-                Case::Value { ref dry, ref wet } if wet == output => {
-                    layer.add_many(&dry_pointer, dry);
-                },
-                Case::Template { ref dry, ref template } => {
-                    match validate(output, template)? {
+                Case::Test { ref dry, ref test } => {
+                    let lit_pass = test.literals.iter().fold(true, |prev, &(ref dest, ref value)| {
+                        let normalized = wet_pointer.extend_all(dest);
+                        normalized.search(output)
+                            .map(|v| prev && v.eq(value))
+                            .unwrap_or(false)
+                    });
+
+                    match lit_pass && validate(output, &test.schema)? {
                         true => layer.add_many(&dry_pointer, dry),
                         false => continue,
                     }
-                },
-                _ => continue,
+                }
             }
 
             found = true;
@@ -266,13 +271,15 @@ fn normalize_schema(
         }
     }
 
-    
     required.push(path);
     root.required = Some(required);
     root.properties = Some(properties);
 }
 
 fn validate(value: &Value, schema: &Schema) -> Result<bool> {
+    debug!("test json: {:?}", value);
+    debug!("test schema: {:?}", schema);
+
     let schema_value = ::serde_json::to_value(schema)
         .chain_err(|| "unable to serialize schema fragment")?;
     if let Value::Bool(ref b) = schema_value {
@@ -288,6 +295,9 @@ fn validate(value: &Value, schema: &Schema) -> Result<bool> {
     };
 
     let state = schema.validate(&value);
+    for err in state.errors.iter() {
+        debug!("validation error: {:?}", err);
+    }
     Ok(state.errors.is_empty())
 }
 

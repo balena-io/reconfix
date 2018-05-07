@@ -84,8 +84,16 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
                 Case::Identity => {
                     layer.add_many(&wet_pointer, input);
                 },
-                Case::Test { ref dry, ref test } if dry.eq(*input) => {
-                    debug!("matched a test statement with dry value: '{}'", dry);
+                Case::Test { ref dry, ref test } => {
+                    let pass = match *dry {
+                        Some(ref d) => d.eq(*input),
+                        None => true,
+                    };
+                    
+                    if !pass {
+                        continue
+                    }
+
                     for &(ref dest, ref value) in test.literals.iter() {
                         let ptr = wet_pointer.extend_all(dest);
                         debug!("adding literal '{}', destination '{}'", value, ptr);
@@ -157,7 +165,11 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
                     });
 
                     match lit_pass && validate(output, &test.schema)? {
-                        true => layer.add_many(&dry_pointer, dry),
+                        true => {
+                            if let Some(ref dry_value) = *dry {
+                                layer.add_many(&dry_pointer, dry_value);
+                            } 
+                        },
                         false => continue,
                     }
                 }

@@ -126,12 +126,19 @@ fn process_reconfix_object(reconfix: &schema::Reconfix, ctx: &Context) -> Result
 
 fn convert_transform(transform: &schema::Transform, ctx: &Context) -> Result<Transform> {
     let target = ctx.get_target(transform.output.target.as_ref())?;
-    let map = match transform.map {
-        Some(ref t) => match *t {
+    let map = match (&transform.map, &transform.const_) {
+        (&Some(ref t), &None) => match *t {
             schema::TypeKind::Single(ref case) => vec![convert_case(&case)],
             schema::TypeKind::Set(ref cases) => cases.iter().map(convert_case).collect(),
         },
-        None => vec![Case::Identity],
+        (&None, &Some(ref c)) => {
+            let test = convert_test(c.clone());
+            vec![Case::Test { dry: None, test: test }]
+        },
+        (&None, &None) => vec![Case::Identity],
+        (&Some(_), &Some(_)) => {
+            bail!("'map' and 'const' cannot both be defined")
+        },
     };
 
     let destination = Destination::from_str(transform.output.path.as_ref())
@@ -149,7 +156,7 @@ fn convert_case(case: &schema::Case) -> Case {
     match *case {
         schema::Case::Identity => Case::Identity,
         schema::Case::Tuple(ref val, ref schema) => {
-            Case::Test { dry: val.clone(), test: convert_test(schema.clone()) }
+            Case::Test { dry: Some(val.clone()), test: convert_test(schema.clone()) }
         },
     }
 }

@@ -360,6 +360,7 @@ mod tests {
     end_to_end_gen!(
         identity_map,
         template_map,
+        const_value,
         const_map,
         object_const_map
     );

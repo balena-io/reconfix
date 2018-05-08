@@ -187,6 +187,7 @@ pub struct Transform {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Case {
     Identity,
+    Stringify,
     Tuple(Value, Schema),
 }
 

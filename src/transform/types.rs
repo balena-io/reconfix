@@ -65,6 +65,7 @@ pub struct NestedFile {
 #[derive(Debug)]
 pub enum Case {
     Identity,
+    Stringify,
     Test { dry: Option<Value>, test: Test },
 }
 

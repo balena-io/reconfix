@@ -84,6 +84,13 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
                 Case::Identity => {
                     layer.add_many(&wet_pointer, input);
                 },
+                Case::Stringify => {
+                    let string = match stringify(input) {
+                        Ok(s) => s,
+                        Err(_) => continue,
+                    };
+                    layer.add_many(&wet_pointer, &Value::String(string));
+                }
                 Case::Test { ref dry, ref test } => {
                     let pass = match *dry {
                         Some(ref d) => d.eq(*input),
@@ -101,7 +108,6 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
                     }
                     layer.add_single(&wet_pointer, Leaf::Schema(test.schema.clone()));
                 }
-                _ => continue,
             }
 
             found = true;
@@ -149,6 +155,13 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
             match *case {
                 Case::Identity => {
                     layer.add_many(&dry_pointer, output);
+                },
+                Case::Stringify => {
+                    let string = match *output {
+                        Value::String(ref s) => s.as_ref(),
+                        _ => continue,
+                    };
+                    layer.add_many(&dry_pointer, &unstringify(string));
                 },
                 Case::Test { ref dry, ref test } => {
                     debug!("test literals: {:?}", test.literals);
@@ -329,6 +342,40 @@ fn validate(value: &Value, schema: &Schema) -> Result<bool> {
         debug!("validation error: {:?}", err);
     }
     Ok(state.errors.is_empty())
+}
+
+fn stringify(value: &Value) -> Result<String> {
+    let out = match *value {
+        Value::Bool(true) => "true".to_string(),
+        Value::Bool(false) => "false".to_string(),
+        Value::Number(ref n) => format!("{}", n),
+        Value::String(ref s) => s.to_string(),
+        _ => bail!("invalid stringify value"),
+    };
+
+    Ok(out)
+}
+
+fn unstringify(value: &str) -> Value {
+    if let Ok(b) = value.parse() {
+        return Value::Bool(b);
+    }
+
+    if let Ok(n) = value.parse::<u64>() {
+        return Value::Number(n.into());
+    }
+
+    if let Ok(n) = value.parse::<i64>() {
+        return Value::Number(n.into());
+    }
+
+    if let Ok(n) = value.parse::<f64>() {
+        if let Some(n) = Number::from_f64(n) {
+            return Value::Number(n);
+        }
+    }
+
+    Value::String(value.into())
 }
 
 //     let combined = layers

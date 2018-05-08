@@ -155,6 +155,7 @@ fn convert_transform(transform: &schema::Transform, ctx: &Context) -> Result<Tra
 fn convert_case(case: &schema::Case) -> Case {
     match *case {
         schema::Case::Identity => Case::Identity,
+        schema::Case::Stringify => Case::Stringify,
         schema::Case::Tuple(ref val, ref schema) => {
             Case::Test { dry: Some(val.clone()), test: convert_test(schema.clone()) }
         },

@@ -362,6 +362,7 @@ mod tests {
         template_map,
         const_value,
         const_map,
-        object_const_map
+        object_const_map,
+        stringify_map
     );
 }

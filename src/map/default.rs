@@ -222,8 +222,12 @@ fn flatten_literals(literals: Vec<(Pointer, Literal)>) -> Result<Value> {
             PointerEntry::Vacant(e) => {
                 let converted = match value {
                     Literal::Bool(b) => Value::Bool(b),
-                    Literal::Number(n) => {
-                        Value::Number(Number::from_f64(n).unwrap())
+                    Literal::Unsigned(u) => Value::Number(u.into()),
+                    Literal::Signed(i) => Value::Number(i.into()),
+                    Literal::Float(f) => {
+                        let num = Number::from_f64(f)
+                            .ok_or_else(|| "invalid floating point value")?;
+                        Value::Number(num)
                     },
                     Literal::String(s) => Value::String(s),
                 };

@@ -5,6 +5,8 @@ authors = ["Aaron Brodersen <aaron@resin.io>"]
 license = "Apache-2.0"
 build = "build.rs"
 
+[workspace]
+
 [lib]
 name = "node_reconfix"
 crate-type = ["dylib"]

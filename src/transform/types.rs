@@ -65,8 +65,23 @@ pub struct NestedFile {
 #[derive(Debug)]
 pub enum Case {
     Identity,
-    Template { dry: Value, template: Schema },
-    Value { dry: Value, wet: Value },
+    Stringify,
+    Test { dry: Option<Value>, test: Test },
+}
+
+#[derive(Debug)]
+pub struct Test {
+    pub literals: Vec<(Vec<String>, Value)>,
+    pub schema: Schema,
+}
+
+impl Test {
+    pub fn new() -> Test {
+        Test {
+            literals: Vec::new(),
+            schema: Schema::Boolean(true),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -148,12 +163,12 @@ pub enum Index {
     Wildcard,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Destination {
     pub parts: Vec<Identifier>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Identifier {
     String(String),
     Pointer(RelativePointer),
@@ -167,6 +182,16 @@ pub enum MatchKey {
 impl Destination {
     pub fn new() -> Destination {
         Destination { parts: Vec::new() }
+    }
+
+    pub fn push(&mut self, id: Identifier) {
+        self.parts.push(id);
+    }
+
+    pub fn extend(&self, id: Identifier) -> Self {
+        let mut next = self.clone();
+        next.push(id);
+        next
     }
 
     pub fn get_match_matrix(&self, value: &Value) -> Vec<MatchSet> {

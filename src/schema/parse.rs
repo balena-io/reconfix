@@ -182,6 +182,7 @@ impl<'de> Visitor<'de> for CaseVisitor {
     {
         match v {
             "identity" => Ok(Case::Identity),
+            "stringify" => Ok(Case::Stringify),
             x => Err(de::Error::invalid_value(Unexpected::Str(x), &"identity")),
         }
     }
@@ -213,6 +214,7 @@ impl Serialize for super::types::Case {
     {
         match *self {
             Case::Identity => "identity".serialize(serializer),
+            Case::Stringify => "stringify".serialize(serializer),
             Case::Tuple(ref l, ref r) => {
                 let mut tuple = serializer.serialize_tuple(2)?;
                 tuple.serialize_element(l)?;

@@ -126,12 +126,19 @@ fn process_reconfix_object(reconfix: &schema::Reconfix, ctx: &Context) -> Result
 
 fn convert_transform(transform: &schema::Transform, ctx: &Context) -> Result<Transform> {
     let target = ctx.get_target(transform.output.target.as_ref())?;
-    let map = match transform.map {
-        Some(ref t) => match *t {
+    let map = match (&transform.map, &transform.const_) {
+        (&Some(ref t), &None) => match *t {
             schema::TypeKind::Single(ref case) => vec![convert_case(&case)],
             schema::TypeKind::Set(ref cases) => cases.iter().map(convert_case).collect(),
         },
-        None => vec![Case::Identity],
+        (&None, &Some(ref c)) => {
+            let test = convert_test(c.clone());
+            vec![Case::Test { dry: None, test: test }]
+        },
+        (&None, &None) => vec![Case::Identity],
+        (&Some(_), &Some(_)) => {
+            bail!("'map' and 'const' cannot both be defined")
+        },
     };
 
     let destination = Destination::from_str(transform.output.path.as_ref())
@@ -148,15 +155,41 @@ fn convert_transform(transform: &schema::Transform, ctx: &Context) -> Result<Tra
 fn convert_case(case: &schema::Case) -> Case {
     match *case {
         schema::Case::Identity => Case::Identity,
-        schema::Case::Tuple(ref val, ref schema) => match schema {
-            &Schema::Object(ref obj) => match obj.as_ref() {
-                &ObjectSchema { const_: Some(ref c), .. } => {
-                    Case::Value { dry: val.clone(), wet: c.clone() }
-                },
-                o => Case::Template { dry: val.clone(), template: Schema::Object(Box::new(o.clone())) },
-            },
-            s => Case::Template { dry: val.clone(), template: s.clone() },
+        schema::Case::Stringify => Case::Stringify,
+        schema::Case::Tuple(ref val, ref schema) => {
+            Case::Test { dry: Some(val.clone()), test: convert_test(schema.clone()) }
         },
+    }
+}
+
+fn convert_test(mut schema: Schema) -> Test {
+    let mut test = Test::new();
+    let mut destination = Vec::new();
+    convert_test_rec(&mut schema, &mut test, &mut destination);
+    test.schema = schema;
+    test
+}
+
+fn convert_test_rec(schema: &mut Schema, test: &mut Test, context: &mut Vec<String>) {
+    match *schema {
+        Schema::Boolean(_) => { test.schema = schema.clone(); },
+        Schema::Object(ref mut obj) => {
+            match obj.as_mut() {
+                &mut ObjectSchema { const_: Some(ref mut c), .. } => {
+                    test.literals.push((context.clone(), c.clone()));
+                },
+                &mut ObjectSchema { properties: Some(ref mut props), .. } => {
+                    for (key, value) in props.iter_mut() {
+                        context.push(key.to_string());
+                        convert_test_rec(value, test, context);
+                        context.pop();
+                    }
+                }
+                _ => (),
+            }
+
+            obj.as_mut().const_ = None;
+        }
     }
 }
 

@@ -179,12 +179,15 @@ pub enum Partition {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Transform {
     pub map: Option<TypeKind<Case>>,
+    #[serde(rename = "const")]
+    pub const_: Option<Schema>,
     pub output: Output,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Case {
     Identity,
+    Stringify,
     Tuple(Value, Schema),
 }
 

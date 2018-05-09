@@ -114,6 +114,18 @@ impl Pointer {
         next
     }
 
+    pub fn push_all(&mut self, parts: &[String]) {
+        for elem in parts.iter() {
+            self.push(elem.to_string());
+        }
+    }
+
+    pub fn extend_all(&self, parts: &[String]) -> Pointer {
+        let mut next = self.clone();
+        next.push_all(parts);
+        next
+    }
+
     pub fn search<'a>(&self, v: &'a Value) -> Option<&'a Value> {
         self.parts.iter().fold(Some(v), |state, name| match state {
             None => None,

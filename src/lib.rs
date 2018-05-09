@@ -22,6 +22,7 @@ extern crate futures;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+extern crate env_logger;
 #[macro_use]
 extern crate maplit;
 extern crate itertools;
@@ -313,6 +314,7 @@ mod tests {
     use serde_json::Value;
 
     fn end_to_end_test(data: &str) {
+        let _ = ::env_logger::init();
         let json: Value = ::serde_json::from_str(data).expect("unable to parse json file");
         let schema_json = json.get("schema").expect("unable to read schema");
         let schema_ast = ::schema::parse::from_value(schema_json.clone()).expect("unable to parse schema AST");
@@ -358,6 +360,9 @@ mod tests {
     end_to_end_gen!(
         identity_map,
         template_map,
-        const_map
+        const_value,
+        const_map,
+        object_const_map,
+        stringify_map
     );
 }

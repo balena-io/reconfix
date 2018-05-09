@@ -1,8 +1,6 @@
 use std::io::{self, BufRead, BufReader};
 use std::cmp;
 
-extern crate env_logger;
-
 use serde_json;
 use serde_json::{from_str, Value};
 
@@ -77,7 +75,7 @@ pub fn parse_test_data<T, F>(data: &str, convert: F) -> (String, T, Value, Optio
 where
     F: FnOnce(&Value) -> T,
 {
-    let _ = env_logger::init();
+    let _ = ::env_logger::init();
     let lines = read_sections(data.as_bytes());
     let title = lines[0]
         .as_comment()

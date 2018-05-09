@@ -71,8 +71,12 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
         let dry_pointer = transform.source.get_pointer_for_index(index as u64)
             .chain_err(|| "unable to generate dry JSON pointer")?;
 
+        debug!("dry pointer: '{}'", dry_pointer);
+
         let wet_pointer = transform.destination.get_pointer(dry, &dry_pointer)
             .chain_err(|| "unable to generate wet JSON pointer")?;
+
+        debug!("wet pointer: '{}'", wet_pointer);
 
         let mut found = false;
         for element in &transform.map {
@@ -80,13 +84,30 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
                 Case::Identity => {
                     layer.add_many(&wet_pointer, input);
                 },
-                Case::Template { ref dry, ref template } if dry.eq(*input) => {
-                    layer.add_single(&wet_pointer, Leaf::Schema(template.clone()));
-                },
-                Case::Value { ref dry, ref wet } if dry.eq(*input) => {
-                    layer.add_many(&wet_pointer, wet);
-                },
-                _ => continue,
+                Case::Stringify => {
+                    let string = match stringify(input) {
+                        Ok(s) => s,
+                        Err(_) => continue,
+                    };
+                    layer.add_many(&wet_pointer, &Value::String(string));
+                }
+                Case::Test { ref dry, ref test } => {
+                    let pass = match *dry {
+                        Some(ref d) => d.eq(*input),
+                        None => true,
+                    };
+                    
+                    if !pass {
+                        continue
+                    }
+
+                    for &(ref dest, ref value) in test.literals.iter() {
+                        let ptr = wet_pointer.extend_all(dest);
+                        debug!("adding literal '{}', destination '{}'", value, ptr);
+                        layer.add_many(&ptr, &value);
+                    }
+                    layer.add_single(&wet_pointer, Leaf::Schema(test.schema.clone()));
+                }
             }
 
             found = true;
@@ -97,6 +118,8 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
             bail!("unable to match dry value '{}'", input);
         }
     }
+
+    debug!("layer: {:?}", layer);
 
     Ok(layer)
 }
@@ -111,6 +134,8 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
         let parameters = match_set.apply_matches(&dry_pointer)
             .chain_err(|| "unable to resolve path parameters")?;
 
+        debug!("dry pointer: '{}'", dry_pointer);
+
         for (ptr, val) in parameters {
             layer.add_many(&ptr, &val);
         }
@@ -122,22 +147,45 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
             None => bail!("unable to find value at transform destination '{}'", wet_pointer),
         };
 
+        debug!("wet pointer: '{}'", wet_pointer);
+        debug!("wet value: '{:?}'", output);
+
         let mut found = false;
         for case in &transform.map {
             match *case {
                 Case::Identity => {
                     layer.add_many(&dry_pointer, output);
                 },
-                Case::Value { ref dry, ref wet } if wet == output => {
-                    layer.add_many(&dry_pointer, dry);
+                Case::Stringify => {
+                    let string = match *output {
+                        Value::String(ref s) => s.as_ref(),
+                        _ => continue,
+                    };
+                    layer.add_many(&dry_pointer, &unstringify(string));
                 },
-                Case::Template { ref dry, ref template } => {
-                    match validate(output, template)? {
-                        true => layer.add_many(&dry_pointer, dry),
+                Case::Test { ref dry, ref test } => {
+                    debug!("test literals: {:?}", test.literals);
+                    let lit_pass = test.literals.iter().fold(true, |prev, &(ref dest, ref value)| {
+                        debug!("test value: {:?}", value);
+                        let local_ptr = Pointer::from(dest.clone());
+                        debug!("testing against wet path: '{}'", local_ptr);
+                        let test_result = match local_ptr.search(output) {
+                            Some(v) => v.eq(value),
+                            None => false,
+                        };
+
+                        prev && test_result
+                    });
+
+                    match lit_pass && validate(output, &test.schema)? {
+                        true => {
+                            if let Some(ref dry_value) = *dry {
+                                layer.add_many(&dry_pointer, dry_value);
+                            } 
+                        },
                         false => continue,
                     }
-                },
-                _ => continue,
+                }
             }
 
             found = true;
@@ -174,8 +222,12 @@ fn flatten_literals(literals: Vec<(Pointer, Literal)>) -> Result<Value> {
             PointerEntry::Vacant(e) => {
                 let converted = match value {
                     Literal::Bool(b) => Value::Bool(b),
-                    Literal::Number(n) => {
-                        Value::Number(Number::from_f64(n).unwrap())
+                    Literal::Unsigned(u) => Value::Number(u.into()),
+                    Literal::Signed(i) => Value::Number(i.into()),
+                    Literal::Float(f) => {
+                        let num = Number::from_f64(f)
+                            .ok_or_else(|| "invalid floating point value")?;
+                        Value::Number(num)
                     },
                     Literal::String(s) => Value::String(s),
                 };
@@ -266,13 +318,15 @@ fn normalize_schema(
         }
     }
 
-    
     required.push(path);
     root.required = Some(required);
     root.properties = Some(properties);
 }
 
 fn validate(value: &Value, schema: &Schema) -> Result<bool> {
+    debug!("test json: {:?}", value);
+    debug!("test schema: {:?}", schema);
+
     let schema_value = ::serde_json::to_value(schema)
         .chain_err(|| "unable to serialize schema fragment")?;
     if let Value::Bool(ref b) = schema_value {
@@ -288,7 +342,44 @@ fn validate(value: &Value, schema: &Schema) -> Result<bool> {
     };
 
     let state = schema.validate(&value);
+    for err in state.errors.iter() {
+        debug!("validation error: {:?}", err);
+    }
     Ok(state.errors.is_empty())
+}
+
+fn stringify(value: &Value) -> Result<String> {
+    let out = match *value {
+        Value::Bool(true) => "true".to_string(),
+        Value::Bool(false) => "false".to_string(),
+        Value::Number(ref n) => format!("{}", n),
+        Value::String(ref s) => s.to_string(),
+        _ => bail!("invalid stringify value"),
+    };
+
+    Ok(out)
+}
+
+fn unstringify(value: &str) -> Value {
+    if let Ok(b) = value.parse() {
+        return Value::Bool(b);
+    }
+
+    if let Ok(n) = value.parse::<u64>() {
+        return Value::Number(n.into());
+    }
+
+    if let Ok(n) = value.parse::<i64>() {
+        return Value::Number(n.into());
+    }
+
+    if let Ok(n) = value.parse::<f64>() {
+        if let Some(n) = Number::from_f64(n) {
+            return Value::Number(n);
+        }
+    }
+
+    Value::String(value.into())
 }
 
 //     let combined = layers

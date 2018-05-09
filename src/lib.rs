@@ -363,6 +363,8 @@ mod tests {
         const_value,
         const_map,
         object_const_map,
-        stringify_map
+        stringify_map,
+        wifi_enable,
+        wifi_disable
     );
 }

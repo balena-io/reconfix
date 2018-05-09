@@ -74,6 +74,7 @@ fn get_transforms(obj: &ObjectSchema, ctx: &Context) -> Result<Vec<Transform>> {
 
     if let Some(ref properties) = obj.properties {
         for (name, schema) in properties.iter() {
+            debug!("processing property '{}'...", name);
             let prop_obj = match *schema {
                 Schema::Object(ref o) => o,
                 Schema::Boolean(_) => continue,
@@ -81,6 +82,7 @@ fn get_transforms(obj: &ObjectSchema, ctx: &Context) -> Result<Vec<Transform>> {
 
             let prop_ctx = ctx.add_component(Component::Property(name.to_string()));
             let prop_transforms = get_transforms(&prop_obj, &prop_ctx)?;
+            debug!("found {} transforms", prop_transforms.len());
             transforms.extend(prop_transforms);
         }
     }
@@ -129,7 +131,15 @@ fn convert_transform(transform: &schema::Transform, ctx: &Context) -> Result<Tra
     let map = match (&transform.map, &transform.const_) {
         (&Some(ref t), &None) => match *t {
             schema::TypeKind::Single(ref case) => vec![convert_case(&case)],
-            schema::TypeKind::Set(ref cases) => cases.iter().map(convert_case).collect(),
+            schema::TypeKind::Set(ref cases) => {
+                cases.iter()
+                    .enumerate()
+                    .map(|(idx, case)| {
+                        debug!("processing case {}...", idx);
+                        convert_case(case)
+                    })
+                    .collect()
+            },
         },
         (&None, &Some(ref c)) => {
             let test = convert_test(c.clone());

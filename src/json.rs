@@ -104,6 +104,10 @@ impl Pointer {
         Pointer { parts: Vec::new() }
     }
 
+    pub fn is_root(&self) -> bool {
+        self.parts.is_empty()
+    }
+
     pub fn push<S: Into<String>>(&mut self, s: S) {
         self.parts.push(s.into());
     }

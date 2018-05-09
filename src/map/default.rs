@@ -20,6 +20,8 @@ pub struct DefaultMapper;
 
 impl Mapper for DefaultMapper {
     fn forward_map(&self, dry: &Value, transforms: &[Transform]) -> Result<Map<Target, Value>> {
+        debug!("processing {} transforms...", transforms.len());
+
         let mut transforms = transforms
             .iter()
             .map(|t| apply_tranform_forward(dry, t).map(|l| (t, l)))
@@ -60,10 +62,6 @@ impl Mapper for DefaultMapper {
 
 fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
     let inputs = transform.source.select_values(dry);
-
-    if inputs.is_empty() {
-        bail!("no values found on required transform");
-    }
 
     let mut layer = Layer::new();
 
@@ -144,7 +142,7 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
             .chain_err(|| "unable to generate wet JSON pointer")?;
         let output = match wet_pointer.search(wet) {
             Some(v) => v,
-            None => bail!("unable to find value at transform destination '{}'", wet_pointer),
+            None => continue,
         };
 
         debug!("wet pointer: '{}'", wet_pointer);
@@ -213,24 +211,18 @@ fn flatten_layers(layers: Vec<Layer>) -> Result<Value> {
 }
 
 fn flatten_literals(literals: Vec<(Pointer, Literal)>) -> Result<Value> {
-    let mut root = json!({});
+    let mut root = literals.iter()
+        .find(|&&(ref ptr, _)| ptr.is_root())
+        .and_then(|&(_, ref lit)| literal_to_value(lit.clone()))
+        .unwrap_or_else(|| json!({}));
 
     for (key, value) in literals {
         let entry = key.entry(&mut root)
             .chain_err(|| "unable to search navigate JSON")?;
         match entry {
             PointerEntry::Vacant(e) => {
-                let converted = match value {
-                    Literal::Bool(b) => Value::Bool(b),
-                    Literal::Unsigned(u) => Value::Number(u.into()),
-                    Literal::Signed(i) => Value::Number(i.into()),
-                    Literal::Float(f) => {
-                        let num = Number::from_f64(f)
-                            .ok_or_else(|| "invalid floating point value")?;
-                        Value::Number(num)
-                    },
-                    Literal::String(s) => Value::String(s),
-                };
+                let converted = literal_to_value(value)
+                    .ok_or_else(|| "invalid floating point value")?;
 
                 e.insert(converted);
             },
@@ -239,6 +231,21 @@ fn flatten_literals(literals: Vec<(Pointer, Literal)>) -> Result<Value> {
     }
 
     Ok(root)
+}
+
+fn literal_to_value(literal: Literal) -> Option<Value> {
+    let value = match literal {
+        Literal::Bool(b) => Value::Bool(b),
+        Literal::Unsigned(u) => Value::Number(u.into()),
+        Literal::Signed(i) => Value::Number(i.into()),
+        Literal::Float(f) => match Number::from_f64(f) {
+            Some(num) => Value::Number(num),
+            None => return None,
+        },
+        Literal::String(s) => Value::String(s),
+    };
+
+    Some(value)
 }
 
 fn seperate(layers: Vec<Layer>) -> (Vec<(Pointer, Literal)>, Vec<(Pointer, Schema)>) {

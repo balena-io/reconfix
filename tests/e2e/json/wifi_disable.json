@@ -1,0 +1,118 @@
+{
+    "schema": {
+        "reconfix": {
+            "targets": {
+                "wifi": {
+                    "type": "file",
+                    "format": "ini",
+                    "location": {
+                        "partition": 1,
+                        "path": "/wifi-config"
+                    }
+                }
+            }
+        },
+        "properties": {
+            "wifi": {
+                "properties": {
+                    "networkSsid": {
+                        "type": "string",
+                        "reconfix": {
+                            "transforms": [
+                                {
+                                    "output": {
+                                        "target": "wifi",
+                                        "path": "/wifi/ssid"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "networkKey": {
+                        "type": "string",
+                        "reconfix": {
+                            "transforms": [
+                                {
+                                    "output": {
+                                        "target": "wifi",
+                                        "path": "/wifi-security/psk"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "enable": {
+                        "type": "boolean",
+                        "reconfix": {
+                            "transforms": [
+                                {
+                                    "map": [
+                                        [true, {
+                                            "type": "object",
+                                            "required": ["connection", "wifi", "wifi-security", "ipv4", "ipv6"],
+                                            "properties": {
+                                                "connection": {
+                                                    "type": "object",
+                                                    "required": ["id", "type"],
+                                                    "properties": {
+                                                        "id": { "const": "wifi-01" },
+                                                        "type": { "const": "wifi" }
+                                                    }
+                                                },
+                                                "wifi": {
+                                                    "type": "object",
+                                                    "required": ["mode", "ssid"],
+                                                    "properties": {
+                                                        "mode": { "const": "infrastructure" },
+                                                        "ssid": { "type": "string" }
+                                                    }
+                                                },
+                                                "wifi-security": {
+                                                    "type": "object",
+                                                    "required": ["auth-alg", "key-mgmt", "psk"],
+                                                    "properties": {
+                                                        "auth-alg": { "const": "open" },
+                                                        "key-mgmt": { "const": "wpa-psk" },
+                                                        "psk": { "type": "string" }
+                                                    }
+                                                },
+                                                "ipv4": {
+                                                    "type": "object",
+                                                    "required": ["method"],
+                                                    "properties": {
+                                                        "method": { "const": "auto" }
+                                                    }
+                                                },
+                                                "ipv6": {
+                                                    "type": "object",
+                                                    "required": ["addr-gen-mode", "method"],
+                                                    "properties": {
+                                                        "addr-gen-mode": { "const": "stable-privacy" },
+                                                        "method": { "const": "auto" }
+                                                    }
+                                                }
+                                            }
+                                        }],
+                                        [false, { "const": {} }]
+                                    ],
+                                    "output": {
+                                        "target": "wifi",
+                                        "path": ""
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "dry": {
+        "wifi": {
+            "enable": false
+        }
+    },
+    "wet": {
+        "/wifi-config": {}
+    }
+}

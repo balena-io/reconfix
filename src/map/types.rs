@@ -84,7 +84,7 @@ pub enum Leaf {
     Schema(Schema),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Literal {
     String(String),
     Float(f64),

@@ -178,8 +178,9 @@ pub enum Partition {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Transform {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub map: Option<TypeKind<Case>>,
-    #[serde(rename = "const")]
+    #[serde(rename = "const", skip_serializing_if = "Option::is_none")]
     pub const_: Option<Schema>,
     pub output: Output,
 }

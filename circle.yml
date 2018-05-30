@@ -7,6 +7,8 @@ buildSteps: &buildSteps
       name: install-npm
       command: npm install
   - run:
+      environment:
+        UV_THREADPOOL_SIZE: 16
       name: test
       command: npm test
   - persist_to_workspace:

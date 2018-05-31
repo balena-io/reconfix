@@ -52,7 +52,7 @@ jobs:
           name: Deploy to npm
           command: npm publish
           # Output used for publish is from node 6 build
-          working_directory: $CIRCLE_WORKING_DIRECTORY/node-6
+          working_directory: ./node-6
 
 workflows:
   version: 2

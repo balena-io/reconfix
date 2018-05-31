@@ -2,8 +2,9 @@ language: cpp
 sudo: false
 
 env:
-  - NODE_VERSION="6"
-  - NODE_VERSION="8"
+  - NODE_VERSION="6" UV_THREADPOOL_SIZE="16"
+  - NODE_VERSION="8" UV_THREADPOOL_SIZE="16"
+  - NODE_VERSION="10" UV_THREADPOOL_SIZE="16"
 
 os:
   - linux

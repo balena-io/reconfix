@@ -1,8 +1,5 @@
-use std::collections::BTreeMap;
-
-use json::Pointer as JsonPointer;
-
 use serde_json::Value;
+use std::collections::BTreeMap;
 
 pub type Map<K, V> = BTreeMap<K, V>;
 

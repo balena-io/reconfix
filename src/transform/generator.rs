@@ -6,7 +6,7 @@ use super::types::*;
 use super::Generator;
 use error::*;
 use json::Pointer as JsonPointer;
-use schema::types::{self as schema, Map, ObjectSchema, Schema, TypeKind};
+use schema::types::{self as schema, Map, ObjectSchema, Schema};
 
 use uuid::Uuid;
 

@@ -1,5 +1,4 @@
 use std::fmt;
-use std::mem;
 use std::str::FromStr;
 
 use error::*;
@@ -7,7 +6,7 @@ use error::*;
 use serde_json::Value;
 type JsObject = ::serde_json::map::Map<String, Value>;
 
-use nom::{self, rest_s, IResult};
+use nom::{rest_s, IResult};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Pointer {
@@ -180,7 +179,7 @@ impl Pointer {
         )?;
 
         match state {
-            FollowState::Real(v) => Ok(Entry::Occupied(OccupiedEntry { value: v })),
+            FollowState::Real(v) => Ok(Entry::Occupied(OccupiedEntry { _value: v })),
             FollowState::Virtual(v, p) => Ok(Entry::Vacant(VacantEntry { value: v, path: p })),
         }
     }
@@ -213,17 +212,7 @@ impl<'a> VacantEntry<'a> {
 }
 
 pub struct OccupiedEntry<'a> {
-    value: &'a mut Value,
-}
-
-impl<'a> OccupiedEntry<'a> {
-    pub fn get_mut(&'a mut self) -> &'a mut Value {
-        self.value
-    }
-
-    pub fn insert(self, v: Value) -> Value {
-        mem::replace(self.value, v)
-    }
+    _value: &'a mut Value,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -281,6 +270,7 @@ impl fmt::Display for RelativePointer {
 }
 
 impl RelativePointer {
+    #[cfg(test)] // TODO Remove
     pub fn new(parent: u64, parts: &[&str]) -> RelativePointer {
         let parts = parts.iter().map(|s| s.to_string()).collect();
         RelativePointer {
@@ -289,6 +279,7 @@ impl RelativePointer {
         }
     }
 
+    #[cfg(test)] // TODO Remove
     pub fn position(parent: u64) -> RelativePointer {
         RelativePointer {
             up: parent,
@@ -364,7 +355,8 @@ impl RelativePointer {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod tests {
     use super::*;
 
     #[test]

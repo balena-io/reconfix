@@ -13,23 +13,14 @@ mod map;
 mod schema;
 mod transform;
 
-#[cfg(test)]
-mod test;
-
 #[macro_use]
 extern crate error_chain;
-extern crate futures;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-#[macro_use]
-extern crate maplit;
 extern crate itertools;
 #[macro_use]
 extern crate nom;
-extern crate regex;
 extern crate serde;
 #[macro_use]
 extern crate serde_json;
@@ -39,6 +30,7 @@ extern crate uuid;
 extern crate valico;
 
 mod error {
+    #![allow(renamed_and_removed_lints)] // unused_doc_comment -> unused_doc_comments
     error_chain! {
         errors {
             /// Indicates a parsing error
@@ -59,9 +51,7 @@ pub use io::Plugin;
 use common::{deserialize, serialize};
 use io::host::HostFile;
 use json::Entry;
-use map::default::DefaultMapper;
 use map::Mapper;
-use schema::parse;
 use schema::types::Schema;
 use transform::types::{DiskFile, Format, Location, Target, Transform};
 use transform::Generator;
@@ -69,15 +59,13 @@ use transform::Generator;
 use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
 
-use futures::stream;
-use futures::{Future, Stream};
-
 use serde_json::Value;
 
 /// The entry point for the Reconfix library
 #[derive(Clone)]
 pub struct Reconfix {
     default: HostFile,
+
     schema: Option<Schema>,
 }
 
@@ -307,6 +295,7 @@ fn get_node(file: &DiskFile) -> Result<FileNode> {
     })
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::Value;

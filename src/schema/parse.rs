@@ -21,16 +21,9 @@ where
     serde_json::from_reader::<R, Schema>(rdr).chain_err(|| "unable to parse schema")
 }
 
+#[cfg(test)] // TODO Remove
 pub fn from_value(value: Value) -> Result<Schema> {
     serde_json::from_value(value).chain_err(|| "unable to parse schema")
-}
-
-pub fn deserialize_some<'de, T, D>(deserializer: D) -> result::Result<Option<T>, D::Error>
-where
-    T: Deserialize<'de>,
-    D: Deserializer<'de>,
-{
-    Deserialize::deserialize(deserializer).map(Some)
 }
 
 struct SchemaVisitor;
@@ -286,7 +279,6 @@ impl<'de> Serialize for Pointer {
 
 #[cfg(test)]
 mod tests {
-
     use super::super::types::*;
     use super::*;
 

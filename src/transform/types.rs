@@ -1,4 +1,3 @@
-use std::iter;
 use std::str::FromStr;
 
 use error::*;
@@ -6,7 +5,7 @@ use json::Pointer as JsonPointer;
 use json::RelativePointer;
 use schema::types::Schema;
 
-use nom::{self, rest_s, IResult};
+use nom::{rest_s, IResult};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -98,16 +97,6 @@ impl Selector {
         self.components.push(c)
     }
 
-    pub fn pop(&mut self) -> Option<Component> {
-        self.components.pop()
-    }
-
-    pub fn extend(&self, c: Component) -> Selector {
-        let mut extended = self.clone();
-        extended.push(c);
-        extended
-    }
-
     pub fn select_values<'a>(&self, v: &'a Value) -> Vec<&'a Value> {
         let init = vec![v];
         self.components.iter().fold(init, |state, component| {
@@ -165,6 +154,10 @@ pub enum Component {
 
 #[derive(Clone)]
 pub enum Index {
+    // TODO Remove allow(dead_code)
+    //
+    // Single(_) is never constructed, but is used in matches. Keeping it around for now.
+    #[allow(dead_code)]
     Single(u64),
     Wildcard,
 }
@@ -186,20 +179,6 @@ pub enum MatchKey {
 }
 
 impl Destination {
-    pub fn new() -> Destination {
-        Destination { parts: Vec::new() }
-    }
-
-    pub fn push(&mut self, id: Identifier) {
-        self.parts.push(id);
-    }
-
-    pub fn extend(&self, id: Identifier) -> Self {
-        let mut next = self.clone();
-        next.push(id);
-        next
-    }
-
     pub fn get_match_matrix(&self, value: &Value) -> Vec<MatchSet> {
         get_matches(value, &self.parts)
     }

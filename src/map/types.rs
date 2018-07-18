@@ -1,10 +1,7 @@
-use super::error::*;
 use json::Pointer as JsonPointer;
 use schema::types::*;
 
 use serde_json::{Number, Value};
-
-type Map<K, V> = ::std::collections::BTreeMap<K, V>;
 
 #[derive(Debug)]
 pub struct Layer {
@@ -14,20 +11,6 @@ pub struct Layer {
 impl Layer {
     pub fn new() -> Layer {
         Layer { values: Vec::new() }
-    }
-
-    pub fn single(ptr: &JsonPointer, value: Leaf) -> Layer {
-        let mut layer = Layer::new();
-        layer.values.push((ptr.clone(), value));
-        layer
-    }
-
-    pub fn from_value(ptr: &JsonPointer, value: &Value) -> Layer {
-        let mut layer = Layer::new();
-        for (ptr, literal) in produce_literals(ptr.clone(), value) {
-            layer.values.push((ptr, Leaf::Literal(literal)));
-        }
-        layer
     }
 
     pub fn add_single(&mut self, ptr: &JsonPointer, value: Leaf) {

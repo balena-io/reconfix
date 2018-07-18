@@ -57,8 +57,8 @@ pub use error::*;
 pub use io::Plugin;
 
 use common::{deserialize, serialize};
-use json::Entry;
 use io::host::HostFile;
+use json::Entry;
 use map::default::DefaultMapper;
 use map::Mapper;
 use schema::parse;

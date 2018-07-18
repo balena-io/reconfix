@@ -4,8 +4,8 @@ use std::io::{Read, Write};
 
 use error::*;
 
-use serde_json::{from_reader, to_writer, to_writer_pretty};
 use serde_json::Value;
+use serde_json::{from_reader, to_writer, to_writer_pretty};
 
 // #[derive(Debug, Eq, PartialEq)]
 // pub enum Value {
@@ -32,7 +32,7 @@ pub struct JsonAdaptor {
 
 impl JsonAdaptor {
     pub fn new(pretty: bool) -> JsonAdaptor {
-        JsonAdaptor { pretty: pretty }
+        JsonAdaptor { pretty }
     }
 }
 

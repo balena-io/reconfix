@@ -61,11 +61,11 @@ where
         &FileFormat::Ini => {
             let adaptor = IniAdaptor::new();
             adaptor.serialize(content, &mut out)
-        }
+        },
         &FileFormat::Json => {
             let adaptor = JsonAdaptor::new(pretty);
             adaptor.serialize(content, &mut out)
-        }
+        },
     }
     //String::from_utf8(buffer).chain_err(|| "unable to decode utf-8")
 }
@@ -80,10 +80,10 @@ where
         &FileFormat::Ini => {
             let adaptor = IniAdaptor::new();
             adaptor.deserialize(content)
-        }
+        },
         &FileFormat::Json => {
             let adaptor = JsonAdaptor::new(false);
             adaptor.deserialize(content)
-        }
+        },
     }
 }

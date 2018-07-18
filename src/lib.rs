@@ -1,16 +1,17 @@
 //! # `reconfix-core`
 //!
-//! This crate implements the core of reconfix schema handling and bidirectional transformation.
+//! This crate implements the core of reconfix schema handling and
+//! bidirectional transformation.
 #![deny(missing_docs)]
 #![recursion_limit = "1024"]
 
-mod common;
-mod json;
 mod adaptor;
+mod common;
+mod io;
+mod json;
+mod map;
 mod schema;
 mod transform;
-mod map;
-mod io;
 
 #[cfg(test)]
 mod test;
@@ -34,8 +35,8 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-extern crate valico;
 extern crate uuid;
+extern crate valico;
 
 mod error {
     error_chain! {
@@ -57,27 +58,27 @@ mod error {
     }
 }
 
+pub use common::{FileFormat, FileNode, Partition};
 pub use error::*;
-pub use common::{FileNode, Partition, FileFormat};
 pub use io::Plugin;
 
 use common::{deserialize, serialize};
 use json::Entry;
 // use transform::{transform_to_dry, transform_to_wet, Entry};
 // use schema::{Location, Schema};
-use schema::types::Schema;
-use schema::parse;
-use transform::Generator;
-use transform::types::{Transform, Target, DiskFile, Location, Format};
-use map::Mapper;
-use map::default::DefaultMapper;
 use io::host::HostFile;
+use map::default::DefaultMapper;
+use map::Mapper;
+use schema::parse;
+use schema::types::Schema;
+use transform::types::{DiskFile, Format, Location, Target, Transform};
+use transform::Generator;
 
-use std::ops::{Deref, DerefMut};
 use std::collections::BTreeMap;
+use std::ops::{Deref, DerefMut};
 
-use futures::{Future, Stream};
 use futures::stream;
+use futures::{Future, Stream};
 
 use serde_json::Value;
 
@@ -104,8 +105,7 @@ impl Reconfix {
     {
         debug!("reading JSON...");
 
-        let schema = schema::parse::from_reader(r)
-            .chain_err(|| "unable to read Reconfix schema")?;
+        let schema = schema::parse::from_reader(r).chain_err(|| "unable to read Reconfix schema")?;
 
         self.schema = Some(schema);
 
@@ -151,11 +151,13 @@ impl Reconfix {
     }
 }
 
-fn wet_to_dry<F>(schema: Schema, mut wet: F) -> Result<Value> 
-    where F: FnMut(&DiskFile, &FileFormat) -> Result<Value>
+fn wet_to_dry<F>(schema: Schema, mut wet: F) -> Result<Value>
+where
+    F: FnMut(&DiskFile, &FileFormat) -> Result<Value>,
 {
     let generator = transform::generator::DefaultGenerator;
-    let transforms = generator.generate(&schema)
+    let transforms = generator
+        .generate(&schema)
         .chain_err(|| "unable to generate transforms")?;
 
     let targets = get_targets(&transforms);
@@ -165,9 +167,7 @@ fn wet_to_dry<F>(schema: Schema, mut wet: F) -> Result<Value>
 
     for target in targets.iter() {
         match *target {
-            Target::NetworkManager => {
-                bail!("networkmanager backend not supported")
-            },
+            Target::NetworkManager => bail!("networkmanager backend not supported"),
             Target::File(ref file) => {
                 let format = match file.format {
                     Format::Ini => common::FileFormat::Ini,
@@ -180,19 +180,23 @@ fn wet_to_dry<F>(schema: Schema, mut wet: F) -> Result<Value>
                         entries.insert(target.clone(), content.clone());
                     },
                     Location::Nested(ref n) => {
-                        let content = phy_files.get(&n.file)
+                        let content = phy_files
+                            .get(&n.file)
                             .ok_or_else(|| "unable to find nested file")?;
-                        let wet = n.path.search(&content)
+                        let wet = n
+                            .path
+                            .search(&content)
                             .ok_or_else(|| "unable to find search nested path")?;
                         entries.insert(target.clone(), wet.clone());
-                    }
+                    },
                 }
-            }
+            },
         }
     }
 
     let mapper = map::default::DefaultMapper;
-    let dry = mapper.reverse_map(&entries, &transforms)
+    let dry = mapper
+        .reverse_map(&entries, &transforms)
         .chain_err(|| "unable to perform reverse map")?;
 
     Ok(dry)
@@ -204,10 +208,8 @@ where
 {
     wet_to_dry(schema, |file, format| {
         let node = get_node(file)?;
-        let content: Vec<u8> = (&mut *plugin)
-            .read(node)
-            .map_err(|e| ErrorKind::Plugin(e))?;
-        
+        let content: Vec<u8> = (&mut *plugin).read(node).map_err(|e| ErrorKind::Plugin(e))?;
+
         let wet = deserialize(content.as_slice(), &format)?;
         Ok(wet)
     })
@@ -215,20 +217,20 @@ where
 
 fn dry_to_wet(schema: Schema, dry: Value) -> Result<Vec<(DiskFile, FileFormat, Value)>> {
     let generator = transform::generator::DefaultGenerator;
-    let transforms = generator.generate(&schema)
+    let transforms = generator
+        .generate(&schema)
         .chain_err(|| "unable to generate transforms")?;
 
     let mapper = map::default::DefaultMapper;
-    let entries = mapper.forward_map(&dry, &transforms)
+    let entries = mapper
+        .forward_map(&dry, &transforms)
         .chain_err(|| "unable to perform forward map")?;
 
     let mut disk_entries = BTreeMap::new();
 
     for (target, value) in entries {
         match target {
-            Target::NetworkManager => {
-                bail!("networkmanager backend not supported")
-            },
+            Target::NetworkManager => bail!("networkmanager backend not supported"),
             Target::File(file) => {
                 let format = match file.format {
                     Format::Ini => common::FileFormat::Ini,
@@ -243,15 +245,18 @@ fn dry_to_wet(schema: Schema, dry: Value) -> Result<Vec<(DiskFile, FileFormat, V
                         serialize(value, &format, false, &mut buffer)?;
                         let content = String::from_utf8(buffer)
                             .chain_err(|| "invalid utf8 output from serializer")?;
-                        let &mut (_, ref mut disk_file) = disk_entries.get_mut(&n.file)
+                        let &mut (_, ref mut disk_file) = disk_entries
+                            .get_mut(&n.file)
                             .ok_or_else(|| "nested file destination not found")?;
                         match n.path.entry(disk_file)? {
-                            Entry::Vacant(e) => { e.insert(Value::String(content)); },
+                            Entry::Vacant(e) => {
+                                e.insert(Value::String(content));
+                            },
                             _ => bail!("cannot overwrite value"),
                         }
                     },
                 }
-            }
+            },
         }
     }
 
@@ -286,7 +291,7 @@ fn get_targets(transforms: &[Transform]) -> Vec<Target> {
         .iter()
         .map(|t| t.target.clone())
         .collect::<Vec<_>>();
-    
+
     targets.sort_unstable();
     targets.dedup();
 
@@ -294,7 +299,8 @@ fn get_targets(transforms: &[Transform]) -> Vec<Target> {
 }
 
 fn get_node(file: &DiskFile) -> Result<FileNode> {
-    let parts = file.path
+    let parts = file
+        .path
         .trim_left_matches('/')
         .split("/")
         .map(|s| s.to_string())
@@ -317,13 +323,16 @@ mod tests {
         let _ = ::env_logger::init();
         let json: Value = ::serde_json::from_str(data).expect("unable to parse json file");
         let schema_json = json.get("schema").expect("unable to read schema");
-        let schema_ast = ::schema::parse::from_value(schema_json.clone()).expect("unable to parse schema AST");
+        let schema_ast =
+            ::schema::parse::from_value(schema_json.clone()).expect("unable to parse schema AST");
         let dry_expected = json.get("dry").expect("unable to read dry");
-        let wet_expected = json.get("wet")
+        let wet_expected = json
+            .get("wet")
             .and_then(|x| x.as_object())
             .expect("unable to read wet");
-        
-        let wet_actual = dry_to_wet(schema_ast.clone(), dry_expected.clone()).expect("unable to convert dry to wet");
+
+        let wet_actual = dry_to_wet(schema_ast.clone(), dry_expected.clone())
+            .expect("unable to convert dry to wet");
         let dry_actual = wet_to_dry(schema_ast.clone(), |file, _| {
             let content = wet_expected
                 .get(&file.path)
@@ -342,7 +351,7 @@ mod tests {
             let content_actual = wet_actual_map
                 .remove(path)
                 .expect("unable to find wet json");
-            
+
             assert_eq!(content_expected.clone(), content_actual);
         }
     }

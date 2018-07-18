@@ -1,16 +1,14 @@
-
 use std::iter;
 use std::str::FromStr;
 
 use error::*;
-use ::json::Pointer as JsonPointer;
-use ::json::RelativePointer;
-use ::schema::types::Schema;
+use json::Pointer as JsonPointer;
+use json::RelativePointer;
+use schema::types::Schema;
 
-use uuid::Uuid;
-use serde_json::Value;
 use nom::{self, rest_s, IResult};
-
+use serde_json::Value;
+use uuid::Uuid;
 
 pub struct Transform {
     pub source: Selector,
@@ -120,10 +118,14 @@ impl Selector {
                         (&Value::Object(ref o), &Component::Property(ref s)) => {
                             o.get(s).into_iter().collect::<Vec<&Value>>()
                         },
-                        (&Value::Array(ref a), &Component::Item(ref i)) => match *i {
-                            Index::Single(ref i) => a.get(*i as usize).into_iter().collect::<Vec<_>>(),
-                            Index::Wildcard => a.iter().collect::<Vec<_>>(),
-                        }
+                        (&Value::Array(ref a), &Component::Item(ref i)) => {
+                            match *i {
+                                Index::Single(ref i) => {
+                                    a.get(*i as usize).into_iter().collect::<Vec<_>>()
+                                },
+                                Index::Wildcard => a.iter().collect::<Vec<_>>(),
+                            }
+                        },
                         _ => vec![],
                     }
                 })
@@ -139,15 +141,19 @@ impl Selector {
             match *component {
                 Component::Property(ref s) => ptr.push(s.to_string()),
                 Component::Item(Index::Single(ref idx)) => ptr.push(idx.to_string()),
-                Component::Item(Index::Wildcard) => match index {
-                    Some(idx) => { index = None; ptr.push(idx.to_string()); },
-                    None => bail!("cannot map more than one array index wildcards"),
+                Component::Item(Index::Wildcard) => {
+                    match index {
+                        Some(idx) => {
+                            index = None;
+                            ptr.push(idx.to_string());
+                        },
+                        None => bail!("cannot map more than one array index wildcards"),
+                    }
                 },
             }
         }
 
         Ok(ptr)
-
     }
 }
 
@@ -199,18 +205,23 @@ impl Destination {
     }
 
     pub fn get_pointer(&self, value: &Value, current: &JsonPointer) -> Result<JsonPointer> {
-        let parts = self.parts.iter()
-            .map(|id| match *id {
-                Identifier::String(ref s) => Ok(s.to_string()),
-                Identifier::Pointer(ref ptr) => {
-                    let value = ptr.resolve(value, current)
-                        .ok_or_else(|| format!("unable to resolve pointer '{}'", ptr))?;
-                        
-                    match value {
-                        Value::String(s) => Ok(s.to_string()),
-                        Value::Number(n) => Ok(n.to_string()),
-                        _ => bail!("unsported value type"),
-                    }
+        let parts = self
+            .parts
+            .iter()
+            .map(|id| {
+                match *id {
+                    Identifier::String(ref s) => Ok(s.to_string()),
+                    Identifier::Pointer(ref ptr) => {
+                        let value = ptr
+                            .resolve(value, current)
+                            .ok_or_else(|| format!("unable to resolve pointer '{}'", ptr))?;
+
+                        match value {
+                            Value::String(s) => Ok(s.to_string()),
+                            Value::Number(n) => Ok(n.to_string()),
+                            _ => bail!("unsported value type"),
+                        }
+                    },
                 }
             })
             .collect::<Result<Vec<_>>>()?;
@@ -219,18 +230,24 @@ impl Destination {
     }
 
     pub fn get_match_pointer(&self, set: &MatchSet) -> Result<JsonPointer> {
-        let parts = self.parts.iter()
-            .map(|id| match *id {
-                Identifier::String(ref s) => Ok(s.to_string()),
-                Identifier::Pointer(ref ptr) => {
-                    let found = set.keys.iter()
-                        .find(|pair| pair.0.eq(ptr))
-                        .ok_or_else(|| format!("unable to resolve pointer '{}'", ptr))?;
-                        
-                    match found.1 {
-                        MatchKey::Property(ref s) => Ok(s.to_string()),
-                        MatchKey::Index(ref n) => Ok(n.to_string()),
-                    }
+        let parts = self
+            .parts
+            .iter()
+            .map(|id| {
+                match *id {
+                    Identifier::String(ref s) => Ok(s.to_string()),
+                    Identifier::Pointer(ref ptr) => {
+                        let found = set
+                            .keys
+                            .iter()
+                            .find(|pair| pair.0.eq(ptr))
+                            .ok_or_else(|| format!("unable to resolve pointer '{}'", ptr))?;
+
+                        match found.1 {
+                            MatchKey::Property(ref s) => Ok(s.to_string()),
+                            MatchKey::Index(ref n) => Ok(n.to_string()),
+                        }
+                    },
                 }
             })
             .collect::<Result<Vec<_>>>()?;
@@ -257,30 +274,33 @@ fn get_matches(value: &Value, identifiers: &[Identifier]) -> Vec<MatchSet> {
                 .unwrap_or_else(|| Vec::new())
         },
         (&Value::Object(ref o), Some(&Identifier::Pointer(ref ptr))) => {
-            o.iter().flat_map(|(key, prop)| {
-                let mut match_sets = get_matches(prop, rest);
+            o.iter()
+                .flat_map(|(key, prop)| {
+                    let mut match_sets = get_matches(prop, rest);
 
-                for match_set in match_sets.iter_mut() {
-                    let pair = (ptr.clone(), MatchKey::Property(key.to_string()));
-                    match_set.keys.push(pair);
-                }
+                    for match_set in match_sets.iter_mut() {
+                        let pair = (ptr.clone(), MatchKey::Property(key.to_string()));
+                        match_set.keys.push(pair);
+                    }
 
-                match_sets
-            })
-            .collect::<Vec<_>>()
+                    match_sets
+                })
+                .collect::<Vec<_>>()
         },
         (&Value::Array(ref a), Some(&Identifier::Pointer(ref ptr))) => {
-            a.iter().enumerate().flat_map(|(index, item)| {
-                let mut match_sets = get_matches(item, rest);
+            a.iter()
+                .enumerate()
+                .flat_map(|(index, item)| {
+                    let mut match_sets = get_matches(item, rest);
 
-                for match_set in match_sets.iter_mut() {
-                    let pair = (ptr.clone(), MatchKey::Index(index as u64));
-                    match_set.keys.push(pair);
-                }
+                    for match_set in match_sets.iter_mut() {
+                        let pair = (ptr.clone(), MatchKey::Index(index as u64));
+                        match_set.keys.push(pair);
+                    }
 
-                match_sets
-            })
-            .collect::<Vec<_>>()
+                    match_sets
+                })
+                .collect::<Vec<_>>()
         },
         _ => vec![MatchSet { keys: Vec::new() }],
     }
@@ -359,9 +379,9 @@ named!(parse_ids<&str, Vec<Identifier>>,
 //     )
 // );
 
-            // alt!(
-            //     map!(
-            //         delimited!(tag!("{{"), RelativePointer::from_str, tag!("}}")),
-            //         Identifier::Pointer),
-            //     map!(rest_s, Identifier::String)
-            // )
+// alt!(
+//     map!(
+//         delimited!(tag!("{{"), RelativePointer::from_str, tag!("}}")),
+//         Identifier::Pointer),
+//     map!(rest_s, Identifier::String)
+// )

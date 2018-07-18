@@ -1,4 +1,3 @@
-
 extern crate reconfix;
 
 use std::env;

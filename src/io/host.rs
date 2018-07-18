@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::{Read, Write};
 
-use io::Plugin;
 use common::FileNode;
+use io::Plugin;
 
 /// The default Reconfix plugin
 #[derive(Clone)]
@@ -55,8 +55,8 @@ impl<'a> Plugin for &'a mut HostFile {
 //     pub children: Vec<Device>,
 // }
 
-// fn get_root_device(devices: &[Device], parent: Option<&Device>) -> Result<()> {
-//     let metadata = fs::metadata("/")
+// fn get_root_device(devices: &[Device], parent: Option<&Device>) ->
+// Result<()> {     let metadata = fs::metadata("/")
 //         .chain_err(|| "unable to stat root directory")?;
 
 //     let device = metadata.st_dev();
@@ -115,9 +115,10 @@ impl<'a> Plugin for &'a mut HostFile {
 
 //     let pair = device_str.splitn(2, ':').collect::<Vec<_>>();
 //     let major = pair.get(0).ok_or_else(|| "missing major number".into())
-//         .and_then(|m| u32::from_str(m).chain_err(|| "invalid major number"))?;
-//     let minor = pair.get(1).ok_or_else(|| "missing minor number".into())
-//         .and_then(|m| u32::from_str(m).chain_err(|| "invalid minor number"))?;
+// .and_then(|m| u32::from_str(m).chain_err(|| "invalid major
+// number"))?; let minor = pair.get(1).ok_or_else(|| "missing minor
+// number".into()) .and_then(|m| u32::from_str(m).chain_err(|| "invalid
+// minor number"))?;
 
 //     let partition = canonical.join("partition");
 //     let parition_num = match partition.is_file() {

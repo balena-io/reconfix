@@ -1,29 +1,59 @@
 {
-    "version": "0.1.0",
+    "version": "2.0.0",
     "command": "cargo",
-    "isShellCommand": true,
-    "showOutput": "always",
-    "suppressTaskName": true,
+    "problemMatcher": "$rustc",
+    "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "showReuseMessage": false,
+        "panel": "shared",
+        "focus": false
+    },
     "tasks": [
         {
-            "taskName": "cargo build",
-            "args": [
-                "build"
-            ],
-            "isBuildCommand": true
+            "label": "Build",
+            "type": "shell",
+            "command": "cargo build --lib",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
-            "taskName": "cargo run",
-            "args": [
-                "run"
-            ]
+            "label": "Build CLI",
+            "type": "shell",
+            "command": "cargo build --bins",
+            "group": "build"
         },
         {
-            "taskName": "cargo test",
-            "args": [
-                "test"
-            ],
-            "isTestCommand": true
+            "label": "Clean",
+            "type": "shell",
+            "command": "cargo clean",
+            "presentation": {
+                "reveal": "never"
+            }
+        },
+        {
+            "label": "Test",
+            "type": "shell",
+            "command": "cargo test --lib",
+            "group": {
+                "kind": "test",
+                "isDefault": true,
+            }
+        },
+        {
+            "label": "Clippy",
+            "type": "shell",
+            "command": "cargo clean -p reconfix && cargo clippy",
+        },
+        {
+            "label": "Reformat",
+            "type": "shell",
+            "command": "cargo fmt",
+            "presentation": {
+                "reveal": "never"
+            }
         }
     ]
 }

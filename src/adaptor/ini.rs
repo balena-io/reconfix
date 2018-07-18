@@ -7,8 +7,8 @@ use error::*;
 
 use nom::{self, multispace, space, IResult, Needed};
 
-use serde_json::{Map, Number, Value};
 use serde_json::map::Entry;
+use serde_json::{Map, Number, Value};
 
 /// The `Property` enum is used to represent a heirarchichal data
 /// structure. It is required to properly sort the data for
@@ -123,7 +123,7 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
     match map.entry(key) {
         Entry::Vacant(e) => {
             e.insert(value);
-        }
+        },
         Entry::Occupied(mut e) => {
             // we use a dummy value here so we can replace it with
             // the modified value later. If we remove the value,
@@ -133,13 +133,13 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
                 Value::Array(mut a) => {
                     a.push(value);
                     a
-                }
+                },
                 x => vec![x, value],
             };
 
             // add back the modified vector, droping the dummy value
             e.insert(Value::Array(modified));
-        }
+        },
     }
 }
 
@@ -148,7 +148,8 @@ fn insert_or_expand(map: &mut Map<String, Value>, key: String, value: Value) {
 fn insert_section(root: &mut Map<String, Value>, section_name: &str, pairs: Vec<(&str, &str)>) {
     // recursively query the object using the split section name
     let mut insert_map = section_name.split('.').fold(root, |map, key| {
-        let entry = map.entry(key.trim())
+        let entry = map
+            .entry(key.trim())
             .or_insert_with(|| Value::Object(Map::new()));
         match *entry {
             Value::Object(ref mut sub) => sub,
@@ -182,7 +183,7 @@ fn emit_values(key: &str, value: &Value) -> Result<Vec<Pair>> {
         (Ok(x), _) => Ok(vec![x]),
         (_, &Value::Array(ref elems)) => {
             elems.iter().map(flatten_value).collect::<Result<Vec<_>>>()
-        }
+        },
         _ => Err("invalid value".into()),
     };
 
@@ -199,9 +200,13 @@ fn emit_values(key: &str, value: &Value) -> Result<Vec<Pair>> {
 /// the internal configuration model to the INI data model.
 fn convert_model(object: Map<String, Value>) -> Result<Vec<Pair>> {
     // filter out top-level key-value pairs and only use sections
-    let section_map = object.into_iter().map(|(key, value)| match value {
-        Value::Object(o) => convert_model(o).map(|props| vec![Pair(key, Property::Section(props))]),
-        x => emit_values(&key, &x),
+    let section_map = object.into_iter().map(|(key, value)| {
+        match value {
+            Value::Object(o) => {
+                convert_model(o).map(|props| vec![Pair(key, Property::Section(props))])
+            },
+            x => emit_values(&key, &x),
+        }
     });
 
     // perform some flattening
@@ -226,19 +231,20 @@ where
     }
 
     // chain names together for subsections
-    let parent_name = name.map(|x| x.to_string() + ".")
+    let parent_name = name
+        .map(|x| x.to_string() + ".")
         .unwrap_or_else(|| "".to_string());
 
     for Pair(mut key, value) in data {
         match value {
             Property::Value(v) => {
                 writeln!(writer, "{} = {}", key, v).unwrap();
-            }
+            },
             Property::Section(s) => {
                 writeln!(writer, "").unwrap();
                 key.insert_str(0, &parent_name);
                 write_section(Some(&key), s, writer)?;
-            }
+            },
         };
     }
 
@@ -283,11 +289,12 @@ fn key(i: &[u8]) -> IResult<&[u8], &[u8]> {
             } else {
                 return IResult::Incomplete(Needed::Unknown);
             }
-        }
+        },
     };
 
     // Search for the byte index of a terminating character.
-    let terminator = text.char_indices()
+    let terminator = text
+        .char_indices()
         .find(|&(_, elem)| elem.is_whitespace() || elem == '=')
         .map(|(index, _)| index);
 
@@ -871,9 +878,7 @@ param2 = val2"[..];
 
         let res = ini_file(ini);
         print_output(&res);
-        let expected = vec![
-            ("parent.child", vec![("param1", "val1"), ("param2", "val2")]),
-        ];
+        let expected = vec![("parent.child", vec![("param1", "val1"), ("param2", "val2")])];
         assert_eq!(res, IResult::Done(&b""[..], (vec![], expected)));
     }
 

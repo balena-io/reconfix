@@ -1,7 +1,6 @@
-
 use std::collections::BTreeMap;
 
-use ::json::Pointer as JsonPointer;
+use json::Pointer as JsonPointer;
 
 use serde_json::Value;
 
@@ -101,7 +100,11 @@ pub struct ObjectSchema {
     pub property_names: Option<Schema>,
     #[serde(rename = "const", skip_serializing_if = "Option::is_none")]
     pub const_: Option<Value>,
-    #[serde(default, rename = "enum", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "enum",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub enum_: Option<Vec<Value>>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<TypeKind<Type>>,
@@ -141,10 +144,7 @@ pub struct Reconfix {
 #[serde(tag = "type")]
 pub enum Target {
     #[serde(rename = "file")]
-    File { 
-        format: Format,
-        location: Location,
-    },
+    File { format: Format, location: Location },
     #[serde(rename = "network_manager")]
     NetworkManager,
 }
@@ -159,14 +159,8 @@ pub enum Format {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Location {
-    Disk {
-        partition: Partition,
-        path: String,
-    },
-    Nested {
-        file: String,
-        path: String,
-    }
+    Disk { partition: Partition, path: String },
+    Nested { file: String, path: String },
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

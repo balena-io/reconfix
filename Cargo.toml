@@ -1,34 +1,29 @@
 [package]
 name = "reconfix"
-description = "bidirectional data transformation engine"
-version = "0.5.2"
-authors = ["Aaron Brodersen <aaron@resin.io>"]
+description = "Bidirectional data transformation engine"
+version = "0.6.0"
+authors = ["Robert Vojta <robert@resin.io>", "Aaron Brodersen <aaron@resin.io>"]
 license = "Apache-2.0"
 
-[workspace]
-members = [ "reconfix-cli" ]
+[[bin]]
+name = "reconfix-cli"
+doc = false
 
 [dev-dependencies]
 env_logger = "0.4"
 
 [dependencies]
-log = "0.4"
 env_logger = "0.4"
+error-chain = "0.11"
+futures = "0.1"
+itertools = "0.7"
+lazy_static = "^0.2"
+log = "0.4"
+maplit = "0.1"
+nom = "3.0"
+regex = "0.2"
 serde = "1.0"
 serde_derive = "1.0"
-valico = "2"
-regex = "0.2"
-error-chain = "0.11"
-lazy_static = "^0.2"
-maplit = "0.1"
-itertools = "0.7"
-futures = "0.1"
+serde_json = "1.0"
 uuid = "0.6"
-
-[dependencies.nom]
-version = "3.0"
-# features = ["nightly"]
-
-[dependencies.serde_json]
-version = "1.0"
-# features = ["linked-hash-map"]
+valico = "2"

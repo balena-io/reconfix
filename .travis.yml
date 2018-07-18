@@ -1,6 +1,9 @@
-dist: trusty
-sudo: false
 language: rust
+rust:
+  - nightly
+
+cache: cargo
+
 addons:
   apt:
     packages:
@@ -12,25 +15,13 @@ addons:
     sources:
       - kalakris-cmake
 
-rust:
-    - nightly
-    - beta
-    - stable
-
-matrix:
-    - include:
-        - os: linux
-        - os: osx
-
 install:
-    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo install rustfmt) || true)
-    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo install clippy) || true)
-    - (cargo install cargo-travis || true)
-    - export PATH=$PATH:$HOME/.cargo/bin
+  - rustup update
+  - rustup component add clippy-preview
+  - rustup component add rustfmt-preview
+
 script:
-    - cargo clean
-    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo fmt -- --write-mode=diff) || true)
-    - ((test $TRAVIS_RUST_VERSION == "nightly" && cargo clippy) || true)
-    - cargo build --verbose
-after_success:
-    - cargo coveralls
+  - cargo clean
+  - cargo fmt -- --check
+  - cargo test --color=never --verbose
+  - cargo clean -p reconfix && cargo clippy

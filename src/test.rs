@@ -1,5 +1,5 @@
-use std::io::{self, BufRead, BufReader};
 use std::cmp;
+use std::io::{self, BufRead, BufReader};
 
 use serde_json;
 use serde_json::{from_str, Value};
@@ -31,9 +31,9 @@ impl Section {
     }
 }
 
-/// Parses a file for `Section` elements. This can handle `# comments`, single-line and
-/// multi-line JSON as well as the special value `#error` to indicate a test that should
-/// fail.
+/// Parses a file for `Section` elements. This can handle `# comments`,
+/// single-line and multi-line JSON as well as the special value `#error` to
+/// indicate a test that should fail.
 pub fn read_sections<R>(r: R) -> Vec<Section>
 where
     R: io::Read,
@@ -62,15 +62,16 @@ where
     items
 }
 
-/// Helper function for parsing the multi-line test files. Assumes they follow the format:
+/// Helper function for parsing the multi-line test files. Assumes they follow
+/// the format:
 ///
 /// 1. Test name in a `# comment`
 /// 2. Schema JSON
 /// 3. Input JSON
 /// 4. Expected output JSON
 ///
-/// A callback is provided for parsing the schema into a different structure before returning
-/// values to the calling test.
+/// A callback is provided for parsing the schema into a different structure
+/// before returning values to the calling test.
 pub fn parse_test_data<T, F>(data: &str, convert: F) -> (String, T, Value, Option<Value>)
 where
     F: FnOnce(&Value) -> T,
@@ -92,7 +93,8 @@ where
     (title, parsed, tree, value)
 }
 
-/// Read a new section, first attempting to read single-line data, then multi-line.
+/// Read a new section, first attempting to read single-line data, then
+/// multi-line.
 fn read_section<R>(mut r: &mut RebufReader<R>) -> Result<Option<Section>>
 where
     R: io::Read,
@@ -123,7 +125,8 @@ where
     Ok(line)
 }
 
-/// Attempt to read a single line section of either a `Comment`, `Error`, or single-line `Json`.
+/// Attempt to read a single line section of either a `Comment`, `Error`, or
+/// single-line `Json`.
 fn read_text<R>(mut r: &mut RebufReader<R>) -> Result<Option<Section>>
 where
     R: io::Read,

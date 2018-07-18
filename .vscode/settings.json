@@ -5,7 +5,8 @@
         "**/.hg": true,
         "**/CVS": true,
         "**/.DS_Store": true,
-        "**/*.rs.bk": true
+        "**/*.rs.bk": true,
+        "**/target": true
     },
-    "rust-client.channel": "nightly-2018-01-21"
+    "rust-client.channel": "nightly"
 }

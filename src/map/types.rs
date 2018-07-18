@@ -1,9 +1,8 @@
-
-use ::json::Pointer as JsonPointer;
-use ::schema::types::*;
 use super::error::*;
+use json::Pointer as JsonPointer;
+use schema::types::*;
 
-use serde_json::{Value, Number};
+use serde_json::{Number, Value};
 
 type Map<K, V> = ::std::collections::BTreeMap<K, V>;
 
@@ -14,9 +13,7 @@ pub struct Layer {
 
 impl Layer {
     pub fn new() -> Layer {
-        Layer {
-            values: Vec::new(),
-        }
+        Layer { values: Vec::new() }
     }
 
     pub fn single(ptr: &JsonPointer, value: Leaf) -> Layer {
@@ -55,12 +52,17 @@ fn produce_literals(ptr: JsonPointer, value: &Value) -> Vec<(JsonPointer, Litera
             }
         },
         Value::Bool(ref b) => vec![(ptr, Literal::Bool(*b))],
-        Value::Object(ref o) => o.iter().flat_map(|(name, value)| 
-            produce_literals(ptr.extend(name.as_ref()), value)
-        ).collect(),
-        Value::Array(ref a) => a.iter().enumerate().flat_map(|(index, value)|
-            produce_literals(ptr.extend(index.to_string()), value)
-        ).collect(),
+        Value::Object(ref o) => {
+            o.iter()
+                .flat_map(|(name, value)| produce_literals(ptr.extend(name.as_ref()), value))
+                .collect()
+        },
+        Value::Array(ref a) => {
+            a.iter()
+                .enumerate()
+                .flat_map(|(index, value)| produce_literals(ptr.extend(index.to_string()), value))
+                .collect()
+        },
     }
 }
 

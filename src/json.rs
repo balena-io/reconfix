@@ -65,7 +65,7 @@ impl Into<Vec<String>> for Pointer {
 
 impl From<Vec<String>> for Pointer {
     fn from(parts: Vec<String>) -> Self {
-        Pointer { parts: parts }
+        Pointer { parts }
     }
 }
 
@@ -83,7 +83,8 @@ enum DerefValue<'a> {
 }
 
 fn dereference<'a>(v: &'a mut Value, k: &str) -> Result<DerefValue<'a>> {
-    let (contains, obj) = v.as_object_mut()
+    let (contains, obj) = v
+        .as_object_mut()
         .map(|obj| (obj.contains_key(k), obj))
         .ok_or_else(|| "expected object")?;
 
@@ -131,16 +132,22 @@ impl Pointer {
     }
 
     pub fn search<'a>(&self, v: &'a Value) -> Option<&'a Value> {
-        self.parts.iter().fold(Some(v), |state, name| match state {
-            None => None,
-            Some(json) => match json {
-                &Value::Object(ref obj) => obj.get(name),
-                &Value::Array(ref arr) => match u64::from_str(name) {
-                    Ok(idx) => arr.get(idx as usize),
-                    _ => None,
-                }
-                _ => None,
-            },
+        self.parts.iter().fold(Some(v), |state, name| {
+            match state {
+                None => None,
+                Some(json) => {
+                    match json {
+                        &Value::Object(ref obj) => obj.get(name),
+                        &Value::Array(ref arr) => {
+                            match u64::from_str(name) {
+                                Ok(idx) => arr.get(idx as usize),
+                                _ => None,
+                            }
+                        },
+                        _ => None,
+                    }
+                },
+            }
         })
     }
 
@@ -157,17 +164,17 @@ impl Pointer {
                     FollowState::Virtual(obj, mut path) => {
                         path.push(name.to_string());
                         Ok(FollowState::Virtual(obj, path))
-                    }
+                    },
                     FollowState::Real(v) => {
                         let state = match dereference(v, name)? {
                             DerefValue::Found(next) => FollowState::Real(next),
                             DerefValue::NotFound(obj) => {
                                 FollowState::Virtual(obj, vec![name.to_string()])
-                            }
+                            },
                         };
 
                         Ok(state)
-                    }
+                    },
                 }
             },
         )?;
@@ -234,7 +241,7 @@ enum Down {
 fn down_from_str(input: &str) -> ::std::result::Result<Down, PointerParseError> {
     match input {
         "#" => Ok(Down::Position),
-        ptr => Ok(Down::Pointer(Pointer::from_str(ptr)?))
+        ptr => Ok(Down::Pointer(Pointer::from_str(ptr)?)),
     }
 }
 
@@ -259,7 +266,7 @@ impl FromStr for RelativePointer {
             _ => return Err(PointerParseError),
         };
 
-        Ok(RelativePointer { up: up, down: down })
+        Ok(RelativePointer { up, down })
     }
 }
 
@@ -278,7 +285,7 @@ impl RelativePointer {
         let parts = parts.iter().map(|s| s.to_string()).collect();
         RelativePointer {
             up: parent,
-            down: Down::Pointer(Pointer { parts: parts })
+            down: Down::Pointer(Pointer { parts }),
         }
     }
 
@@ -294,11 +301,13 @@ impl RelativePointer {
         if self.up <= len {
             let boundary = (len - self.up) as usize;
             let slice = &ptr.parts[0..boundary];
-            Some(Pointer { parts: slice.to_vec() })
+            Some(Pointer {
+                parts: slice.to_vec(),
+            })
         } else {
             None
         }
-    } 
+    }
 
     pub fn normalize(&self, ptr: &Pointer) -> Option<Pointer> {
         match self.down {
@@ -314,7 +323,7 @@ impl RelativePointer {
                 }
 
                 Some(pivot)
-            }
+            },
         }
     }
 
@@ -331,14 +340,18 @@ impl RelativePointer {
                     None => return None,
                 };
 
-                let parent_ptr = Pointer { parts: parent.to_vec() };
+                let parent_ptr = Pointer {
+                    parts: parent.to_vec(),
+                };
 
                 match parent_ptr.search(value) {
                     Some(&Value::Object(_)) => Some(Value::String(key.to_string())),
-                    Some(&Value::Array(_)) => match u64::from_str(key) {
-                        Ok(idx) => Some(Value::Number(idx.into())),
-                        _ => None,
-                    }
+                    Some(&Value::Array(_)) => {
+                        match u64::from_str(key) {
+                            Ok(idx) => Some(Value::Number(idx.into())),
+                            _ => None,
+                        }
+                    },
                     _ => None,
                 }
             },
@@ -346,7 +359,7 @@ impl RelativePointer {
                 self.normalize(ptr)
                     .and_then(|ptr| ptr.search(value))
                     .map(|v| v.clone())
-            }
+            },
         }
     }
 }

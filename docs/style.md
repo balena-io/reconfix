@@ -22,7 +22,7 @@ file.
   * This lint is disabled because some lines are longer (mainly lines with
     links)
 * `MD024` - No duplicate header / No duplicate heading
-  * This lint is disabled because of the [style.md](style.md) document
+  * This lint is disabled because of the [schema.md](schema.md) document
   * Will be enabled in the future, have to check if it's really necessary
 
 ## Rust

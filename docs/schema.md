@@ -1,13 +1,11 @@
-Schema Specification
-====================
+# Schema Specification
 
 This document aims to describe in detail the syntax of schemas.
 
 Schemas are based on the JSON format, and declaratively describe how clients
 should move among the various transformation phases.
 
-Example
--------
+## Example
 
 This is a complete example of a configuration schema:
 
@@ -115,44 +113,41 @@ This is a complete example of a configuration schema:
 }
 ```
 
-Structure
----------
+## Structure
 
 Schemas are modelled with a top level JSON object, including various object
 properties that describe each of the files the schema is concerned with.
 
 For example:
 
-```js
+```json
 {
-  "file_foo", {
+  "file_foo": {
     ...
   },
-  "file_bar", {
+  "file_bar": {
     ...
   },
-  "file_baz", {
+  "file_baz": {
     ...
   }
 }
 ```
 
-File Names
-----------
+## File Names
 
 Schemas contain object properties defining files. The property names should
 adhere to the following rules:
 
-- Must be unique in the schema
-- Must consist of alphanumeric characters and underscores only
+* Must be unique in the schema
+* Must consist of alphanumeric characters and underscores only
 
 Valid file names:
 
-- `config_txt`
-- `resin_config_network_config`
+* `config_txt`
+* `resin_config_network_config`
 
-File Objects
-------------
+## File Objects
 
 File object properties consist of the following properties:
 
@@ -163,8 +158,8 @@ desired file format.
 
 For example:
 
-- `ini`
-- `json`
+* `ini`
+* `json`
 
 If the referenced connector doesn't exist, then the schema is considered
 invalid.
@@ -205,8 +200,8 @@ When an object location is independent, then the following properties are expect
 The path of the file, where each portion of the path is a different element of
 the array.
 
-- **This propery can't be an empty array**
-- If the directory name of the specified path doesn't exist, then the schema
+* **This propery can't be an empty array**
+* If the directory name of the specified path doesn't exist, then the schema
   client should recursively create it
 
 For example
@@ -220,9 +215,9 @@ For example
 The partition where the file is located. The partition object might include the
 following properties:
 
-- `Number primary`: the primary partition number, which must be less or equal
+* `Number primary`: the primary partition number, which must be less or equal
   than 4
-- `Number logical`: the logical partition number
+* `Number logical`: the logical partition number
 
 For example:
 
@@ -252,7 +247,7 @@ properties.
 
 For example
 
-```js
+```json
 {
   "top_level_file": {
     ...
@@ -271,11 +266,11 @@ If the referenced file doesn't exist, then the schema is considered invalid.
 
 The path of the property of the parent file where this file should be inlined.
 
-- **This property can't be an empty array**
+* **This property can't be an empty array**
 
 For example:
 
-```js
+```json
 {
   "nested_file": {
     "location": {
@@ -299,12 +294,12 @@ The array contains items that include the following properties:
 
 The property definition, which contains top level objects whose property names:
 
-- Must be unique in the described file
-- Must consist of alphanumeric characters and underscores only
+* Must be unique in the described file
+* Must consist of alphanumeric characters and underscores only
 
 For example:
 
-```js
+```json
 "properties": [
   {
     "definition": {
@@ -321,7 +316,7 @@ For example:
 
 Property names may be nested by describing them with the following notation:
 
-```js
+```json
 "properties": [
   {
     "definition": {
@@ -344,7 +339,7 @@ This object can refer to any dry property.
 
 For example:
 
-```
+```json
 "properties": [
   {
     "when": {
@@ -381,20 +376,19 @@ in question always applies.
 Note that many object items can be true at the same time unless they disagree
 in one or more properties.
 
-Property Objects
-----------------
+## Property Objects
 
 Property objects consist of the following properties:
 
 ### `String[] type`
 
-- **This propery can't be an empty array**
+* **This propery can't be an empty array**
 
 The types of the property. Valid property types are:
 
-- `string`
-- `number`
-- `boolean`
+* `string`
+* `number`
+* `boolean`
 
 This property is an array of strings since a single property may support
 multiple types.
@@ -415,13 +409,13 @@ Recursive properties definitions.
 
 ### `(Array|Object)[] mapping`
 
-- **This propery can't be an empty array**
+* **This propery can't be an empty array**
 
 This property defines the mapping between the dry and wet states. Schemas
 support two types of mappings:
 
-- Direct mappings
-- Template mappings
+* Direct mappings
+* Template mappings
 
 #### Direct Mappings
 
@@ -475,9 +469,9 @@ properties:
 The value that must hold for the template to be applied. The value may be of
 any supported type:
 
-- `string`
-- `number`
-- `boolean`
+* `string`
+* `number`
+* `boolean`
 
 ##### `Object template`
 
@@ -492,23 +486,23 @@ certain property, but you don't know the value in advance.
 For these cases, templates values may include string wildcards in the following
 form:
 
-```
+```text
 [[<type/s>]]
 ```
 
 Where `type` can be:
 
-- `string`
-- `number`
-- `boolean`
-- `object`
-- `array`
-- `*` (matches any type)
+* `string`
+* `number`
+* `boolean`
+* `object`
+* `array`
+* `*` (matches any type)
 
 Wildcards may also include multiple types separated by `|` symbols. For
 example:
 
-```
+```text
 [[string|number]]
 ```
 

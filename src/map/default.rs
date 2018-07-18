@@ -99,7 +99,7 @@ fn apply_tranform_forward(dry: &Value, transform: &Transform) -> Result<Layer> {
                         continue;
                     }
 
-                    for &(ref dest, ref value) in test.literals.iter() {
+                    for &(ref dest, ref value) in &test.literals {
                         let ptr = wet_pointer.extend_all(dest);
                         debug!("adding literal '{}', destination '{}'", value, ptr);
                         layer.add_many(&ptr, &value);
@@ -183,13 +183,12 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
                         },
                     );
 
-                    match lit_pass && validate(output, &test.schema)? {
-                        true => {
-                            if let Some(ref dry_value) = *dry {
-                                layer.add_many(&dry_pointer, dry_value);
-                            }
-                        },
-                        false => continue,
+                    if lit_pass && validate(output, &test.schema)? {
+                        if let Some(ref dry_value) = *dry {
+                            layer.add_many(&dry_pointer, dry_value);
+                        }
+                    } else {
+                        continue;
                     }
                 },
             }
@@ -260,6 +259,7 @@ fn literal_to_value(literal: Literal) -> Option<Value> {
     Some(value)
 }
 
+#[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
 fn seperate(layers: Vec<Layer>) -> (Vec<(Pointer, Literal)>, Vec<(Pointer, Schema)>) {
     let mut literals = Vec::new();
     let mut schemas = Vec::new();
@@ -307,15 +307,15 @@ fn normalize_schema(
     mut remaining: Vec<String>,
     schema: Schema,
 ) {
-    let mut properties = mem::replace(&mut root.properties, None).unwrap_or_else(|| Map::new());
-    let mut required = mem::replace(&mut root.required, None).unwrap_or_else(|| Vec::new());
+    let mut properties = mem::replace(&mut root.properties, None).unwrap_or_else(Map::new);
+    let mut required = mem::replace(&mut root.required, None).unwrap_or_else(Vec::new);
     {
         let entry = properties.entry(path.clone());
         let next = remaining.pop();
         match (entry, next) {
             (Entry::Occupied(mut e), Some(next)) => {
-                match e.get_mut() {
-                    &mut Schema::Object(ref mut o) => {
+                match *e.get_mut() {
+                    Schema::Object(ref mut o) => {
                         normalize_schema(&mut **o, next, remaining, schema)
                     },
                     _ => unimplemented!(),
@@ -357,7 +357,7 @@ fn validate(value: &Value, schema: &Schema) -> Result<bool> {
     };
 
     let state = schema.validate(&value);
-    for err in state.errors.iter() {
+    for err in &state.errors {
         debug!("validation error: {:?}", err);
     }
     Ok(state.errors.is_empty())

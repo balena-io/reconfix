@@ -70,6 +70,12 @@ pub struct Reconfix {
     schema: Option<Schema>,
 }
 
+impl Default for Reconfix {
+    fn default() -> Reconfix {
+        Reconfix::new()
+    }
+}
+
 impl Reconfix {
     /// Initialize reconfix
     pub fn new() -> Reconfix {
@@ -104,13 +110,13 @@ impl Reconfix {
     /// Read data using default `Plugin` implementation
     pub fn read_values(&mut self) -> Result<Value> {
         let schema = self.get_schema()?;
-        read_values(schema, &mut self.default)
+        read_values(&schema, &mut self.default)
     }
 
     /// Write data using default `Plugin` implementation
-    pub fn write_values(&mut self, dry: Value) -> Result<()> {
+    pub fn write_values(&mut self, dry: &Value) -> Result<()> {
         let schema = self.get_schema()?;
-        write_values(schema, dry, &mut self.default)
+        write_values(&schema, dry, &mut self.default)
     }
 
     /// Read data in data sources and convert to dry
@@ -119,26 +125,26 @@ impl Reconfix {
         for<'a> &'a mut <P as Deref>::Target: Plugin,
     {
         let schema = self.get_schema()?;
-        read_values(schema, plugin)
+        read_values(&schema, plugin)
     }
 
     /// Convert dry to wet and write to data sources
-    pub fn write_values_plugin<P: Plugin + DerefMut>(&self, dry: Value, plugin: P) -> Result<()>
+    pub fn write_values_plugin<P: Plugin + DerefMut>(&self, dry: &Value, plugin: P) -> Result<()>
     where
         for<'a> &'a mut <P as Deref>::Target: Plugin,
     {
         let schema = self.get_schema()?;
-        write_values(schema, dry, plugin)
+        write_values(&schema, dry, plugin)
     }
 }
 
-fn wet_to_dry<F>(schema: Schema, mut wet: F) -> Result<Value>
+fn wet_to_dry<F>(schema: &Schema, mut wet: F) -> Result<Value>
 where
     F: FnMut(&DiskFile, &FileFormat) -> Result<Value>,
 {
     let generator = transform::generator::DefaultGenerator;
     let transforms = generator
-        .generate(&schema)
+        .generate(schema)
         .chain_err(|| "unable to generate transforms")?;
 
     let targets = get_targets(&transforms);
@@ -146,7 +152,7 @@ where
     let mut phy_files = BTreeMap::new();
     let mut entries = BTreeMap::new();
 
-    for target in targets.iter() {
+    for target in &targets {
         match *target {
             Target::NetworkManager => bail!("networkmanager backend not supported"),
             Target::File(ref file) => {
@@ -183,7 +189,7 @@ where
     Ok(dry)
 }
 
-fn read_values<P: Plugin + DerefMut>(schema: Schema, mut plugin: P) -> Result<Value>
+fn read_values<P: Plugin + DerefMut>(schema: &Schema, mut plugin: P) -> Result<Value>
 where
     for<'a> &'a mut <P as Deref>::Target: Plugin,
 {
@@ -196,15 +202,15 @@ where
     })
 }
 
-fn dry_to_wet(schema: Schema, dry: Value) -> Result<Vec<(DiskFile, FileFormat, Value)>> {
+fn dry_to_wet(schema: &Schema, dry: &Value) -> Result<Vec<(DiskFile, FileFormat, Value)>> {
     let generator = transform::generator::DefaultGenerator;
     let transforms = generator
-        .generate(&schema)
+        .generate(schema)
         .chain_err(|| "unable to generate transforms")?;
 
     let mapper = map::default::DefaultMapper;
     let entries = mapper
-        .forward_map(&dry, &transforms)
+        .forward_map(dry, &transforms)
         .chain_err(|| "unable to perform forward map")?;
 
     let mut disk_entries = BTreeMap::new();
@@ -249,7 +255,7 @@ fn dry_to_wet(schema: Schema, dry: Value) -> Result<Vec<(DiskFile, FileFormat, V
     Ok(list)
 }
 
-fn write_values<P: Plugin + DerefMut>(schema: Schema, dry: Value, mut plugin: P) -> Result<()>
+fn write_values<P: Plugin + DerefMut>(schema: &Schema, dry: &Value, mut plugin: P) -> Result<()>
 where
     for<'a> &'a mut <P as Deref>::Target: Plugin,
 {
@@ -283,7 +289,7 @@ fn get_node(file: &DiskFile) -> Result<FileNode> {
     let parts = file
         .path
         .trim_left_matches('/')
-        .split("/")
+        .split('/')
         .map(|s| s.to_string())
         .collect::<Vec<String>>();
     let partition = match file.partition {
@@ -313,16 +319,16 @@ mod tests {
             .and_then(|x| x.as_object())
             .expect("unable to read wet");
 
-        let wet_actual = dry_to_wet(schema_ast.clone(), dry_expected.clone())
-            .expect("unable to convert dry to wet");
-        let dry_actual = wet_to_dry(schema_ast.clone(), |file, _| {
+        let wet_actual =
+            dry_to_wet(&schema_ast, &dry_expected).expect("unable to convert dry to wet");
+        let dry_actual = wet_to_dry(&schema_ast, |file, _| {
             let content = wet_expected
                 .get(&file.path)
                 .expect("unable to find wet json");
             Ok(content.clone())
         }).expect("unable to convert wet to dry");
 
-        assert_eq!(dry_expected.clone(), dry_actual);
+        assert_eq!(dry_expected, &dry_actual);
 
         let mut wet_actual_map = wet_actual
             .into_iter()

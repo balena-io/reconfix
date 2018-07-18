@@ -126,7 +126,7 @@ impl Selector {
         let mut index = Some(idx);
         let mut ptr = JsonPointer::new();
 
-        for component in self.components.iter() {
+        for component in &self.components {
             match *component {
                 Component::Property(ref s) => ptr.push(s.to_string()),
                 Component::Item(Index::Single(ref idx)) => ptr.push(idx.to_string()),
@@ -244,20 +244,20 @@ fn get_matches(value: &Value, identifiers: &[Identifier]) -> Vec<MatchSet> {
         (&Value::Object(ref o), Some(&Identifier::String(ref s))) => {
             o.get(s)
                 .map(|v| get_matches(v, rest))
-                .unwrap_or_else(|| Vec::new())
+                .unwrap_or_else(Vec::new)
         },
         (&Value::Array(ref a), Some(&Identifier::String(ref s))) => {
             let idx = u64::from_str(s).ok();
             idx.and_then(|i| a.get(i as usize))
                 .map(|v| get_matches(v, rest))
-                .unwrap_or_else(|| Vec::new())
+                .unwrap_or_else(Vec::new)
         },
         (&Value::Object(ref o), Some(&Identifier::Pointer(ref ptr))) => {
             o.iter()
                 .flat_map(|(key, prop)| {
                     let mut match_sets = get_matches(prop, rest);
 
-                    for match_set in match_sets.iter_mut() {
+                    for match_set in &mut match_sets {
                         let pair = (ptr.clone(), MatchKey::Property(key.to_string()));
                         match_set.keys.push(pair);
                     }
@@ -272,7 +272,7 @@ fn get_matches(value: &Value, identifiers: &[Identifier]) -> Vec<MatchSet> {
                 .flat_map(|(index, item)| {
                     let mut match_sets = get_matches(item, rest);
 
-                    for match_set in match_sets.iter_mut() {
+                    for match_set in &mut match_sets {
                         let pair = (ptr.clone(), MatchKey::Index(index as u64));
                         match_set.keys.push(pair);
                     }
@@ -293,7 +293,7 @@ impl MatchSet {
     pub fn apply_matches(&self, ptr: &JsonPointer) -> Result<Vec<(JsonPointer, Value)>> {
         let mut output = Vec::new();
 
-        for &(ref rel, ref key) in self.keys.iter() {
+        for &(ref rel, ref key) in &self.keys {
             let value = match *key {
                 MatchKey::Property(ref s) => Value::String(s.to_string()),
                 MatchKey::Index(ref i) => Value::Number((*i).into()),

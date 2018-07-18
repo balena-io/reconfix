@@ -175,14 +175,14 @@ fn convert_test_rec(schema: &mut Schema, test: &mut Test, context: &mut Vec<Stri
             test.schema = schema.clone();
         },
         Schema::Object(ref mut obj) => {
-            match obj.as_mut() {
-                &mut ObjectSchema {
+            match *obj.as_mut() {
+                ObjectSchema {
                     const_: Some(ref mut c),
                     ..
                 } => {
                     test.literals.push((context.clone(), c.clone()));
                 },
-                &mut ObjectSchema {
+                ObjectSchema {
                     properties: Some(ref mut props),
                     ..
                 } => {
@@ -273,7 +273,7 @@ fn dereference_disk(
     local: Option<&Map<String, Target>>,
     ctx: &Context,
 ) -> Result<DiskFile> {
-    for opt in [local, Some(&ctx.targets)].iter() {
+    for opt in &[local, Some(&ctx.targets)] {
         let map = match *opt {
             Some(ref m) => m,
             None => continue,

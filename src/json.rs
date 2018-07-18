@@ -15,7 +15,7 @@ pub struct Pointer {
 
 impl fmt::Display for Pointer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for part in self.parts.iter() {
+        for part in &self.parts {
             write!(f, "/{}", escape(part.as_ref()))?;
         }
 
@@ -136,8 +136,8 @@ impl Pointer {
                 None => None,
                 Some(json) => {
                     match json {
-                        &Value::Object(ref obj) => obj.get(name),
-                        &Value::Array(ref arr) => {
+                        Value::Object(ref obj) => obj.get(name),
+                        Value::Array(ref arr) => {
                             match u64::from_str(name) {
                                 Ok(idx) => arr.get(idx as usize),
                                 _ => None,
@@ -201,8 +201,8 @@ impl<'a> VacantEntry<'a> {
         let last = path.pop().expect("vec should never be empty");
 
         let last_obj = path.into_iter().fold(value, |current, name| {
-            match current.entry(name).or_insert(json!({})) {
-                &mut Value::Object(ref mut obj) => obj,
+            match *current.entry(name).or_insert(json!({})) {
+                Value::Object(ref mut obj) => obj,
                 _ => panic!("the value should always be an object"),
             }
         });
@@ -309,7 +309,7 @@ impl RelativePointer {
                     None => return None,
                 };
 
-                for part in rel.parts.iter() {
+                for part in &rel.parts {
                     pivot.push(part.clone());
                 }
 
@@ -349,7 +349,7 @@ impl RelativePointer {
             Down::Pointer(_) => {
                 self.normalize(ptr)
                     .and_then(|ptr| ptr.search(value))
-                    .map(|v| v.clone())
+                    .cloned()
             },
         }
     }

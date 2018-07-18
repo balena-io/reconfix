@@ -5,7 +5,7 @@ use crate::common::FileNode;
 use crate::io::Plugin;
 
 /// The default Reconfix plugin
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct HostFile {}
 
 impl HostFile {

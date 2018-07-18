@@ -105,9 +105,9 @@ fn infer_type(value: &str) -> Value {
         .or_else(|_| value.parse::<i64>().map(|x| Value::Number(x.into())))
         // will fix this unwrap once we add error_chain, for now not very dangerous
         .or_else(|_| value.parse::<f64>().map(|x| {
-            Value::Number(Number::from_f64(x.into()).unwrap())
+            Value::Number(Number::from_f64(x).unwrap())
         }))
-        .or_else(|_| value.parse::<bool>().map(|x| Value::Bool(x.into())))
+        .or_else(|_| value.parse::<bool>().map(Value::Bool))
         .unwrap_or_else(|_| Value::String(value.into()))
 }
 
@@ -241,7 +241,7 @@ where
                 writeln!(writer, "{} = {}", key, v).unwrap();
             },
             Property::Section(s) => {
-                writeln!(writer, "").unwrap();
+                writeln!(writer).unwrap();
                 key.insert_str(0, &parent_name);
                 write_section(Some(&key), s, writer)?;
             },

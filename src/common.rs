@@ -2,6 +2,7 @@ use crate::adaptor::{Adaptor, IniAdaptor, JsonAdaptor};
 use crate::error::*;
 
 use std::io;
+use std::str::FromStr;
 
 use serde_json::Value;
 
@@ -39,9 +40,11 @@ pub enum FileFormat {
     Json,
 }
 
-impl FileFormat {
+impl FromStr for FileFormat {
+    type Err = Error;
+
     /// Parses a string representation of a `FileFormat`
-    pub fn from_str(s: &str) -> Result<FileFormat> {
+    fn from_str(s: &str) -> Result<FileFormat> {
         match s {
             "ini" => Ok(FileFormat::Ini),
             "json" => Ok(FileFormat::Json),
@@ -58,11 +61,11 @@ where
 {
     //let mut buffer = Vec::new();
     match format {
-        &FileFormat::Ini => {
+        FileFormat::Ini => {
             let adaptor = IniAdaptor::new();
             adaptor.serialize(content, &mut out)
         },
-        &FileFormat::Json => {
+        FileFormat::Json => {
             let adaptor = JsonAdaptor::new(pretty);
             adaptor.serialize(content, &mut out)
         },
@@ -77,11 +80,11 @@ where
     R: io::Read,
 {
     match format {
-        &FileFormat::Ini => {
+        FileFormat::Ini => {
             let adaptor = IniAdaptor::new();
             adaptor.deserialize(content)
         },
-        &FileFormat::Json => {
+        FileFormat::Json => {
             let adaptor = JsonAdaptor::new(false);
             adaptor.deserialize(content)
         },

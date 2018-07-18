@@ -19,6 +19,7 @@ with the [Rust](https://github.com/resin-io/reconfix/tree/rust) version.
 ### Development
 
 * [Rust](docs/rust.md)
+* [Style](docs/style.md) (not just code)
 
 ## License
 

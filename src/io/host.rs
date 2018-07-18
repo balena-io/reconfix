@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::{Read, Write};
 
-use common::FileNode;
-use io::Plugin;
+use crate::common::FileNode;
+use crate::io::Plugin;
 
 /// The default Reconfix plugin
 #[derive(Clone)]

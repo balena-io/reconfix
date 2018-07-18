@@ -1,5 +1,5 @@
-use json::Pointer as JsonPointer;
-use schema::types::*;
+use crate::json::Pointer as JsonPointer;
+use crate::schema::types::*;
 
 use serde_json::{Number, Value};
 

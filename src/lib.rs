@@ -4,6 +4,7 @@
 //! bidirectional transformation.
 #![deny(missing_docs)]
 #![recursion_limit = "1024"]
+#![feature(rust_2018_preview)]
 
 mod adaptor;
 mod common;
@@ -44,17 +45,17 @@ mod error {
     }
 }
 
-pub use common::{FileFormat, FileNode, Partition};
-pub use error::*;
-pub use io::Plugin;
+pub use crate::common::{FileFormat, FileNode, Partition};
+pub use crate::error::*;
+pub use crate::io::Plugin;
 
-use common::{deserialize, serialize};
-use io::host::HostFile;
-use json::Entry;
-use map::Mapper;
-use schema::types::Schema;
-use transform::types::{DiskFile, Format, Location, Target, Transform};
-use transform::Generator;
+use crate::common::{deserialize, serialize};
+use crate::io::host::HostFile;
+use crate::json::Entry;
+use crate::map::Mapper;
+use crate::schema::types::Schema;
+use crate::transform::types::{DiskFile, Format, Location, Target, Transform};
+use crate::transform::Generator;
 
 use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
@@ -305,7 +306,7 @@ mod tests {
         let json: Value = ::serde_json::from_str(data).expect("unable to parse json file");
         let schema_json = json.get("schema").expect("unable to read schema");
         let schema_ast =
-            ::schema::parse::from_value(schema_json.clone()).expect("unable to parse schema AST");
+            schema::parse::from_value(schema_json.clone()).expect("unable to parse schema AST");
         let dry_expected = json.get("dry").expect("unable to read dry");
         let wet_expected = json
             .get("wet")

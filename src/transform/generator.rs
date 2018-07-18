@@ -4,9 +4,9 @@ use std::str::FromStr;
 
 use super::types::*;
 use super::Generator;
-use error::*;
-use json::Pointer as JsonPointer;
-use schema::types::{self as schema, Map, ObjectSchema, Schema};
+use crate::error::*;
+use crate::json::Pointer as JsonPointer;
+use crate::schema::types::{self as schema, Map, ObjectSchema, Schema};
 
 use uuid::Uuid;
 

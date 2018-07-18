@@ -1,9 +1,12 @@
+cargo-features = ["edition"]
+
 [package]
 name = "reconfix"
 description = "Bidirectional data transformation engine"
 version = "0.6.0"
 authors = ["Robert Vojta <robert@resin.io>", "Aaron Brodersen <aaron@resin.io>"]
 license = "Apache-2.0"
+edition = '2018'
 
 [[bin]]
 name = "reconfix-cli"

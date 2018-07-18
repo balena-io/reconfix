@@ -2,7 +2,7 @@ mod ini;
 
 use std::io::{Read, Write};
 
-use error::*;
+use crate::error::*;
 
 use serde_json::Value;
 use serde_json::{from_reader, to_writer, to_writer_pretty};

@@ -7,8 +7,8 @@ mod error {
 }
 
 use self::types::Transform;
-use error::*;
-use schema::types::Schema;
+use crate::error::*;
+use crate::schema::types::Schema;
 
 pub trait Generator {
     fn generate(&self, schema: &Schema) -> Result<Vec<Transform>>;

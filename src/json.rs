@@ -1,7 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use error::*;
+use crate::error::*;
 
 use serde_json::Value;
 type JsObject = ::serde_json::map::Map<String, Value>;

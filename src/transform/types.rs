@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
-use error::*;
-use json::Pointer as JsonPointer;
-use json::RelativePointer;
-use schema::types::Schema;
+use crate::error::*;
+use crate::json::Pointer as JsonPointer;
+use crate::json::RelativePointer;
+use crate::schema::types::Schema;
 
 use nom::{rest_s, IResult};
 use serde_json::Value;

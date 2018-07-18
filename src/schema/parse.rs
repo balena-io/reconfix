@@ -1,6 +1,6 @@
 use super::types::{Case, ObjectSchema, Schema, TypeKind};
-use error::*;
-use json::Pointer;
+use crate::error::*;
+use crate::json::Pointer;
 
 use std::fmt;
 use std::io::Read;

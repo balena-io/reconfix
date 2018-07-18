@@ -1,5 +1,5 @@
-use adaptor::{Adaptor, IniAdaptor, JsonAdaptor};
-use error::*;
+use crate::adaptor::{Adaptor, IniAdaptor, JsonAdaptor};
+use crate::error::*;
 
 use std::io;
 

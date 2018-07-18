@@ -2,8 +2,8 @@ use std::cmp::Ordering;
 use std::io::{Read, Write};
 use std::str;
 
-use adaptor::Adaptor;
-use error::*;
+use crate::adaptor::Adaptor;
+use crate::error::*;
 
 use nom::{self, multispace, space, IResult, Needed};
 

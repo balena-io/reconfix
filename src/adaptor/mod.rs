@@ -7,18 +7,6 @@ use error::*;
 use serde_json::Value;
 use serde_json::{from_reader, to_writer, to_writer_pretty};
 
-// #[derive(Debug, Eq, PartialEq)]
-// pub enum Value {
-//     Bool(bool),
-//     Number(String),
-//     Text(String),
-//     Array(Vec<Value>),
-//     Object(BTreeMap<String, Value>),
-// }
-
-// type AdaptorError = &'static str;
-// type AResult<T> = Result<T, ErrorKind>;
-
 pub use self::ini::IniAdaptor;
 
 pub trait Adaptor<'a> {

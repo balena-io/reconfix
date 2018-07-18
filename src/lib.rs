@@ -40,12 +40,6 @@ extern crate valico;
 
 mod error {
     error_chain! {
-        // links {
-        //     Schema(::schema::Error, ::schema::ErrorKind)
-        //     /// Indicates an error during schema processing
-        //     ;
-        // }
-
         errors {
             /// Indicates a parsing error
             Parse { }
@@ -64,8 +58,6 @@ pub use io::Plugin;
 
 use common::{deserialize, serialize};
 use json::Entry;
-// use transform::{transform_to_dry, transform_to_wet, Entry};
-// use schema::{Location, Schema};
 use io::host::HostFile;
 use map::default::DefaultMapper;
 use map::Mapper;

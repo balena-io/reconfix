@@ -359,29 +359,3 @@ named!(parse_ids<&str, Vec<Identifier>>,
         )
     )
 );
-
-// named!(parse_identifiers<&str, Vec<Identifier>>,
-//     preceded!(
-//         opt!(tag_s!("/")),
-//         separated_list!(
-//             tag_s!("/"),
-//             alt!(
-//                 map!(
-//                     map_res!(
-//                         delimited!(tag_s!("{{"), rest_s, tag_s!("}}")),
-//                         RelativePointer::from_str
-//                     ),
-//                     Identifier::Pointer
-//                 ),
-//                 map!(rest_s, |s| Identifier::String(String::from(s)))
-//             )
-//         )
-//     )
-// );
-
-// alt!(
-//     map!(
-//         delimited!(tag!("{{"), RelativePointer::from_str, tag!("}}")),
-//         Identifier::Pointer),
-//     map!(rest_s, Identifier::String)
-// )

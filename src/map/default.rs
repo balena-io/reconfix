@@ -397,20 +397,3 @@ fn unstringify(value: &str) -> Value {
 
     Value::String(value.into())
 }
-
-//     let combined = layers
-//         .flat_map(|layer| layer.values)
-//         .collect();
-
-//     // combined.sort_by(|(_, a), (_, b)| {
-//     //     match (a, b) {
-//     //         (Leaf::Literal(_), Leaf::Schema(_)) => Ordering::Less,
-//     //         (Leaf::Schema(_), Leaf::Literal(_)) => Ordering::Greater,
-//     //         _ => Ordering::Equal,
-//     //     }
-//     // })
-// }
-
-// fn valid_literal(literal: Literal, Value) -> bool {
-
-// }

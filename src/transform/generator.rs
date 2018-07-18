@@ -86,24 +86,6 @@ fn get_transforms(obj: &ObjectSchema, ctx: &Context) -> Result<Vec<Transform>> {
         }
     }
 
-    match obj.items {
-        // Some(TypeKind::Single(Schema::Object(ref obj))) => {
-        //     let item_ctx = ctx.add_component(Component::Item(Index::Wildcard));
-        //     let item_transforms = get_transforms(obj.as_ref(), &item_ctx)?;
-        //     transforms.extend(item_transforms);
-        // },
-        // Some(TypeKind::Set(ref schemas)) => {
-        //     for (index, schema) in schemas.iter().enumerate() {
-        //         if let Schema::Object(ref obj) = *schema {
-        // let item_ctx = ctx.add_component(Component::Item(Index::Single(index as
-        // u64))); let item_transforms = get_transforms(obj.as_ref(),
-        // &item_ctx)?;             transforms.extend(item_transforms);
-        //         }
-        //     }
-        // },
-        _ => (),
-    }
-
     if let Some(Schema::Object(ref obj)) = obj.additional_items {
         let item_ctx = ctx.add_component(Component::Item(Index::Wildcard));
         let item_transforms = get_transforms(obj.as_ref(), &item_ctx)?;

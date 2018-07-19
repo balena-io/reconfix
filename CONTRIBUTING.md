@@ -16,6 +16,8 @@ Reconfix is aiming for the stable [Rust 2018 edition](https://blog.rust-lang.org
 It will be released on [2018-10-25](https://internals.rust-lang.org/t/rust-2018-the-home-stretch/7810).
 Then the toolchain will be switched from `nightly` to `beta` and then to `stable`.
 
+Don't know what the edition is? Visit [The Rust Edition Guide](https://rust-lang-nursery.github.io/edition-guide/2018/index.html).
+
 #### Installation
 
 ```bash

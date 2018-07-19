@@ -23,5 +23,5 @@ install:
 script:
   - cargo clean
   - cargo fmt -- --check
-  - cargo test --color=never --verbose
+  - cargo test --color=never
   - cargo clean -p reconfix && cargo clippy

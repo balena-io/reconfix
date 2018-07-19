@@ -6,8 +6,9 @@
 
 ## Status
 
-Work in progress. Goal is to replace JavaScript version ([master](https://github.com/resin-io/reconfix/tree/master) branch)
-with the [Rust](https://github.com/resin-io/reconfix/tree/rust) version.
+Work in progress. Goal is to replace JavaScript version
+([master](https://github.com/resin-io/reconfix/tree/master) branch) with the
+[Rust](https://github.com/resin-io/reconfix/tree/rust) version.
 
 ## Documentation
 
@@ -16,11 +17,11 @@ with the [Rust](https://github.com/resin-io/reconfix/tree/rust) version.
 * [Schema](docs/schema.md)
 * [Transformations](docs/transformations.md)
 
-### Development
+### Contribution
 
-* [Rust](docs/rust.md)
-* [Style](docs/style.md) (not just code)
+Do you want to help? Please, read the [Contributing Guidelines](CONTRIBUTING.md).
 
 ## License
 
-Reconfix is free software, and may be redistributed under the terms specified in the [license](LICENSE).
+Reconfix is free software, and may be redistributed under the terms specified in the
+[license](LICENSE).

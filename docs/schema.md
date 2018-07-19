@@ -403,7 +403,9 @@ For example:
 }
 ```
 
+<!-- markdownlint-disable MD022 MD024 -->
 ### `Object[] properties`
+<!-- markdownlint-enabled MD022 MD024 -->
 
 Recursive properties definitions.
 

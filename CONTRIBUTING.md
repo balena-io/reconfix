@@ -24,8 +24,7 @@ rustup component add rustfmt-preview
 rustup component add clippy-preview
 ```
 
-You can always consult [.travis.yml](https://github.com/resin-io/reconfix/blob/rust/.travis.yml) if
-these steps doesn't work for you.
+You can always consult [.travis.yml](.travis.yml) if these steps doesn't work for you.
 
 #### Cargo watch
 
@@ -42,7 +41,7 @@ project's source code for changes and run tests automatically with `cargo watch 
 ### Editor Config
 
 Install [Editor Config](https://editorconfig.org/) plugin for your favorite IDE. If it's not
-available, you should obey rules from the [.editorconfig](../.editorconfig) file.
+available, you should obey rules from the [.editorconfig](.editorconfig) file.
 
 ### Line Length
 
@@ -54,7 +53,7 @@ documents as well (especially with links). Line length limit for this project is
 **Enforced by CI: No.**
 
 All documents must pass [markdownlint](https://github.com/DavidAnson/markdownlint) checks.
-Configuration is available in the [.markdownlint.json](../.markdownlint.json) file.
+Configuration is available in the [.markdownlint.json](.markdownlint.json) file.
 
 Markdown lines can be longer than 100 characters if they contain link.
 
@@ -72,7 +71,7 @@ find errors if the output is very long. Pull requests with warnings will not be 
 **Enforced by CI: Yes.**
 
 Setup pre commit hook or run `cargo fmt` manually. Configuration is available in the
-[rustfmt.toml](../rustfmt.toml) file.
+[rustfmt.toml](rustfmt.toml) file.
 
 #### Clippy
 

@@ -8,5 +8,6 @@
         "**/*.rs.bk": true,
         "**/target": true
     },
-    "rust-client.channel": "nightly"
+    "rust-client.channel": "nightly",
+    "editor.rulers": [100]
 }

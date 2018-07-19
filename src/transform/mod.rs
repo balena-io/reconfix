@@ -2,7 +2,12 @@ pub mod generator;
 pub mod types;
 
 mod error {
-    #![allow(renamed_and_removed_lints)] // unused_doc_comment -> unused_doc_comments
+    // TODO Rust 2018: Remove when error_chain will be fixed
+    #![allow(
+        renamed_and_removed_lints,
+        bare_trait_objects,
+        unreachable_pub
+    )]
     error_chain!{}
 }
 

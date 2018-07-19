@@ -72,6 +72,12 @@ pub struct Test {
     pub schema: Schema,
 }
 
+impl Default for Test {
+    fn default() -> Test {
+        Test::new()
+    }
+}
+
 impl Test {
     pub fn new() -> Test {
         Test {
@@ -81,7 +87,7 @@ impl Test {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Selector {
     components: Vec<Component>,
 }
@@ -324,7 +330,9 @@ impl FromStr for Destination {
     }
 }
 
-named!(parse_ids<&str, Vec<Identifier>>,
+named_attr!(
+    #[allow(unreachable_pub)],
+    parse_ids<&str, Vec<Identifier>>,
     many0!(
         alt!(
             map!(

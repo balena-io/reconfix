@@ -43,6 +43,7 @@ impl PartialOrd for Pair {
 
 /// The adaptor struct for INI files
 /// Later, this might contain parameters for the myriad INI quirks
+#[derive(Default)]
 pub struct IniAdaptor {}
 
 impl IniAdaptor {
@@ -271,7 +272,8 @@ named!(
 );
 
 /// Parses and swallows any whitespace or comments
-named!(
+named_attr!(
+    #[allow(unreachable_pub)],
     blanks,
     map!(many0!(alt!(comment | multispace)), |_| &b""[..])
 );

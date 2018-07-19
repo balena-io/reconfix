@@ -1,4 +1,4 @@
-mod ini;
+pub mod ini;
 
 use std::io::{Read, Write};
 

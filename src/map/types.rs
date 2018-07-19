@@ -24,6 +24,12 @@ impl Layer {
     }
 }
 
+impl Default for Layer {
+    fn default() -> Layer {
+        Layer::new()
+    }
+}
+
 fn produce_literals(ptr: JsonPointer, value: &Value) -> Vec<(JsonPointer, Literal)> {
     match *value {
         Value::Null => vec![],

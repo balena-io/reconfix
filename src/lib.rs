@@ -2,36 +2,49 @@
 //!
 //! This crate implements the core of reconfix schema handling and
 //! bidirectional transformation.
-#![deny(missing_docs)]
-#![recursion_limit = "1024"]
+
+// Rust 2018 edition opt-in
 #![feature(rust_2018_preview)]
+#![warn(rust_2018_compatibility)]
+#![warn(rust_2018_idioms)]
+// TODO Rust 2018: Till it will be decided how it will work in Rust 2018
+#![allow(unused_extern_crates)]
+// TODO Check why we need this
+#![recursion_limit = "1024"]
+// TODO This crate is undocumented, should be fixed
+#![allow(missing_docs)]
 
-mod adaptor;
-mod common;
-mod io;
-mod json;
-mod map;
-mod schema;
-mod transform;
+// TODO Remove pub
+//
+// Rust 2018 has unreachable_pub lint and these modules do contain lot of `pub`
+// stuff, but were private -> unreachable pub. This should be removed when the
+// decision about public API will be made.
+pub mod adaptor;
+pub mod common;
+pub mod io;
+pub mod json;
+pub mod map;
+pub mod schema;
+pub mod transform;
 
+#[macro_use]
+extern crate log;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
-extern crate log;
-extern crate env_logger;
-extern crate itertools;
+extern crate serde_derive;
 #[macro_use]
 extern crate nom;
-extern crate serde;
 #[macro_use]
 extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
-extern crate uuid;
-extern crate valico;
 
 mod error {
-    #![allow(renamed_and_removed_lints)] // unused_doc_comment -> unused_doc_comments
+    // TODO Rust 2018: Remove when error_chain will be fixed
+    #![allow(
+        renamed_and_removed_lints,
+        bare_trait_objects,
+        unreachable_pub
+    )]
     error_chain! {
         errors {
             /// Indicates a parsing error

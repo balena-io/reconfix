@@ -8,8 +8,8 @@ use crate::common::FileNode;
 pub trait Plugin {
     /// Given a `FileNode` provide an `Read` implementation for reading the
     /// contents.
-    fn read(self, node: FileNode) -> Result<Vec<u8>, Box<error::Error + Send>>;
+    fn read(self, node: FileNode) -> Result<Vec<u8>, Box<dyn error::Error + Send>>;
     /// Given a `FileNode` provide an `Write` implementation for reading the
     /// contents.
-    fn write(self, node: FileNode, buf: Vec<u8>) -> Result<(), Box<error::Error + Send>>;
+    fn write(self, node: FileNode, buf: Vec<u8>) -> Result<(), Box<dyn error::Error + Send>>;
 }

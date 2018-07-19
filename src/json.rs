@@ -8,7 +8,7 @@ type JsObject = ::serde_json::map::Map<String, Value>;
 
 use nom::{rest_s, IResult};
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Pointer {
     parts: Vec<String>,
 }

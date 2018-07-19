@@ -18,7 +18,7 @@ impl<'a> Plugin for &'a mut HostFile {
     fn read(
         self,
         node: FileNode,
-    ) -> ::std::result::Result<Vec<u8>, Box<::std::error::Error + Send>> {
+    ) -> ::std::result::Result<Vec<u8>, Box<dyn std::error::Error + Send>> {
         let path = node.path.join("/");
         File::open(path)
             .and_then(|mut f| {
@@ -26,17 +26,17 @@ impl<'a> Plugin for &'a mut HostFile {
                 f.read_to_end(&mut buffer)?;
                 Ok(buffer)
             })
-            .map_err(|e| Box::new(e) as Box<::std::error::Error + Send>)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)
     }
 
     fn write(
         self,
         node: FileNode,
         buf: Vec<u8>,
-    ) -> ::std::result::Result<(), Box<::std::error::Error + Send>> {
+    ) -> ::std::result::Result<(), Box<dyn std::error::Error + Send>> {
         let path = node.path.join("/");
         File::open(path)
             .and_then(|mut f| f.write_all(&buf))
-            .map_err(|e| Box::new(e) as Box<::std::error::Error + Send>)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)
     }
 }

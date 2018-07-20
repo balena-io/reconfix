@@ -19,9 +19,11 @@ install:
   - rustup update
   - rustup component add clippy-preview
   - rustup component add rustfmt-preview
+  - cargo install cargo-audit || /bin/true
 
 script:
   - cargo clean
   - cargo fmt -- --check
   - cargo test --color=never
   - cargo clean -p reconfix && cargo clippy
+  - cargo audit

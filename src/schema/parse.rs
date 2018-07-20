@@ -282,18 +282,11 @@ mod tests {
     use super::super::types::*;
     use super::*;
 
-    macro_rules! testfile {
-        ($name:ident) => {
-            include_str!(concat!(
-                "../../tests/testdata/schemas/",
-                stringify!($name),
-                ".json"
-            ))
-        };
-    }
-
-    fn parse_schema(data: &str) -> Schema {
-        from_reader(data.as_bytes()).expect("unable to parse test file")
+    fn parse_schema<S>(data: S) -> Schema
+    where
+        S: Into<String>,
+    {
+        from_reader(data.into().as_bytes()).expect("unable to parse test file")
     }
 
     fn parse_object(data: &str) -> ObjectSchema {
@@ -305,14 +298,13 @@ mod tests {
 
     #[test]
     fn parse_boolean() {
-        let schema = parse_schema(testfile!(boolean));
-
+        let schema = parse_schema("true");
         assert_eq!(schema, Schema::Boolean(true));
     }
 
     #[test]
     fn parse_empty_object() {
-        let schema = parse_schema(testfile!(empty_object));
+        let schema = parse_schema("{}");
         let expected = Box::new(ObjectSchema::default());
 
         assert_eq!(schema, Schema::Object(expected));
@@ -320,42 +312,97 @@ mod tests {
 
     #[test]
     fn parse_const() {
-        let schema = parse_object(testfile!(constant));
+        let schema = parse_object(
+            r##"
+            {
+                "const": {
+                    "foo": "bar"
+                }
+            }
+        "##,
+        );
+
         let expected = Some(json!({ "foo": "bar" }));
         assert_eq!(schema.const_, expected);
     }
 
     #[test]
     fn parse_ref() {
-        let schema = parse_object(testfile!(reference));
+        let schema = parse_object(
+            r##"
+            {
+                "$ref": "#"
+            }
+        "##,
+        );
+
         let expected = Some(String::from("#"));
         assert_eq!(schema.ref_, expected);
     }
 
     #[test]
     fn parse_single_type() {
-        let schema = parse_object(testfile!(single_type));
+        let schema = parse_object(
+            r##"
+            {
+                "type": "string"
+            }
+        "##,
+        );
+
         let expected = Some(TypeKind::Single(Type::String));
         assert_eq!(schema.type_, expected);
     }
 
     #[test]
     fn parse_multi_type() {
-        let schema = parse_object(testfile!(multi_type));
+        let schema = parse_object(
+            r##"
+            {
+                "type": ["string", "number"]
+            }
+        "##,
+        );
+
         let expected = Some(TypeKind::Set(vec![Type::String, Type::Number]));
         assert_eq!(schema.type_, expected);
     }
 
     #[test]
     fn parse_reconfix() {
-        let schema = parse_object(testfile!(reconfix));
+        let schema = parse_object(
+            r##"
+            {
+                "reconfix": {}
+            }
+        "##,
+        );
+
         let expected = Some(Default::default());
         assert_eq!(schema.reconfix, expected);
     }
 
     #[test]
     fn parse_reconfix_target_disk() {
-        let schema = parse_object(testfile!(reconfix_target_disk));
+        let schema = parse_object(
+            r##"
+            {
+                "reconfix": {
+                    "targets": {
+                        "disk_file": {
+                            "type": "file",
+                            "format": "json",
+                            "location": {
+                                "partition": "boot",
+                                "path": "/foo/bar"
+                            }
+                        }
+                    }
+                }
+            }
+        "##,
+        );
+
         let mut expected = Map::new();
         expected.insert(
             "disk_file".into(),
@@ -373,7 +420,25 @@ mod tests {
 
     #[test]
     fn parse_reconfix_target_nested() {
-        let schema = parse_object(testfile!(reconfix_target_nested));
+        let schema = parse_object(
+            r##"
+            {
+                "reconfix": {
+                    "targets": {
+                        "nested_file": {
+                            "type": "file",
+                            "format": "ini",
+                            "location": {
+                                "file": "#/another/file",
+                                "path": "/foo/bar"
+                            }
+                        }
+                    }
+                }
+            }
+        "##,
+        );
+
         let mut expected = Map::new();
         expected.insert(
             "nested_file".into(),
@@ -391,7 +456,20 @@ mod tests {
 
     #[test]
     fn parse_reconfix_target_network_manager() {
-        let schema = parse_object(testfile!(reconfix_target_network_manager));
+        let schema = parse_object(
+            r##"
+            {
+                "reconfix": {
+                    "targets": {
+                        "nm": {
+                            "type": "network_manager"
+                        }
+                    }
+                }
+            }
+        "##,
+        );
+
         let mut expected = Map::new();
         expected.insert("nm".into(), Target::NetworkManager);
         let result = schema.reconfix.expect("no reconfix object found");

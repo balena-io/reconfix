@@ -1,9 +1,0 @@
-{
-    "reconfix": {
-        "targets": {
-            "nm": {
-                "type": "network_manager"
-            }
-        }
-    }
-}

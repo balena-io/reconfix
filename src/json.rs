@@ -1,12 +1,14 @@
 use std::fmt;
 use std::str::FromStr;
 
+use serde_json::{json, json_internal, Value};
+// TODO Rust 2018: Remove * when used macros will import other macros they do
+// depend on
+use nom::*;
+
 use crate::error::*;
 
-use serde_json::Value;
 type JsObject = ::serde_json::map::Map<String, Value>;
-
-use nom::{rest_s, IResult};
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Pointer {
@@ -14,7 +16,7 @@ pub struct Pointer {
 }
 
 impl fmt::Display for Pointer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for part in &self.parts {
             write!(f, "/{}", escape(part.as_ref()))?;
         }
@@ -33,7 +35,7 @@ impl ::std::error::Error for PointerParseError {
 }
 
 impl fmt::Display for PointerParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "pointer must start with '/'")
     }
 }
@@ -260,7 +262,7 @@ impl FromStr for RelativePointer {
 }
 
 impl fmt::Display for RelativePointer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.up)?;
         match self.down {
             Down::Position => write!(f, "#"),

@@ -1,16 +1,18 @@
 use std::collections::btree_map::Entry;
 use std::mem;
 
+use error_chain::bail;
+use itertools::Itertools;
+use log::{debug, log};
+use serde_json::{json, json_internal, Number, Value};
+use valico::json_schema;
+
 use super::error::*;
 use super::types::*;
 use super::Mapper;
 use crate::json::{Entry as PointerEntry, Pointer};
 use crate::schema::types::{ObjectSchema, Schema};
 use crate::transform::types::*;
-
-use itertools::Itertools;
-use serde_json::{Number, Value};
-use valico::json_schema;
 
 type Map<K, V> = ::std::collections::BTreeMap<K, V>;
 

@@ -1,10 +1,10 @@
-use self::error::*;
-use crate::transform::types::*;
+pub mod default;
+pub mod types;
 
 use serde_json::Value;
 
-pub mod default;
-pub mod types;
+use self::error::*;
+use crate::transform::types::*;
 
 mod error {
     // TODO Rust 2018: Remove when error_chain will be fixed
@@ -13,6 +13,8 @@ mod error {
         bare_trait_objects,
         unreachable_pub
     )]
+
+    use error_chain::*;
     error_chain!{}
 }
 

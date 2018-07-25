@@ -1,6 +1,6 @@
-use std::error;
-
 pub mod host;
+
+use std::error;
 
 use crate::common::FileNode;
 

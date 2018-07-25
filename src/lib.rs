@@ -4,11 +4,9 @@
 //! bidirectional transformation.
 
 // Rust 2018 edition opt-in
-#![feature(rust_2018_preview)]
+#![feature(rust_2018_preview, use_extern_macros)]
 #![warn(rust_2018_compatibility)]
 #![warn(rust_2018_idioms)]
-// TODO Rust 2018: Till it will be decided how it will work in Rust 2018
-#![allow(unused_extern_crates)]
 // TODO Check why we need this
 #![recursion_limit = "1024"]
 // TODO This crate is undocumented, should be fixed
@@ -27,17 +25,6 @@ pub mod map;
 pub mod schema;
 pub mod transform;
 
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate error_chain;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate nom;
-#[macro_use]
-extern crate serde_json;
-
 mod error {
     // TODO Rust 2018: Remove when error_chain will be fixed
     #![allow(
@@ -45,6 +32,8 @@ mod error {
         bare_trait_objects,
         unreachable_pub
     )]
+
+    use error_chain::*;
     error_chain! {
         errors {
             /// Indicates a parsing error
@@ -58,22 +47,23 @@ mod error {
     }
 }
 
-pub use crate::common::{FileFormat, FileNode, Partition};
-pub use crate::error::*;
-pub use crate::io::Plugin;
+use std::collections::BTreeMap;
+use std::ops::{Deref, DerefMut};
+
+use error_chain::bail;
+use log::{debug, log};
+use serde_json::Value;
 
 use crate::common::{deserialize, serialize};
+pub use crate::common::{FileFormat, FileNode, Partition};
+pub use crate::error::*;
 use crate::io::host::HostFile;
+pub use crate::io::Plugin;
 use crate::json::Entry;
 use crate::map::Mapper;
 use crate::schema::types::Schema;
 use crate::transform::types::{DiskFile, Format, Location, Target, Transform};
 use crate::transform::Generator;
-
-use std::collections::BTreeMap;
-use std::ops::{Deref, DerefMut};
-
-use serde_json::Value;
 
 /// The entry point for the Reconfix library
 #[derive(Clone)]

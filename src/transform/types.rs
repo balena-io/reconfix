@@ -1,13 +1,16 @@
 use std::str::FromStr;
 
+use error_chain::bail;
+// TODO Rust 2018: Remove * when used macros will import other macros they do
+// depend on
+use nom::*;
+use serde_json::Value;
+use uuid::Uuid;
+
 use crate::error::*;
 use crate::json::Pointer as JsonPointer;
 use crate::json::RelativePointer;
 use crate::schema::types::Schema;
-
-use nom::{rest_s, IResult};
-use serde_json::Value;
-use uuid::Uuid;
 
 pub struct Transform {
     pub source: Selector,

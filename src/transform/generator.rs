@@ -2,13 +2,15 @@ use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::str::FromStr;
 
+use error_chain::bail;
+use log::{debug, log};
+use uuid::Uuid;
+
 use super::types::*;
 use super::Generator;
 use crate::error::*;
 use crate::json::Pointer as JsonPointer;
 use crate::schema::types::{self as schema, Map, ObjectSchema, Schema};
-
-use uuid::Uuid;
 
 pub struct DefaultGenerator;
 

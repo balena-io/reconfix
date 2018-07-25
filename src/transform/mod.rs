@@ -8,6 +8,8 @@ mod error {
         bare_trait_objects,
         unreachable_pub
     )]
+
+    use error_chain::*;
     error_chain!{}
 }
 

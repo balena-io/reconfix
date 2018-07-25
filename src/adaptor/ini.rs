@@ -2,13 +2,15 @@ use std::cmp::Ordering;
 use std::io::{Read, Write};
 use std::str;
 
-use crate::adaptor::Adaptor;
-use crate::error::*;
-
-use nom::{self, multispace, space, IResult, Needed};
-
+// TODO Rust 2018: Remove * when used macros will import other macros they do
+// depend on
+use nom::*;
 use serde_json::map::Entry;
 use serde_json::{Map, Number, Value};
+
+use crate::adaptor::Adaptor;
+// TODO Rust 2018: Remove ErrorKind when nom::* will be removed
+use crate::error::{ErrorKind, *};
 
 /// The `Property` enum is used to represent a heirarchichal data
 /// structure. It is required to properly sort the data for

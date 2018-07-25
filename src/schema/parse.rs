@@ -1,7 +1,3 @@
-use super::types::{Case, ObjectSchema, Schema, TypeKind};
-use crate::error::*;
-use crate::json::Pointer;
-
 use std::fmt;
 use std::io::Read;
 use std::marker;
@@ -13,6 +9,10 @@ use serde::de::{
 };
 use serde::ser::{Serialize, SerializeTuple, Serializer};
 use serde_json::{self, Value};
+
+use super::types::{Case, ObjectSchema, Schema, TypeKind};
+use crate::error::*;
+use crate::json::Pointer;
 
 pub fn from_reader<R>(rdr: R) -> Result<Schema>
 where
@@ -31,7 +31,7 @@ struct SchemaVisitor;
 impl<'de> Visitor<'de> for SchemaVisitor {
     type Value = Schema;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "a JSON Schema value")
     }
 
@@ -91,7 +91,7 @@ where
 {
     type Value = TypeKind<T>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "single value or list of values")
     }
 
@@ -201,7 +201,7 @@ struct CaseVisitor;
 impl<'de> Visitor<'de> for CaseVisitor {
     type Value = Case;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "'identity' or tuple")
     }
 
@@ -281,6 +281,7 @@ impl<'de> Serialize for Pointer {
 mod tests {
     use super::super::types::*;
     use super::*;
+    use serde_json::{json, json_internal};
 
     fn parse_schema<S>(data: S) -> Schema
     where

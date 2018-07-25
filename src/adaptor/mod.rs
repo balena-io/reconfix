@@ -2,12 +2,11 @@ pub mod ini;
 
 use std::io::{Read, Write};
 
-use crate::error::*;
-
 use serde_json::Value;
 use serde_json::{from_reader, to_writer, to_writer_pretty};
 
 pub use self::ini::IniAdaptor;
+use crate::error::*;
 
 pub trait Adaptor<'a> {
     fn serialize<W: Write>(&self, conf: Value, writer: W) -> Result<()>;

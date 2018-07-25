@@ -1,7 +1,7 @@
+use serde_json::{Number, Value};
+
 use crate::json::Pointer as JsonPointer;
 use crate::schema::types::*;
-
-use serde_json::{Number, Value};
 
 #[derive(Debug)]
 pub struct Layer {

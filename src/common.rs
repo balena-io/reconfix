@@ -1,10 +1,11 @@
-use crate::adaptor::{Adaptor, IniAdaptor, JsonAdaptor};
-use crate::error::*;
-
 use std::io;
 use std::str::FromStr;
 
+use error_chain::bail;
 use serde_json::Value;
+
+use crate::adaptor::{Adaptor, IniAdaptor, JsonAdaptor};
+use crate::error::*;
 
 /// Represents a partition within a partition scheme
 #[derive(Eq, PartialEq, Clone, Debug)]

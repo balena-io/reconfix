@@ -1,6 +1,7 @@
-#![feature(rust_2018_preview)]
-
-extern crate reconfix;
+// Rust 2018 edition opt-in
+#![feature(rust_2018_preview, use_extern_macros)]
+#![warn(rust_2018_compatibility)]
+#![warn(rust_2018_idioms)]
 
 use std::env;
 use std::fs;

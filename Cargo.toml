@@ -8,10 +8,6 @@ authors = ["Robert Vojta <robert@resin.io>", "Aaron Brodersen <aaron@resin.io>"]
 license = "Apache-2.0"
 edition = '2018'
 
-[[bin]]
-name = "reconfix-cli"
-doc = false
-
 [dev-dependencies]
 env_logger = "0.4"
 

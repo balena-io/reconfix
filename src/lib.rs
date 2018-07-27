@@ -1,7 +1,7 @@
 //! # `reconfix-core`
 //!
 //! This crate implements the core of reconfix schema handling and
-//! bidirectional transformation.
+//! bi-directional transformation.
 
 // Rust 2018 edition opt-in
 #![feature(rust_2018_preview, use_extern_macros)]

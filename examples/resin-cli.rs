@@ -6,6 +6,8 @@
 use std::env;
 use std::fs;
 
+use clap::{App, Arg};
+
 fn main() {
     let args = env::args().collect::<Vec<_>>();
     let command = args.get(1).expect("command required");
@@ -18,4 +20,21 @@ fn main() {
         },
         _ => unimplemented!(),
     }
+    let matches = App::new("resin-cli")
+        .arg(
+            Arg::with_name("SCHEMA")
+                .required(true)
+                .takes_value(true)
+                .short("s")
+                .long("schema")
+                .help("Resin JSON schema path"),
+        )
+        .get_matches();
+
+    let schema_path = matches.value_of("SCHEMA").unwrap();
+    let schema_file = fs::File::open(schema_path).expect("Schema file not found");
+
+    let mut rfx = reconfix::Reconfix::new();
+
+    println!("{:?}", rfx.load_schema(schema_file));
 }

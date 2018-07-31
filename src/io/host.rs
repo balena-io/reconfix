@@ -25,8 +25,7 @@ impl<'a> Plugin for &'a mut HostFile {
                 let mut buffer = Vec::new();
                 f.read_to_end(&mut buffer)?;
                 Ok(buffer)
-            })
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)
+            }).map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)
     }
 
     fn write(

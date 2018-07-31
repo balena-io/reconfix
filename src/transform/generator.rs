@@ -126,8 +126,7 @@ fn convert_transform(transform: &schema::Transform, ctx: &Context) -> Result<Tra
                         .map(|(idx, case)| {
                             debug!("processing case {}...", idx);
                             convert_case(case)
-                        })
-                        .collect()
+                        }).collect()
                 },
             }
         },

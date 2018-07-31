@@ -95,7 +95,8 @@ impl Reconfix {
     {
         debug!("reading JSON...");
 
-        let schema = schema::parse::from_reader(r).chain_err(|| "unable to read Reconfix schema")?;
+        let schema =
+            schema::parse::from_reader(r).chain_err(|| "unable to read Reconfix schema")?;
 
         self.schema = Some(schema);
 
@@ -198,7 +199,9 @@ where
 {
     wet_to_dry(schema, |file, format| {
         let node = get_node(file)?;
-        let content: Vec<u8> = (&mut *plugin).read(node).map_err(|e| ErrorKind::Plugin(e))?;
+        let content: Vec<u8> = (&mut *plugin)
+            .read(node)
+            .map_err(|e| ErrorKind::Plugin(e))?;
 
         let wet = deserialize(content.as_slice(), &format)?;
         Ok(wet)

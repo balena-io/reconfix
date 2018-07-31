@@ -126,8 +126,7 @@ impl Selector {
                         },
                         _ => vec![],
                     }
-                })
-                .collect::<Vec<_>>()
+                }).collect::<Vec<_>>()
         })
     }
 
@@ -211,34 +210,31 @@ impl Destination {
                         }
                     },
                 }
-            })
-            .collect::<Result<Vec<_>>>()?;
+            }).collect::<Result<Vec<_>>>()?;
 
         Ok(parts.into())
     }
 
     pub fn get_match_pointer(&self, set: &MatchSet) -> Result<JsonPointer> {
-        let parts = self
-            .parts
-            .iter()
-            .map(|id| {
-                match *id {
-                    Identifier::String(ref s) => Ok(s.to_string()),
-                    Identifier::Pointer(ref ptr) => {
-                        let found = set
-                            .keys
-                            .iter()
-                            .find(|pair| pair.0.eq(ptr))
-                            .ok_or_else(|| format!("unable to resolve pointer '{}'", ptr))?;
+        let parts =
+            self.parts
+                .iter()
+                .map(|id| {
+                    match *id {
+                        Identifier::String(ref s) => Ok(s.to_string()),
+                        Identifier::Pointer(ref ptr) => {
+                            let found =
+                                set.keys.iter().find(|pair| pair.0.eq(ptr)).ok_or_else(|| {
+                                    format!("unable to resolve pointer '{}'", ptr)
+                                })?;
 
-                        match found.1 {
-                            MatchKey::Property(ref s) => Ok(s.to_string()),
-                            MatchKey::Index(ref n) => Ok(n.to_string()),
-                        }
-                    },
-                }
-            })
-            .collect::<Result<Vec<_>>>()?;
+                            match found.1 {
+                                MatchKey::Property(ref s) => Ok(s.to_string()),
+                                MatchKey::Index(ref n) => Ok(n.to_string()),
+                            }
+                        },
+                    }
+                }).collect::<Result<Vec<_>>>()?;
 
         Ok(parts.into())
     }
@@ -272,8 +268,7 @@ fn get_matches(value: &Value, identifiers: &[Identifier]) -> Vec<MatchSet> {
                     }
 
                     match_sets
-                })
-                .collect::<Vec<_>>()
+                }).collect::<Vec<_>>()
         },
         (&Value::Array(ref a), Some(&Identifier::Pointer(ref ptr))) => {
             a.iter()
@@ -287,8 +282,7 @@ fn get_matches(value: &Value, identifiers: &[Identifier]) -> Vec<MatchSet> {
                     }
 
                     match_sets
-                })
-                .collect::<Vec<_>>()
+                }).collect::<Vec<_>>()
         },
         _ => vec![MatchSet { keys: Vec::new() }],
     }

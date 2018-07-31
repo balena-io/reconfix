@@ -37,8 +37,7 @@ impl Mapper for DefaultMapper {
                 let layers = group.map(|(_, layer)| layer).collect::<Vec<_>>();
                 let value = flatten_layers(layers)?;
                 Ok((key.clone(), value))
-            })
-            .collect::<Result<Map<_, _>>>()?;
+            }).collect::<Result<Map<_, _>>>()?;
 
         Ok(wet)
     }
@@ -50,8 +49,7 @@ impl Mapper for DefaultMapper {
                 let wet_document = wet.get(&t.target).ok_or_else(|| "unable to find target")?;
                 let layer = apply_transform_reverse(wet_document, t)?;
                 Ok(layer)
-            })
-            .collect::<Result<Vec<_>>>()?;
+            }).collect::<Result<Vec<_>>>()?;
 
         let dry = flatten_layers(layers)?;
         Ok(dry)
@@ -170,20 +168,20 @@ fn apply_transform_reverse(wet: &Value, transform: &Transform) -> Result<Layer> 
                 },
                 Case::Test { ref dry, ref test } => {
                     debug!("test literals: {:?}", test.literals);
-                    let lit_pass = test.literals.iter().fold(
-                        true,
-                        |prev, &(ref dest, ref value)| {
-                            debug!("test value: {:?}", value);
-                            let local_ptr = Pointer::from(dest.clone());
-                            debug!("testing against wet path: '{}'", local_ptr);
-                            let test_result = match local_ptr.search(output) {
-                                Some(v) => v.eq(value),
-                                None => false,
-                            };
+                    let lit_pass =
+                        test.literals
+                            .iter()
+                            .fold(true, |prev, &(ref dest, ref value)| {
+                                debug!("test value: {:?}", value);
+                                let local_ptr = Pointer::from(dest.clone());
+                                debug!("testing against wet path: '{}'", local_ptr);
+                                let test_result = match local_ptr.search(output) {
+                                    Some(v) => v.eq(value),
+                                    None => false,
+                                };
 
-                            prev && test_result
-                        },
-                    );
+                                prev && test_result
+                            });
 
                     if lit_pass && validate(output, &test.schema)? {
                         if let Some(ref dry_value) = *dry {

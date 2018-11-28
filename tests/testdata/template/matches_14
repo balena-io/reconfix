@@ -1,4 +1,0 @@
-# return true if an object wildcard matches
-{"foo":{"bar":{"qux":1,"hello":{"world":3}}}}
-{"foo":"[[object]]"}
-true

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Hello balena-temen!</title>
+    <style>
+        body {
+            padding: 30px;
+            max-width: 1080px;
+            margin: 0 auto;
+            font-size: 16px;
+            font-family: sans-serif;
+        }
+        #root {
+            display: flex;
+            margin-left: -30px;
+            margin-right: -30px;
+            margin-top: 30px;
+        }
+        #source,
+        #result {
+            width: 50%;
+            margin: 0 30px;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        #source {
+            resize: vertical;
+        }
+        #result {
+            white-space: pre;
+        }
+
+    </style>
+  </head>
+  <body>
+      <p>Evaluate an expression by typing it into the text area below. You can read the expression documentation <a href="https://github.com/balena-io-modules/balena-temen/blob/master/docs/expression.md">here</a>.</p>
+    <div id="root">
+        <textarea
+            rows="30"
+            id="source"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+        >
+        </textarea>
+        <div id="result"></div>
+    </div>
+    <script src="./bootstrap.js"></script>
+  </body>
+</html>

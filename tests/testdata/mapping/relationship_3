@@ -1,4 +1,0 @@
-# able to find a single matching relationship
-[{"value":true,"template":{"foo":1}},{"value":false,"template":{"foo":2}}]
-true
-[{"value":true,"template":{"foo":1}}]

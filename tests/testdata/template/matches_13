@@ -1,4 +1,0 @@
-# return true if a boolean wildcard does not match
-{"foo":{"bar":"true"}}
-{"foo":{"bar":"[[boolean]]"}}
-false

@@ -1,4 +1,0 @@
-# boolean template mapping
-[ { "value": true, "template": { "foo": 1 } }, { "value": false, "template": { "foo": 2 } } ]
-{ "foo": 2 }
-false

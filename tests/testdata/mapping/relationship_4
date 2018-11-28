@@ -1,4 +1,0 @@
-# able to find multiple matching relationships
-[{"value":"foo","template":{"foo":1}},{"value":"foo","template":{"foo":2}},{"value":"bar","template":{"bar":1}}]
-"foo"
-[{"value":"foo","template":{"foo":1}},{"value":"foo","template":{"foo":2}}]

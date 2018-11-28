@@ -1,4 +1,0 @@
-# do nothing if no match
-[{"value":1,"template":{"foo":1}},{"value":2,"template":{"foo":2}}]
-5
-{}

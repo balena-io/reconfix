@@ -1,4 +1,0 @@
-# return false if subset does not match
-{"foo":{"bar":2,"baz":{"qux":5}}}
-{"foo":{"qux":2}}
-false

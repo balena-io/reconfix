@@ -1,4 +1,0 @@
-# return false if an object wildcard does not match
-{"foo":{"bar":[1,2,3]}}
-{"foo":{"bar":"[[object]]"}}
-false

@@ -1,4 +1,0 @@
-# throw if a wildcard type is invalid
-{"foo":{"bar":"baz"}}
-{"foo":{"bar":"[[foo]]"}}
-#error

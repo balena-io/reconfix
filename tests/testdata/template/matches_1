@@ -1,4 +1,0 @@
-# return true if subset matches
-{"foo":{"bar":2,"baz":{"qux":5}}}
-{"foo":{"bar":2}}
-true

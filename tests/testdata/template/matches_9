@@ -1,5 +1,0 @@
-# return false if a string wildcard does not match
-{"foo":{"bar":1}}
-{"foo":{"bar":"[[string]]"}}
-false
-

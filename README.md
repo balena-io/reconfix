@@ -1,27 +1,27 @@
-# Reconfix
+# reconfix
 
-> (Re)Configuration toolkit.
+[![Build Status](https://travis-ci.org/balena-io/reconfix.svg?branch=master)](https://travis-ci.org/balena-io/reconfix)
+[![Current Release](https://img.shields.io/github/tag/balena-io/reconfix.svg?style=flat-square)](https://github.com/balena-io/reconfix/tags)
+[![License](https://img.shields.io/github/license/balena-io/reconfix.svg?style=flat-square)](https://github.com/balena-io/reconfix/blob/master/LICENSE)
+[![Issues](https://img.shields.io/github/issues/balena-io/reconfix.svg?style=flat-square)](https://github.com/balena-io/reconfix/issues)
 
-[![Build Status](https://travis-ci.org/resin-io/reconfix.svg?branch=rust)](https://travis-ci.org/resin-io/reconfix)
+(Re)Configuration toolkit.
 
-## Status
+<div align="center">
+  <sub>an open source :satellite: project by <a href="https://www.balena.io">balena.io</a></sub>
+</div>
 
-Work in progress. Goal is to replace JavaScript version
-([master](https://github.com/resin-io/reconfix/tree/master) branch) with the
-[Rust](https://github.com/resin-io/reconfix/tree/rust) version.
+## Support
 
-## Documentation
-
-### General
-
-* [Schema](docs/schema.md)
-* [Transformations](docs/transformations.md)
-
-### Contribution
-
-Do you want to help? Please, read the [Contributing Guidelines](CONTRIBUTING.md).
+If you're having any problem, please [raise an issue] on GitHub or [contact us], and the [balena.io] team
+will be happy to help.
 
 ## License
 
-Reconfix is free software, and may be redistributed under the terms specified in the
-[license](LICENSE).
+`balena-temen` is open source software, and may be redistributed under the terms specified in
+the [license].
+
+[balena.io]: https://www.balena.io/
+[contact us]: https://forums.balena.io/
+[raise an issue]: https://github.com/balena-io/reconfix/issues/new
+[license]: https://github.com/balena-io/reconfix/blob/master/LICENSE

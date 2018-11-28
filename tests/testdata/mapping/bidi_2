@@ -1,4 +1,0 @@
-# single nested mapping
-["/foo/bar/baz"]
-{"foo": {"bar": {"baz": 3}}}
-3

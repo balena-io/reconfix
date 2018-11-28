@@ -1,4 +1,0 @@
-# error if conflicting templates match
-[{"value":1,"template":{"foo":1}},{"value":2,"template":{"foo":1}}]
-{"foo":1}
-#error

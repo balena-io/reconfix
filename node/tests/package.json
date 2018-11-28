@@ -1,0 +1,12 @@
+{
+    "name": "node-integration-tests",
+    "scripts": {
+        "test": "jest --env node"
+    },
+    "dependencies": {
+        "reconfix": "file:../../target/npm/pkg"
+    },
+    "devDependencies": {
+        "jest": "^23.6.0"
+    }
+}

@@ -1,4 +1,16 @@
 - commits:
+    - subject: Fix project name
+      hash: 057cbd68a40c6f86a1c39c6e0940ad733ef50a41
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+  version: 0.2.1
+  date: 2018-12-03T12:44:27.124Z
+- commits:
     - subject: Bump to 0.2.0
       hash: 35cfaf2c4b179a97e7e92426ea5d488d4d4e6848
       body: |

@@ -1,4 +1,17 @@
 - commits:
+    - subject: Bump test
+      hash: 9e0deb3e8f151865c247a055958fee4b7064a934
+      body: |
+        Ignore, just playing with versionist.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+  version: 0.2.1
+  date: 2018-12-03T12:04:53.479Z
+- commits:
     - subject: Bump to 0.2.0
       hash: 35cfaf2c4b179a97e7e92426ea5d488d4d4e6848
       body: |

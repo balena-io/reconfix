@@ -14,6 +14,7 @@ use crate::utils::deref::OptionDeref;
 use self::target::Target;
 
 pub(crate) mod target;
+pub(crate) mod map;
 
 /// Mapping target filename
 #[derive(Debug, PartialEq)]
@@ -36,8 +37,8 @@ pub struct Mapping {
     // TODO: Implement
     //
     // https://github.com/balena-io/balena/blob/63ca3a4b026694750f8d6f4e3eea9792cf344426/specs/configuration-dsl-mapping-extension.md#keyword-map
-    #[serde(skip_serializing_if = "Option::is_none")]
-    map: Option<Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    map: Option<Vec<map::Entry>>,
 
     // TODO: Implement
     //
@@ -83,6 +84,11 @@ impl Mapping {
     /// Returns target path
     pub fn template(&self) -> Option<&Value> {
         self.template.as_ref()
+    }
+
+    /// Returns map
+    pub fn map(&self) -> Option<&Vec<map::Entry>> {
+        self.map.as_ref()
     }
 
     /// Returns number of targets
@@ -231,6 +237,35 @@ mod tests {
         "#;
         let mapping: Mapping = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(mapping.target(), Some("foo"));
+    }
+
+    #[test]
+    fn map() {
+        let yaml = r#"
+            map:
+                - - true
+                  - "yes"
+                - - false
+                  - "no"
+                - - identity
+                  - identity
+                - identity
+        "#;
+        let mapping: Mapping = serde_yaml::from_str(yaml).unwrap();
+        let map = mapping.map().unwrap();
+        assert_eq!(map.len(), 4);
+
+        let mut i = map.iter();
+        let e = i.next().unwrap();
+        assert_eq!(e.matcher(), &Value::Bool(true));
+        assert_eq!(e.output(), &Value::String("yes".to_string()));
+
+        let e = i.next().unwrap();
+        assert_eq!(e.matcher(), &Value::Bool(false));
+        assert_eq!(e.output(), &Value::String("no".to_string()));
+
+        assert!(i.next().unwrap().is_identity());
+        assert!(i.next().unwrap().is_identity());
     }
 
     #[test]

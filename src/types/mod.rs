@@ -10,6 +10,7 @@ use balena_cdsl::dsl::schema::{DocumentRoot, Schema};
 use serde::Deserialize;
 use serde_yaml::Value;
 
+pub use self::mapping::map::Entry;
 pub use self::mapping::Mapping;
 pub use self::mapping::target::{Format, Location, Partition, Target, Type};
 

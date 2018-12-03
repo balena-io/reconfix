@@ -8,6 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/balena-io/reconfix/"
 description = "(Re)Configuration toolkit"
 readme = "README.md"
+publish = false
 
 [lib]
 crate-type = ["lib", "cdylib"]

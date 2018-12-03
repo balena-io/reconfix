@@ -2,6 +2,8 @@
 //!
 //! https://github.com/balena-io/balena/blob/63ca3a4b026694750f8d6f4e3eea9792cf344426/specs/configuration-dsl-mapping-extension.md#keyword-map
 
+// TODO: This should be part of the balena-cdsl crate
+
 use std::fmt;
 
 use serde::de::{self, Deserialize, Deserializer, SeqAccess, Visitor};

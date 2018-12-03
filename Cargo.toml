@@ -1,6 +1,6 @@
 [package]
 name = "reconfix"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["Robert Vojta <robert@balena.io>"]
 edition = "2018"
 maintenance = { status = "actively-developed" }

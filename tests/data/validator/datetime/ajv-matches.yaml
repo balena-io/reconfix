@@ -1,0 +1,10 @@
+valid: true
+schema:
+  version: 1
+  type: array
+  items:
+    type: datetime
+# https://github.com/epoberezkin/ajv/blob/v6.7.0/spec/tests/rules/format.json#L533-L564
+data:
+  - 1963-06-19T12:13:14Z
+  - 2016-12-31T23:59:60Z

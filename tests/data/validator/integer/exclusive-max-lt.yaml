@@ -1,0 +1,10 @@
+valid: true
+schema:
+  version: 1
+  type: array
+  items:
+    type: integer
+    exclusiveMax: 10
+data:
+  - 9
+  - 8

@@ -1,0 +1,8 @@
+valid: false
+schema:
+  version: 1
+  type: array
+  items:
+    - type: string
+data:
+  foo: bar

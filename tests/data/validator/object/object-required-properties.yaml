@@ -1,0 +1,14 @@
+valid: true
+schema:
+  version: 1
+  properties:
+    - name:
+        type: string
+    - age:
+        type: integer
+    - married:
+        type: boolean
+data:
+  name: Robert
+  age: 12
+  married: true

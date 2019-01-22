@@ -1,0 +1,6 @@
+valid: false
+schema:
+  version: 1
+  type: integer
+  multipleOf: 5
+data: 11

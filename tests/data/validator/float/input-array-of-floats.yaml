@@ -1,0 +1,7 @@
+valid: false
+schema:
+  version: 1
+  type: number
+data:
+  - 1.2
+  - 2.3

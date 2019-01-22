@@ -1,0 +1,6 @@
+valid: true
+schema:
+  version: 1
+  type: text
+  const: Foo
+data: Foo

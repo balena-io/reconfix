@@ -1,0 +1,6 @@
+valid: false
+schema:
+  version: 1
+  type: password
+data:
+  foo: bar

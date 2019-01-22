@@ -1,0 +1,8 @@
+valid: false
+schema:
+  version: 1
+  type: string
+  enum:
+    - foo
+    - bar
+data: baz

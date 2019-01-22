@@ -1,0 +1,13 @@
+valid: true
+schema:
+  version: 1
+  type: array
+  items:
+    - type: string
+    - type: boolean
+data:
+  - foo
+  - true
+  - bar
+  - false
+  - baz

@@ -1,0 +1,6 @@
+valid: false
+schema:
+  version: 1
+  type: string
+  pattern: ^\d+$
+data: foo

@@ -1,0 +1,10 @@
+valid: true
+schema:
+  version: 1
+  type: array
+  items:
+    type: number
+    min: 5.5
+data:
+  - 5.5
+  - 6.3

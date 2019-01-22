@@ -1,0 +1,6 @@
+valid: true
+schema:
+  version: 1
+  type: string
+  maxLength: 5
+data: hallo

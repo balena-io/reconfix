@@ -1,0 +1,30 @@
+    #[test]
+    fn {name}() {{
+        let mut content: serde_yaml::Value = serde_yaml::from_str(include_str!("{path}")).unwrap();
+        let mapping = content.as_mapping_mut().unwrap();
+
+        let schema: reconfix::schema::Schema = mapping
+            .remove(&serde_yaml::Value::String("schema".to_string()))
+            .ok_or_else(|| serde::de::Error::custom("invalid test: missing schema key"))
+            .and_then(serde_yaml::from_value)
+            .unwrap();
+
+        let data: serde_json::Value = mapping
+            .remove(&serde_yaml::Value::String("data".to_string()))
+            .ok_or_else(|| serde::de::Error::custom("invalid test: missing data key"))
+            .and_then(serde_yaml::from_value)
+            .unwrap();
+
+        let should_be_valid: bool = mapping
+            .remove(&serde_yaml::Value::String("valid".to_string()))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true);
+
+        let state = reconfix::validator::validate(&schema, &data);
+        if should_be_valid != state.is_valid() && !state.is_valid() {{
+            for error in state.errors() {{
+                eprintln!("{{}}", error);
+            }}
+        }}
+        assert_eq!(should_be_valid, state.is_valid());
+    }}

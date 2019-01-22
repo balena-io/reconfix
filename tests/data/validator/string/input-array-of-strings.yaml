@@ -1,0 +1,7 @@
+valid: false
+schema:
+  version: 1
+  type: string
+data:
+  - foo
+  - bar

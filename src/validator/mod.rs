@@ -1,0 +1,137 @@
+use serde_json::{self, Value};
+
+use crate::{
+    schema::{PrimitiveType, Schema},
+    utils::value,
+};
+
+use scope::ScopedSchema;
+use state::ValidationState;
+
+mod error;
+mod path;
+mod scope;
+mod state;
+mod types;
+
+pub trait Validator {
+    fn validate(&self, data: Option<&Value>) -> ValidationState;
+}
+
+macro_rules! bail_if_invalid {
+    ($state:expr) => {{
+        let state = $state;
+        if !state.is_valid() {
+            return state;
+        }
+    }};
+}
+
+fn validate_optional(scope: &ScopedSchema, data: Option<&Value>) -> ValidationState {
+    let mut state = ValidationState::new();
+
+    let value_exists = match data {
+        Some(Value::Null) => false,
+        None => false,
+        _ => true,
+    };
+
+    if !value_exists && scope.schema().type_().is_required() {
+        state.push_error(scope.missing_error());
+    }
+
+    state
+}
+
+fn validate_const(scope: &ScopedSchema, data: &Value) -> ValidationState {
+    match scope.schema().const_() {
+        Some(constant) if value::ne(constant, data) => ValidationState::new_with_error(scope.invalid_error("scope")),
+        _ => ValidationState::new(),
+    }
+}
+
+fn validate_enum(scope: &ScopedSchema, data: &Value) -> ValidationState {
+    let enum_entries = scope.schema().enum_();
+
+    if enum_entries.is_empty() {
+        return ValidationState::new();
+    }
+
+    for entry in enum_entries {
+        if value::eq(entry.value(), data) {
+            return ValidationState::new();
+        }
+    }
+
+    ValidationState::new_with_error(scope.invalid_error("enum"))
+}
+
+impl<'a> Validator for ScopedSchema<'a> {
+    fn validate(&self, data: Option<&Value>) -> ValidationState {
+        bail_if_invalid!(validate_optional(self, data));
+
+        let data = match data {
+            Some(x) => x,
+            None => return ValidationState::new(),
+        };
+
+        bail_if_invalid!(validate_const(self, data));
+        bail_if_invalid!(validate_enum(self, data));
+
+        match self.schema().type_().primitive_type() {
+            PrimitiveType::String => types::validate_as_string(self, data),
+            PrimitiveType::Array => types::validate_as_array(self, data),
+            PrimitiveType::Boolean => types::validate_as_boolean(self, data),
+            PrimitiveType::Integer => types::validate_as_integer(self, data),
+            PrimitiveType::Number => types::validate_as_number(self, data),
+            PrimitiveType::Object => types::validate_as_object(self, data),
+            PrimitiveType::Port => types::validate_as_port(self, data),
+            PrimitiveType::Text => types::validate_as_text(self, data),
+            PrimitiveType::Password => types::validate_as_password(self, data),
+            PrimitiveType::Hostname => types::validate_as_hostname(self, data),
+            PrimitiveType::Date => types::validate_as_date(self, data),
+            PrimitiveType::DateTime => types::validate_as_datetime(self, data),
+            PrimitiveType::Time => types::validate_as_time(self, data),
+            PrimitiveType::Email => types::validate_as_email(self, data),
+            PrimitiveType::IPv4 => types::validate_as_ipv4(self, data),
+            PrimitiveType::IPv6 => types::validate_as_ipv6(self, data),
+            PrimitiveType::Uri => types::validate_as_uri(self, data),
+            PrimitiveType::File => types::validate_as_file(self, data),
+            PrimitiveType::ChronyAddress => types::validate_as_chrony_address(self, data),
+            PrimitiveType::DNSMasqAddress => types::validate_as_dnsmasq_address(self, data),
+            PrimitiveType::IPTablesAddress => types::validate_as_iptables_address(self, data),
+            PrimitiveType::StringList => types::validate_as_stringlist(self, data),
+        }
+    }
+}
+
+impl Validator for Schema {
+    fn validate(&self, data: Option<&Value>) -> ValidationState {
+        ScopedSchema::new(self).validate(data)
+    }
+}
+
+pub fn validate(schema: &Schema, data: &Value) -> ValidationState {
+    schema.validate(Some(data))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_yaml;
+
+    #[test]
+    fn string_type() {
+        let schema = r#"
+            version: 1
+            type: string?
+            minLength: 5
+            maxLength: 10
+        "#;
+        let schema: Schema = serde_yaml::from_str(schema).unwrap();
+
+        let data: Value = serde_json::from_str(r#""hallo""#).unwrap();
+        let state = validate(&schema, &data);
+        assert!(state.is_valid());
+    }
+}

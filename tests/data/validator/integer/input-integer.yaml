@@ -1,0 +1,5 @@
+valid: true
+schema:
+  version: 1
+  type: integer
+data: -10

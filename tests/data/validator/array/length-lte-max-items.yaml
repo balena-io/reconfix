@@ -1,0 +1,10 @@
+valid: true
+schema:
+  version: 1
+  type: array
+  maxItems: 2
+  items:
+    - type: string
+data:
+  - foo
+  - bar

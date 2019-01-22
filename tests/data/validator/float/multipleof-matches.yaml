@@ -1,0 +1,6 @@
+valid: true
+schema:
+  version: 1
+  type: number
+  multipleOf: 2.5
+data: 5.0

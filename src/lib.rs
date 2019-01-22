@@ -1,3 +1,4 @@
 pub mod error;
-pub mod types;
-pub(crate) mod utils;
+pub mod schema;
+mod utils;
+pub mod validator;

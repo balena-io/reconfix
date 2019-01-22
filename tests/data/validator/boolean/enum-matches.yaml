@@ -1,0 +1,8 @@
+valid: true
+schema:
+  version: 1
+  type: boolean
+  enum:
+    - false
+    - true
+data: true

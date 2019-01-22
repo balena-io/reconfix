@@ -1,0 +1,6 @@
+valid: false
+schema:
+  version: 1
+  type: number
+  exclusiveMin: 5.5
+data: 5.5

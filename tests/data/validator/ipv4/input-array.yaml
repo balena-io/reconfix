@@ -1,0 +1,7 @@
+valid: false
+schema:
+  version: 1
+  type: ipv4
+data:
+  - foo
+  - bar

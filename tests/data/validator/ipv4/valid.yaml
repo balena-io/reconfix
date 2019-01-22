@@ -1,0 +1,12 @@
+valid: true
+schema:
+  version: 1
+  type: array
+  items:
+    type: ipv4
+data:
+  - 127.0.0.1
+  - 0.0.0.0
+  - 255.255.255.255
+  - 10.0.0.1
+  - 192.168.20.120

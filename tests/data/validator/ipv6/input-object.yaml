@@ -1,0 +1,6 @@
+valid: false
+schema:
+  version: 1
+  type: ipv6
+data:
+  foo: bar

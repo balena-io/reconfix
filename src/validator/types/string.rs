@@ -24,15 +24,8 @@ pub fn validate_as_string(scope: &ScopedSchema, data: &Value) -> ValidationState
         }
     }
 
-    if let Some(pattern) = schema.pattern() {
-        use regex::Regex;
-
-        if let Ok(regex) = Regex::new(pattern) {
-            if !regex.is_match(string) {
-                state.push_error(scope.invalid_error("pattern"));
-            }
-        } else {
-            // TODO Should be handled on the deserialization level
+    if let Some(regex) = schema.pattern() {
+        if !regex.is_match(string) {
             state.push_error(scope.invalid_error("pattern"));
         }
     }

@@ -9,7 +9,7 @@ use super::{
 
 lazy_static! {
     // ajv v6.7.0 compatible
-    // https://github.com/epoberezkin/ajv/blob/38a9ad4cf9498532190f49fac7245930e649fe58/lib/compile/formats.js
+    // https://github.com/epoberezkin/ajv/blob/v6.7.0/lib/compile/formats.js
     static ref HOSTNAME_REGEX: Regex =
         Regex::new(r"^(?i)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*$").unwrap();
 }

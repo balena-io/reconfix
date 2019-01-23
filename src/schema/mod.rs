@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use regex::Regex;
 use serde_derive::Deserialize;
 pub use serde_yaml::{Number, Value};
 use std::fmt;
@@ -108,8 +109,12 @@ pub struct Schema {
     max_length: Option<usize>,
     #[serde(default, rename = "minLength", skip_serializing_if = "Option::is_none")]
     min_length: Option<usize>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pattern: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "deserialize_option_from_str"
+    )]
+    pattern: Option<Regex>,
 }
 
 impl Schema {
@@ -236,8 +241,8 @@ impl Schema {
         self.min_length
     }
 
-    pub fn pattern(&self) -> Option<&str> {
-        self.pattern.as_deref()
+    pub fn pattern(&self) -> Option<&Regex> {
+        self.pattern.as_ref()
     }
 }
 
@@ -280,6 +285,16 @@ where
 {
     let s: String = serde::de::Deserialize::deserialize(deserializer)?;
     S::from_str(&s).map_err(serde::de::Error::custom)
+}
+
+fn deserialize_option_from_str<'de, S, D>(deserializer: D) -> Result<Option<S>, D::Error>
+where
+    S: FromStr,
+    S::Err: std::fmt::Display,
+    D: serde::de::Deserializer<'de>,
+{
+    let s: String = serde::de::Deserialize::deserialize(deserializer)?;
+    Ok(Some(S::from_str(&s).map_err(serde::de::Error::custom)?))
 }
 
 fn deserialize_struct_or_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>

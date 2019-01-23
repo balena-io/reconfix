@@ -1,10 +1,10 @@
+use std::fmt;
+use std::marker::PhantomData;
 use std::str::FromStr;
 
 use regex::Regex;
 use serde_derive::Deserialize;
 pub use serde_yaml::{Number, Value};
-use std::fmt;
-use std::marker::PhantomData;
 
 // Reexport everything except mapping, which is a public module
 pub use self::{

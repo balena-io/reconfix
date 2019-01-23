@@ -1,0 +1,11 @@
+valid: true
+schema:
+  version: 1
+  type: stringlist
+  separator: ' '
+  items:
+    type: string
+    pattern: ^(foo|bar)$
+data:
+  - foo
+  - bar

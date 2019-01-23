@@ -1,0 +1,10 @@
+valid: true
+schema:
+  version: 1
+  type: stringlist
+  separator: ' '
+  items:
+    type: ipv4
+data:
+  - 127.0.0.1
+  - 10.0.0.2

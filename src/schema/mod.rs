@@ -28,16 +28,6 @@ mod unique_items;
 mod version;
 
 #[derive(Debug, Deserialize)]
-pub struct DynamicObjectKeys {
-    #[serde(default, rename = "type", deserialize_with = "deserialize_from_str")]
-    type_: Type,
-    #[serde(default, rename = "type")]
-    title: Option<String>,
-    #[serde(deserialize_with = "deserialize_from_str")]
-    pattern: Regex,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct Schema {
     #[serde(default)]
     version: Version,
@@ -65,7 +55,7 @@ pub struct Schema {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     properties: Vec<Property>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    keys: Option<DynamicObjectKeys>,
+    keys: Option<Box<Schema>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     values: Option<Box<Schema>>,
     //
@@ -175,8 +165,8 @@ impl Schema {
         self.properties.as_slice()
     }
 
-    pub fn keys(&self) -> Option<&DynamicObjectKeys> {
-        self.keys.as_ref()
+    pub fn keys(&self) -> Option<&Schema> {
+        self.keys.as_deref()
     }
 
     pub fn values(&self) -> Option<&Schema> {

@@ -58,6 +58,8 @@ pub struct Schema {
     keys: Option<Box<Schema>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     values: Option<Box<Schema>>,
+    #[serde(default, rename = "additionalProperties")]
+    additional_properties: bool,
     //
     // StringList keywords
     //

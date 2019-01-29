@@ -34,8 +34,7 @@ pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState 
         let mut data_item_state = ValidationState::new();
 
         for (idx, array_schema) in scope.schema().items().iter().enumerate() {
-            let nested_scope = data_scope.scope_with_schema_index(idx);
-            let nested_scope = nested_scope.scope_with_schema(array_schema);
+            let nested_scope = data_scope.scope_with_schema_index(idx, array_schema);
 
             let nested_state = nested_scope.validate(Some(item));
 

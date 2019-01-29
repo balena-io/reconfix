@@ -1,4 +1,4 @@
-use crate::schema::Schema;
+use crate::schema::{Property, Schema};
 
 use super::error::ValidationError;
 use super::path::PathBuf;
@@ -33,14 +33,6 @@ impl<'a> ScopedSchema<'a> {
 }
 
 impl<'a> ScopedSchema<'a> {
-    pub fn scope_with_schema<'b>(&self, schema: &'b Schema) -> ScopedSchema<'b> {
-        ScopedSchema {
-            schema,
-            schema_path: self.schema_path.clone(),
-            data_path: self.data_path.clone(),
-        }
-    }
-
     pub fn scope_with_data_index(&self, index: usize) -> ScopedSchema {
         let mut data_path = self.data_path.clone();
         data_path.push_index(index);
@@ -52,23 +44,26 @@ impl<'a> ScopedSchema<'a> {
         }
     }
 
-    pub fn scope_with_data_property<S: Into<String>>(&self, property: S) -> ScopedSchema {
+    pub fn scope_with_property<'b>(&self, property: &'b Property) -> ScopedSchema<'b> {
         let mut data_path = self.data_path.clone();
-        data_path.push_property(property);
+        data_path.push_property(property.name());
+
+        let mut schema_path = self.schema_path.clone();
+        schema_path.push_property(property.name());
 
         ScopedSchema {
-            schema: self.schema,
-            schema_path: self.schema_path.clone(),
+            schema: property.schema(),
+            schema_path,
             data_path,
         }
     }
 
-    pub fn scope_with_schema_index(&self, index: usize) -> ScopedSchema {
+    pub fn scope_with_schema_index<'b>(&self, index: usize, schema: &'b Schema) -> ScopedSchema<'b> {
         let mut schema_path = self.schema_path.clone();
         schema_path.push_index(index);
 
         ScopedSchema {
-            schema: self.schema,
+            schema,
             schema_path,
             data_path: self.data_path.clone(),
         }

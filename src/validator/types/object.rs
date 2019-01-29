@@ -16,9 +16,7 @@ fn validate_object_properties(scope: &ScopedSchema, data: &Value) -> ValidationS
     let mut state = ValidationState::new();
 
     for property in scope.schema().properties() {
-        let nested_scope = scope.scope_with_schema_keyword(property.name());
-        let nested_scope = nested_scope.scope_with_data_property(property.name());
-        let nested_scope = nested_scope.scope_with_schema(property.schema());
+        let nested_scope = scope.scope_with_property(property);
         let nested_state = nested_scope.validate(object.get(property.name()));
         state.extend(nested_state);
     }

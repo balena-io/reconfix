@@ -60,8 +60,6 @@ fn validate_enum(scope: &ScopedSchema, data: &Value) -> ValidationState {
         return ValidationState::new();
     }
 
-    let scope = scope.scope_with_schema_keyword("enum");
-
     let valid_count = enum_entries
         .iter()
         .fold(0, |acc, item| acc + value::eq(item.value(), data) as usize);

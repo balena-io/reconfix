@@ -5,7 +5,7 @@ use super::super::{scope::ScopedSchema, state::ValidationState, Validator};
 pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let data_array = match data.as_array() {
         Some(x) => x,
-        None => return scope.error("type", format!("expected 'array'")).into(),
+        None => return scope.error("type", "expected 'array'").into(),
     };
 
     let schema = scope.schema();

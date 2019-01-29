@@ -10,7 +10,10 @@ pub fn validate_as_string_with_regex(scope: &ScopedSchema, data: &Value, regex: 
     let mut state = validate_as_string(scope, data);
 
     if state.is_valid() && !regex.is_match(data.as_str().expect("invalid validate_as_string")) {
-        state.push_error(scope.invalid_error("type"));
+        state.push_error(scope.error(
+            "type",
+            format!("expected '{}'", scope.schema().type_().primitive_type().as_ref()),
+        ));
     }
 
     state

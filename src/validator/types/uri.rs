@@ -25,7 +25,7 @@ pub fn validate_as_uri(scope: &ScopedSchema, data: &Value) -> ValidationState {
         let string = data.as_str().expect("invalid validate_as_string_with_regex");
 
         if !NOT_URI_FRAGMENT_REGEX.is_match(string) {
-            state.push_error(scope.invalid_error("not uri fragment"));
+            state.push_error(scope.error("type", "unable to parse as 'uri'"));
         }
     }
 

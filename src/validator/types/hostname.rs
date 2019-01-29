@@ -25,7 +25,7 @@ pub fn validate_as_hostname(scope: &ScopedSchema, data: &Value) -> ValidationSta
             .count();
 
         if len > 255 {
-            state.push_error(scope.invalid_error("max length (255) exceeded"));
+            state.push_error(scope.error("type", "'hostname' must not be longer than 255 characters"));
         }
     }
 

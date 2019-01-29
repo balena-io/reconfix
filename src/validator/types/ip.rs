@@ -16,8 +16,8 @@ pub fn validate_as_ipv4(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let ip: Result<IpAddr, _> = data.as_str().expect("invalid validate_as_string").parse();
 
     match ip {
-        Ok(x) if !x.is_ipv4() => state.push_error(scope.invalid_error("not an IPv4")),
-        Err(_) => state.push_error(scope.invalid_error("not an IP address")),
+        Ok(x) if !x.is_ipv4() => state.push_error(scope.error("type", "valid IP address, but not an 'ipv4'")),
+        Err(_) => state.push_error(scope.error("type", "unable to parse as 'ipv4'")),
         _ => {}
     };
 
@@ -33,8 +33,8 @@ pub fn validate_as_ipv6(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let ip: Result<IpAddr, _> = data.as_str().expect("invalid validate_as_string").parse();
 
     match ip {
-        Ok(x) if !x.is_ipv6() => state.push_error(scope.invalid_error("not an IPv4")),
-        Err(_) => state.push_error(scope.invalid_error("not an IP address")),
+        Ok(x) if !x.is_ipv6() => state.push_error(scope.error("type", "valid IP address, but not an 'ipv6'")),
+        Err(_) => state.push_error(scope.error("type", "unable to parse as 'ipv6'")),
         _ => {}
     };
 

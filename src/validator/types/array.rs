@@ -3,43 +3,53 @@ use serde_json::Value;
 use super::super::{scope::ScopedSchema, state::ValidationState, Validator};
 
 pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState {
-    let array = match data.as_array() {
+    let data_array = match data.as_array() {
         Some(x) => x,
-        None => return ValidationState::new_with_error(scope.invalid_error("type")),
+        None => return scope.error("type", format!("expected 'array'")).into(),
     };
 
     let schema = scope.schema();
+
     let mut state = ValidationState::new();
 
     if let Some(min) = schema.min_items() {
-        if array.len() < min {
-            state.push_error(scope.invalid_error("minItems"));
+        if data_array.len() < min {
+            state.push_error(scope.error("minItems", format!("should contain at least '{}' items", min)));
         }
     }
 
     if let Some(max) = schema.max_items() {
-        if array.len() > max {
-            state.push_error(scope.invalid_error("maxItems"));
+        if data_array.len() > max {
+            state.push_error(scope.error("maxItems", format!("should contain up to '{}' items", max)));
         }
     }
 
-    for (idx, item) in array.iter().enumerate() {
+    let scope = scope.scope_with_schema_keyword("items");
+
+    for (idx, item) in data_array.iter().enumerate() {
         let mut valid_count = 0;
 
-        for array_schema in scope.schema().items() {
-            let nested_state = scope
-                .scope_with_array_index(array_schema, idx as isize)
-                .validate(Some(item));
+        let data_scope = scope.scope_with_data_index(idx);
+
+        let mut data_item_state = ValidationState::new();
+
+        for (idx, array_schema) in scope.schema().items().iter().enumerate() {
+            let nested_scope = data_scope.scope_with_schema_index(idx);
+            let nested_scope = nested_scope.scope_with_schema(array_schema);
+
+            let nested_state = nested_scope.validate(Some(item));
 
             if nested_state.is_valid() {
                 valid_count += 1;
+            } else {
+                data_item_state.extend(nested_state);
             }
         }
 
         match valid_count {
-            0 => state.push_error(scope.invalid_error("items")),
+            0 => state.extend(data_item_state),
             1 => {}
-            _ => state.push_error(scope.invalid_error("items")),
+            _ => state.push_error(data_scope.error("items", "valid against multiple schemas")),
         };
     }
 

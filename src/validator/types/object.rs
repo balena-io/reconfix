@@ -10,15 +10,16 @@ fn validate_object_keys_and_values(_scope: &ScopedSchema, _data: &Value) -> Vali
 fn validate_object_properties(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let object = match data.as_object() {
         Some(x) => x,
-        None => return ValidationState::new_with_error(scope.invalid_error("type")),
+        None => return ValidationState::new_with_error(scope.error("type", "expected 'object'")),
     };
 
     let mut state = ValidationState::new();
 
     for property in scope.schema().properties() {
-        let nested_state = scope
-            .scope_with_property_name(property.schema(), property.name())
-            .validate(object.get(property.name()));
+        let nested_scope = scope.scope_with_schema_keyword(property.name());
+        let nested_scope = nested_scope.scope_with_data_property(property.name());
+        let nested_scope = nested_scope.scope_with_schema(property.schema());
+        let nested_state = nested_scope.validate(object.get(property.name()));
         state.extend(nested_state);
     }
 

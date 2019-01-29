@@ -28,8 +28,6 @@ macro_rules! bail_if_invalid {
 }
 
 fn validate_optional(scope: &ScopedSchema, data: Option<&Value>) -> ValidationState {
-    let mut state = ValidationState::new();
-
     let value_exists = match data {
         Some(Value::Null) => false,
         None => false,
@@ -37,15 +35,20 @@ fn validate_optional(scope: &ScopedSchema, data: Option<&Value>) -> ValidationSt
     };
 
     if !value_exists && scope.schema().type_().is_required() {
-        state.push_error(scope.missing_error());
+        return scope
+            .error(
+                "type",
+                format!("'{}' is not an optional type", scope.schema().type_().to_string()),
+            )
+            .into();
     }
 
-    state
+    ValidationState::new()
 }
 
 fn validate_const(scope: &ScopedSchema, data: &Value) -> ValidationState {
     match scope.schema().const_() {
-        Some(constant) if value::ne(constant, data) => ValidationState::new_with_error(scope.invalid_error("scope")),
+        Some(constant) if value::ne(constant, data) => scope.error("const", "value does not match").into(),
         _ => ValidationState::new(),
     }
 }
@@ -57,13 +60,17 @@ fn validate_enum(scope: &ScopedSchema, data: &Value) -> ValidationState {
         return ValidationState::new();
     }
 
-    for entry in enum_entries {
-        if value::eq(entry.value(), data) {
-            return ValidationState::new();
-        }
-    }
+    let scope = scope.scope_with_schema_keyword("enum");
 
-    ValidationState::new_with_error(scope.invalid_error("enum"))
+    let valid_count = enum_entries
+        .iter()
+        .fold(0, |acc, item| acc + value::eq(item.value(), data) as usize);
+
+    match valid_count {
+        1 => ValidationState::new(),
+        0 => scope.error("enum", "does not match any value").into(),
+        _ => scope.error("enum", "matches multiple values").into(),
+    }
 }
 
 impl<'a> Validator for ScopedSchema<'a> {
@@ -132,6 +139,7 @@ mod tests {
 
         let data: Value = serde_json::from_str(r#""hallo""#).unwrap();
         let state = validate(&schema, &data);
+        eprintln!("{:?}", state);
         assert!(state.is_valid());
     }
 }

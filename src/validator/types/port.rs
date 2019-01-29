@@ -12,7 +12,7 @@ pub fn validate_as_port(scope: &ScopedSchema, data: &Value) -> ValidationState {
         let value = data.as_i64().expect("invalid validate_as_integer");
 
         if value < 0 || value > 65535 {
-            state.push_error(scope.invalid_error("out of range 0 - 65535"));
+            state.push_error(scope.error("type", format!("expected '{} in 0..65535'", value)));
         }
     }
 

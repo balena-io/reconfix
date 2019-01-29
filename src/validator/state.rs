@@ -7,11 +7,20 @@ pub struct ValidationState {
 
 impl ValidationState {
     pub fn new() -> ValidationState {
-        ValidationState::default()
+        ValidationState { errors: vec![] }
     }
 
     pub fn new_with_error(error: ValidationError) -> ValidationState {
         ValidationState { errors: vec![error] }
+    }
+
+    pub fn new_with_errors<I>(errors: I) -> ValidationState
+    where
+        I: IntoIterator<Item = ValidationError>,
+    {
+        ValidationState {
+            errors: errors.into_iter().collect(),
+        }
     }
 
     pub fn push_error(&mut self, error: ValidationError) {
@@ -28,5 +37,22 @@ impl ValidationState {
 
     pub fn errors(&self) -> &Vec<ValidationError> {
         &self.errors
+    }
+}
+
+impl From<ValidationError> for ValidationState {
+    fn from(error: ValidationError) -> ValidationState {
+        ValidationState { errors: vec![error] }
+    }
+}
+
+impl<T> From<T> for ValidationState
+where
+    T: IntoIterator<Item = ValidationError>,
+{
+    fn from(iter: T) -> Self {
+        ValidationState {
+            errors: iter.into_iter().collect(),
+        }
     }
 }

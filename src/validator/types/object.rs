@@ -1,13 +1,10 @@
+use std::collections::HashSet;
+
 use serde_json::Value;
 
 use super::super::{scope::ScopedSchema, state::ValidationState, Validator};
 
-fn validate_object_keys_and_values(_scope: &ScopedSchema, _data: &Value) -> ValidationState {
-    // TODO Implement when CDSL -> JSON Schema settles down
-    ValidationState::new()
-}
-
-fn validate_object_properties(scope: &ScopedSchema, data: &Value) -> ValidationState {
+pub fn validate_as_object(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let object = match data.as_object() {
         Some(x) => x,
         None => return ValidationState::new_with_error(scope.error("type", "expected 'object'")),
@@ -15,24 +12,32 @@ fn validate_object_properties(scope: &ScopedSchema, data: &Value) -> ValidationS
 
     let mut state = ValidationState::new();
 
+    let mut remaining_keys: HashSet<&str> = object.keys().map(AsRef::as_ref).collect();
+
+    // Validate .properties first
     for property in scope.schema().properties() {
         let nested_scope = scope.scope_with_property(property);
         let nested_state = nested_scope.validate(object.get(property.name()));
         state.extend(nested_state);
+        remaining_keys.remove(property.name());
     }
 
-    state
-}
-
-pub fn validate_as_object(scope: &ScopedSchema, data: &Value) -> ValidationState {
-    let mut state = ValidationState::new();
-
-    if !scope.schema().properties().is_empty() {
-        state.extend(validate_object_properties(scope, data));
-    }
-
-    if scope.schema().keys().is_some() && scope.schema().values().is_some() {
-        state.extend(validate_object_keys_and_values(scope, data));
+    match (scope.schema().keys(), scope.schema().values()) {
+        // Schema contains keys & values, validate pattern properties
+        (Some(schema_keys), Some(schema_values)) => {
+            for key in remaining_keys {
+                // FIXME schema & data path
+                let value = object.get(key);
+                state.extend(schema_keys.validate(Some(&Value::String(key.to_string()))));
+                state.extend(schema_values.validate(value));
+            }
+        }
+        // Schema doesn't contain keys & values, just check for additional properties
+        _ => {
+            if !remaining_keys.is_empty() && !scope.schema().additional_properties() {
+                state.push_error(scope.error("additionalProperties", "not allowed"));
+            }
+        }
     }
 
     state

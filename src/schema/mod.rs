@@ -174,6 +174,10 @@ impl Schema {
     pub fn values(&self) -> Option<&Schema> {
         self.values.as_deref()
     }
+
+    pub fn additional_properties(&self) -> bool {
+        self.additional_properties
+    }
 }
 
 //

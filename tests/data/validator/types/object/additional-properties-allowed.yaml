@@ -1,0 +1,10 @@
+valid: true
+schema:
+  version: 1
+  properties:
+    - name:
+        type: string
+  additionalProperties: true
+data:
+  name: Foo
+  foo: bar

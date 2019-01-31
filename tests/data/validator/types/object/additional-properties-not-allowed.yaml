@@ -1,9 +1,0 @@
-valid: false
-schema:
-  version: 1
-  properties:
-    - name:
-        type: string
-data:
-  name: Foo
-  foo: bar

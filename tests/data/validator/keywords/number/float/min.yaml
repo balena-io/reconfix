@@ -1,0 +1,14 @@
+schema:
+  version: 1
+  type: number
+  min: 10.5
+tests:
+  - valid: false
+    description: Must be invalid if lower than min
+    data: 9.3
+  - valid: true
+    description: Must be valid if equals to min
+    data: 10.5
+  - valid: true
+    description: Must be valid if greater than min
+    data: 11.4

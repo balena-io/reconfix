@@ -1,0 +1,11 @@
+schema:
+  version: 1
+  type: array
+  items:
+    - type: string
+    - type: string
+tests:
+  - valid: false
+    description: Must be invalid if matches more than one schema in the items keyword
+    data:
+      - foo

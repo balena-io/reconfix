@@ -1,6 +1,0 @@
-valid: false
-schema:
-  version: 1
-  type: integer
-  min: 5
-data: 4

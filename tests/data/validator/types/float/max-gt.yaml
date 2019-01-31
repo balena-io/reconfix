@@ -1,6 +1,0 @@
-valid: false
-schema:
-  version: 1
-  type: number
-  max: 5.5
-data: 6.0

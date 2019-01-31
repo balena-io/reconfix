@@ -1,0 +1,14 @@
+schema:
+  version: 1
+  type: integer
+  exclusiveMin: 10
+tests:
+  - valid: false
+    description: Must be invalid if lower than exclusiveMin
+    data: 9
+  - valid: false
+    description: Must be invalid if equals to exclusiveMin
+    data: 10
+  - valid: true
+    description: Must be valid if greater than exclusiveMin
+    data: 11

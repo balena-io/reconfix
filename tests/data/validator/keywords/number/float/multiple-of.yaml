@@ -1,0 +1,11 @@
+schema:
+  version: 1
+  type: number
+  multipleOf: 5.5
+tests:
+  - valid: true
+    description: Must be valid if the remainder equals to zero
+    data: 11.0
+  - valid: false
+    description: Must be invalid if the remainder doesn't equal to zero
+    data: 13.0

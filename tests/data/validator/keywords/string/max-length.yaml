@@ -1,0 +1,14 @@
+schema:
+  version: 1
+  type: string
+  maxLength: 5
+tests:
+  - valid: true
+    description: Must be valid if characters count equal to maxLength
+    data: "12345"
+  - valid: true
+    description: Must be valid if characters count is lower than maxLength
+    data: "1234"
+  - valid: false
+    description: Must be invalid if characters count is greater than maxLength
+    data: "123456"

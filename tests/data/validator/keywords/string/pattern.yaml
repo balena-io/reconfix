@@ -1,0 +1,11 @@
+schema:
+  version: 1
+  type: string
+  pattern: ^[0-9]+$
+tests:
+  - valid: true
+    description: Must be valid if matches pattern
+    data: "12345"
+  - valid: false
+    description: Must be invalid if does not match pattern
+    data: foo

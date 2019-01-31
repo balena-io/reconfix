@@ -1,8 +1,0 @@
-valid: true
-schema:
-  version: 1
-  type: text
-data: >-
-  Hallo,
-  this is multiline
-  text.

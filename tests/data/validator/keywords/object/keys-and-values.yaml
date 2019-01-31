@@ -1,0 +1,21 @@
+schema:
+  keys:
+    type: string
+    pattern: ^[0-9]+$
+  values:
+    type: integer
+    min: 100
+tests:
+  - valid: true
+    description: Must be valid if the object matches keys & values schemas
+    data:
+      "123": 100
+      "456": 110
+  - valid: false
+    description: Must be invalid if the key doesn't match schema from the keys keyword
+    data:
+      "a123": 100
+  - valid: false
+    description: Must be invalid if the value doesn't match schema from the values keyword
+    data:
+      "123": 90

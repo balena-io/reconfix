@@ -1,6 +1,0 @@
-valid: true
-schema:
-  version: 1
-  type: integer
-  multipleOf: 5
-data: 10

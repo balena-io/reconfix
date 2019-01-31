@@ -1,6 +1,0 @@
-valid: false
-schema:
-  version: 1
-  type: integer
-  exclusiveMax: 5
-data: 5

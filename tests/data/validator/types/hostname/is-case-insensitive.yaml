@@ -1,9 +1,0 @@
-valid: true
-schema:
-  version: 1
-  type: array
-  items:
-    type: hostname
-data:
-  - zrzka
-  - Zrzka

@@ -1,0 +1,32 @@
+schema:
+  type: array
+  items:
+    type: string
+tests:
+  - valid: true
+    description: Must be valid if array is provided
+    data:
+      - foo
+      - bar
+#
+# Other types must not be accepted
+#
+  - valid: false
+    description: Must be invalid if string is provided
+    data: foo
+  - valid: false
+    description: Must be invalid if integer is provided
+    data: 10
+  - valid: false
+    description: Must be invalid if float is provided
+    data: 10.5
+  - valid: false
+    description: Must be invalid if boolean value is provided
+    data: true
+  - valid: false
+    description: Must be invalid if null is provided
+    data: ~
+  - valid: false
+    description: Must be invalid if object is provided
+    data:
+      foo: bar

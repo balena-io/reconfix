@@ -1,0 +1,15 @@
+schema:
+  properties:
+    - name:
+        type: string
+  additionalProperties: false
+tests:
+  - valid: true
+    description: Must be valid if there're no additional properties
+    data:
+      name: Foo
+  - valid: false
+    description: Must be invalid if there're additional properties
+    data:
+      name: Foo
+      age: 10

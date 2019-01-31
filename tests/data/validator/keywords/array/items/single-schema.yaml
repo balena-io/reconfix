@@ -1,0 +1,15 @@
+schema:
+  version: 1
+  type: array
+  items:
+    type: string
+tests:
+  - valid: false
+    description: Must be invalid if any item does not match schema from the items keyword
+    data:
+      - 123
+  - valid: true
+    description: Must be valid if each item matches schema from the items keyword
+    data:
+      - foo
+      - bar

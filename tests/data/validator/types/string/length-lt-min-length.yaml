@@ -1,6 +1,0 @@
-valid: false
-schema:
-  version: 1
-  type: string
-  minLength: 5
-data: hall

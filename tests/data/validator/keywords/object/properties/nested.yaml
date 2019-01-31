@@ -1,0 +1,52 @@
+schema:
+  properties:
+    - required:
+        properties:
+          - name:
+              type: string
+          - age:
+              type: integer?
+    - optional:
+        type: object?
+        properties:
+          - name:
+              type: string
+          - age:
+              type: integer?
+tests:
+  - valid: true
+    description: Must be valid if all required properties are provided and are of correct type
+    data:
+      required:
+        name: foo
+      optional:
+        name: bar
+  - valid: true
+    description: Must be valid if optional object is omitted
+    data:
+      required:
+        name: foo
+  - valid: true
+    description: Must be valid if all properties are provided and are of correct type
+    data:
+      required:
+        name: foo
+        age: 10
+      optional:
+        name: bar
+        age: 11
+  - valid: false
+    description: Must be invalid if optional object is provided, but does not contain required properties
+    data:
+      required:
+        name: foo
+        age: 10
+      optional: {}
+  - valid: true
+    description: Must be valid if optional object is provided and only required properties are provided
+    data:
+      required:
+        name: foo
+        age: 10
+      optional:
+        name: bar

@@ -1,9 +1,0 @@
-valid: false
-schema:
-  version: 1
-  type: integer
-  enum:
-    - 10
-    - 20
-    - 30
-data: 23

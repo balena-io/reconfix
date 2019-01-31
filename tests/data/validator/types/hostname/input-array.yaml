@@ -1,7 +1,0 @@
-valid: false
-schema:
-  version: 1
-  type: hostname
-data:
-  - true
-  - false

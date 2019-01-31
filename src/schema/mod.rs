@@ -89,8 +89,8 @@ pub struct Schema {
     max_items: Option<usize>,
     #[serde(default, rename = "minItems", skip_serializing_if = "Option::is_none")]
     min_items: Option<usize>,
-    #[serde(default, rename = "uniqueItems", skip_serializing_if = "Option::is_none")]
-    unique_items: Option<UniqueItems>,
+    #[serde(default, rename = "uniqueItems")]
+    unique_items: UniqueItems,
     //
     // Number validation keywords
     //
@@ -268,8 +268,8 @@ impl Schema {
         self.min_items
     }
 
-    pub fn unique_items(&self) -> Option<&UniqueItems> {
-        self.unique_items.as_ref()
+    pub fn unique_items(&self) -> &UniqueItems {
+        &self.unique_items
     }
 }
 

@@ -11,6 +11,12 @@ pub enum UniqueItems {
     Paths(Vec<String>),
 }
 
+impl Default for UniqueItems {
+    fn default() -> UniqueItems {
+        UniqueItems::Boolean(false)
+    }
+}
+
 impl UniqueItems {
     pub fn is_unique(&self) -> Option<bool> {
         match self {

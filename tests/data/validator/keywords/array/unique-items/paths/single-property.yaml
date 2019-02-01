@@ -1,0 +1,26 @@
+schema:
+  version: 1
+  type: array
+  uniqueItems:
+    - foo
+  items:
+    properties:
+      - foo:
+         type: string
+      - bar:
+         type: string
+tests:
+  - valid: false
+    description: Must be invalid if foo isn't unique
+    data:
+      - foo: equals
+        bar: hallo
+      - foo: equals
+        bar: hi
+  - valid: true
+    description: Must be valid if foo is unique, but bar isn't
+    data:
+      - foo: hallo
+        bar: baz
+      - foo: hi
+        bar: baz

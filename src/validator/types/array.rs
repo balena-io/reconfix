@@ -1,30 +1,75 @@
+use balena_temen as temen;
 use serde_json::Value;
 
-use super::super::{scope::ScopedSchema, state::ValidationState, Validator};
-use crate::schema::UniqueItems;
+use crate::{
+    schema::UniqueItems,
+    validator::{scope::ScopedSchema, state::ValidationState, Validator},
+};
 
-struct ValueWrapper<'a> {
-    value: &'a Value,
+enum ValueWrapper<'a> {
+    Borrowed(&'a Value),
+    Owned(Value),
 }
 
 impl<'a> ValueWrapper<'a> {
-    fn new(value: &'a Value) -> ValueWrapper<'a> {
-        ValueWrapper { value }
+    fn value_ref(&'a self) -> &'a Value {
+        match self {
+            ValueWrapper::Borrowed(value) => value,
+            ValueWrapper::Owned(ref value) => value,
+        }
+    }
+}
+
+impl<'a> From<Value> for ValueWrapper<'a> {
+    fn from(x: Value) -> ValueWrapper<'a> {
+        ValueWrapper::Owned(x)
+    }
+}
+
+impl<'a> From<&'a Value> for ValueWrapper<'a> {
+    fn from(x: &'a Value) -> ValueWrapper<'a> {
+        ValueWrapper::Borrowed(x)
     }
 }
 
 impl<'a, 'b> PartialEq<ValueWrapper<'a>> for ValueWrapper<'b> {
     fn eq(&self, other: &ValueWrapper<'a>) -> bool {
-        crate::utils::value::eq(self.value, other.value)
+        crate::utils::value::eq(self.value_ref(), other.value_ref())
     }
 }
 
-fn validate_items_uniqueness(scope: &ScopedSchema, values: &[Value]) -> ValidationState {
+fn validate_items_uniqueness_by(scope: &ScopedSchema, items: &[Value], path: &str) -> ValidationState {
+    let engine = temen::Engine::default();
+    let mut ctx = temen::Context::default();
+    let position = temen::ast::Identifier::default();
+
+    let mut disctinct = vec![];
+    let mut state = ValidationState::new();
+
+    for item in items {
+        match engine.eval(path, &position, item, &mut ctx).map(ValueWrapper::from) {
+            Ok(wrapped) => {
+                if disctinct.contains(&wrapped) {
+                    state.push_error(scope.error("uniqueItems", path));
+                } else {
+                    disctinct.push(wrapped);
+                }
+            }
+            Err(_) => {
+                state.push_error(scope.error("uniqueItems", path));
+            }
+        }
+    }
+
+    state
+}
+
+fn validate_items_uniqueness(scope: &ScopedSchema, items: &[Value]) -> ValidationState {
     let mut distinct = vec![];
 
     let mut state = ValidationState::new();
 
-    for wrapped in values.iter().map(ValueWrapper::new) {
+    for wrapped in items.iter().map(ValueWrapper::from) {
         if distinct.contains(&wrapped) {
             state.push_error(scope.error("uniqueItems", "expected unique items"));
         } else {
@@ -39,7 +84,15 @@ fn validate_unique_items(scope: &ScopedSchema, values: &[Value]) -> ValidationSt
     match scope.schema().unique_items() {
         UniqueItems::Boolean(false) => ValidationState::new(),
         UniqueItems::Boolean(true) => validate_items_uniqueness(scope, values),
-        UniqueItems::Paths(ref _paths) => ValidationState::new(),
+        UniqueItems::Paths(ref paths) => {
+            let mut state = ValidationState::new();
+
+            for path in paths {
+                state.extend(validate_items_uniqueness_by(scope, values, path));
+            }
+
+            state
+        }
     }
 }
 

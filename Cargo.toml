@@ -20,6 +20,9 @@ travis-ci = { repository = "balena-io/reconfix", branch = "master" }
 [dependencies.balena-temen]
 version = "0"
 
+[dependencies.base64]
+version = "0"
+
 [dependencies.chrono]
 version = "0"
 

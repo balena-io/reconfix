@@ -1,0 +1,42 @@
+schema:
+  type: file
+tests:
+  - valid: true
+    description: Must be valid if name & base64 encoded data are provided
+    data: data:application/octet-stream;name=test;base64,aGVsbG8gd29ybGQgIQo=
+  - valid: false
+    description: Must be invalid if data prefix is missing
+    data: application/octet-stream;name=test;base64,aGVsbG8gd29ybGQgIQo=
+  - valid: false
+    description: Must be invalid if name is empty
+    data: data:application/octet-stream;name=;base64,aGVsbG8gd29ybGQgIQo=
+  - valid: false
+    description: Must be invalid if encoding is not base64
+    data: data:application/octet-stream;name=test;base68,aGVsbG8gd29ybGQgIQo=
+  - valid: false
+    description: Must be invalid if file data can't be decoded
+    data: data:application/octet-stream;name=test;base64,aGaEw2321VsbG8gd29ybGQgIQo=
+#
+# Other types must not be accepted
+#
+  - valid: false
+    description: Must be invalid if integer is provided
+    data: 10
+  - valid: false
+    description: Must be invalid if float is provided
+    data: 10.5
+  - valid: false
+    description: Must be invalid if null is provided
+    data: ~
+  - valid: false
+    description: Must be invalid if string is provided
+    data: foo
+  - valid: false
+    description: Must be invalid if array is provided
+    data:
+      - true
+      - false
+  - valid: false
+    description: Must be invalid if object is provided
+    data:
+      foo: true

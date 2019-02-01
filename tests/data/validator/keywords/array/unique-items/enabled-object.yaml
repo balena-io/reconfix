@@ -1,0 +1,25 @@
+schema:
+  version: 1
+  type: array
+  uniqueItems: true
+  items:
+    properties:
+      - foo:
+         type: string
+      - bar:
+         type: string
+tests:
+  - valid: false
+    description: Must be invalid if at least two items equal
+    data:
+      - foo: fooz
+        bar: barz
+      - bar: barz
+        foo: fooz
+  - valid: true
+    description: Must be valid if all items are unique
+    data:
+      - foo: foo
+        bar: bar1
+      - bar: bar2
+        foo: foo

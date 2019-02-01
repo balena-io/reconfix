@@ -1,6 +1,47 @@
 use serde_json::Value;
 
 use super::super::{scope::ScopedSchema, state::ValidationState, Validator};
+use crate::schema::UniqueItems;
+
+struct ValueWrapper<'a> {
+    value: &'a Value,
+}
+
+impl<'a> ValueWrapper<'a> {
+    fn new(value: &'a Value) -> ValueWrapper<'a> {
+        ValueWrapper { value }
+    }
+}
+
+impl<'a, 'b> PartialEq<ValueWrapper<'a>> for ValueWrapper<'b> {
+    fn eq(&self, other: &ValueWrapper<'a>) -> bool {
+        crate::utils::value::eq(self.value, other.value)
+    }
+}
+
+fn validate_items_uniqueness(scope: &ScopedSchema, values: &[Value]) -> ValidationState {
+    let mut distinct = vec![];
+
+    let mut state = ValidationState::new();
+
+    for wrapped in values.iter().map(ValueWrapper::new) {
+        if distinct.contains(&wrapped) {
+            state.push_error(scope.error("uniqueItems", "expected unique items"));
+        } else {
+            distinct.push(wrapped);
+        }
+    }
+
+    state
+}
+
+fn validate_unique_items(scope: &ScopedSchema, values: &[Value]) -> ValidationState {
+    match scope.schema().unique_items() {
+        UniqueItems::Boolean(false) => ValidationState::new(),
+        UniqueItems::Boolean(true) => validate_items_uniqueness(scope, values),
+        UniqueItems::Paths(ref _paths) => ValidationState::new(),
+    }
+}
 
 pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let data_array = match data.as_array() {
@@ -23,6 +64,8 @@ pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState 
             state.push_error(scope.error("maxItems", format!("should contain up to '{}' items", max)));
         }
     }
+
+    state.extend(validate_unique_items(scope, data_array));
 
     let scope = scope.scope_with_schema_keyword("items");
 

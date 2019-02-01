@@ -1,0 +1,13 @@
+schema:
+  version: 1
+  type: array
+  uniqueItems: false
+  items:
+    type: string
+tests:
+  - valid: true
+    description: Must be valid even if items are not unique
+    data:
+      - foo
+      - foo
+      - foo

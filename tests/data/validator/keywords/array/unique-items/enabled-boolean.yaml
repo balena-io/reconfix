@@ -1,0 +1,17 @@
+schema:
+  version: 1
+  type: array
+  uniqueItems: true
+  items:
+    type: boolean
+tests:
+  - valid: false
+    description: Must be invalid if at least two items equal
+    data:
+      - true
+      - true
+  - valid: true
+    description: Must be valid if all items are unique
+    data:
+      - true
+      - false

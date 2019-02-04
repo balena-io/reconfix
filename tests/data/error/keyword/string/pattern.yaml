@@ -1,0 +1,8 @@
+schema:
+  version: 1
+  type: string
+  pattern: ^[0-9]+$
+tests:
+  - description: Error keyword must equal to pattern
+    data: foo
+    keyword: pattern

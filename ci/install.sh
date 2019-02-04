@@ -6,8 +6,8 @@ set -o pipefail
 echo "Installing Rust toolchain..."
 curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $(cat rust-toolchain)
 source "${HOME}/.cargo/env"
-rustup component add clippy-preview
-rustup component add rustfmt-preview
+rustup component add clippy
+rustup component add rustfmt
 
 echo "Updating Rust toolchain..."
 (test -x "${HOME}/.cargo/bin/cargo-install-update" || cargo install cargo-update)
@@ -19,9 +19,6 @@ source "${HOME}/.nvm/nvm.sh"
 nvm install
 nvm use
 echo "NodeJS version $(node --version)"
-
-echo "Installing jest..."
-npm install -g jest
 
 echo "Installing wasm-pack..."
 curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f

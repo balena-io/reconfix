@@ -1,0 +1,14 @@
+schema:
+  version: 1
+  type: integer
+  exclusiveMax: 10
+tests:
+  - valid: true
+    description: Must be valid if lower than exclusiveMax
+    data: 9
+  - valid: false
+    description: Must be invalid if equals to exclusiveMax
+    data: 10
+  - valid: false
+    description: Must be invalid if greater than exclusiveMax
+    data: 11

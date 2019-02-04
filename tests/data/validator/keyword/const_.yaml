@@ -1,0 +1,11 @@
+schema:
+  version: 1
+  type: string
+  const: foo
+tests:
+  - valid: true
+    description: Must be valid if equals to const
+    data: foo
+  - valid: false
+    description: Must be invalid if does not equal to const
+    data: bar

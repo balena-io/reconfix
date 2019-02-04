@@ -1,0 +1,27 @@
+schema:
+  properties:
+    - name:
+        type: string
+  keys:
+    type: string
+    pattern: ^.*$
+    minLength: 5
+  values:
+    type: string
+    minLength: 5
+tests:
+  - valid: false
+    description: Must be invalid if the name property is missing
+    data:
+      "123456": something long
+      "456789": even longer
+  - valid: true
+    description: Must be valid if the name property is valid, but does not validate against keys & values
+    data:
+      name: Foo
+  - valid: true
+    description: Must be valid if properties are valid and rest is valid against keys & values
+    data:
+      name: Foo
+      "123456": something long
+      "456789": even longer

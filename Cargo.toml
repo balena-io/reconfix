@@ -9,6 +9,7 @@ repository = "https://github.com/balena-io/reconfix/"
 description = "(Re)Configuration toolkit"
 readme = "README.md"
 publish = false
+build = "build.rs"
 
 [lib]
 crate-type = ["lib", "cdylib"]
@@ -16,8 +17,20 @@ crate-type = ["lib", "cdylib"]
 [badges]
 travis-ci = { repository = "balena-io/reconfix", branch = "master" }
 
-[dependencies.balena-cdsl]
-version = "0.2"
+[dependencies.balena-temen]
+version = "0"
+
+[dependencies.base64]
+version = "0"
+
+[dependencies.chrono]
+version = "0"
+
+[dependencies.lazy_static]
+version = "1"
+
+[dependencies.regex]
+version = "1"
 
 [dependencies.serde]
 version = "1"

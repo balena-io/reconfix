@@ -1,0 +1,30 @@
+schema:
+  version: 1
+  properties:
+    - list:
+        type: array
+        items:
+          properties:
+            - seq:
+                type: array
+                items:
+                  properties:
+                    - name:
+                        type: string
+tests:
+  - description: "Error schema-path must equal to #properties[0].list.items[0].properties[0].seq.items[0].properties[0].name.type"
+    data:
+      list:
+        - seq: [{}]
+    schema-path: "#properties[0].list.items[0].properties[0].seq.items[0].properties[0].name.type"
+  - description: "Error schema-path must equal to #properties[0].list.items[0].properties[0].seq.items[0].properties[0].name.type"
+    data:
+      list:
+        - seq: []
+        - seq: []
+        - seq:
+            - name: foo
+            - name: bar
+            - name: baz
+            - name: 123
+    schema-path: "#properties[0].list.items[0].properties[0].seq.items[0].properties[0].name.type"

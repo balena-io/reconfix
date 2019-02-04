@@ -1,0 +1,39 @@
+schema:
+  type: number
+tests:
+  - valid: true
+    description: Must be valid if integer is provided
+    data: 10
+  - valid: true
+    description: Must be valid if i64::MIN is provided
+    data: -9223372036854775808
+  - valid: true
+    description: Must be valid if i64::MAX is provided
+    data: 9223372036854775807
+  - valid: true
+    description: Must be valid if u64::MAX is provided
+    data: 18446744073709551615
+  - valid: true
+    description: Must be valid if float is provided
+    data: 10.5
+#
+# Other types must not be accepted
+#
+  - valid: false
+    description: Must be invalid if boolean value is provided
+    data: true
+  - valid: false
+    description: Must be invalid if null is provided
+    data: ~
+  - valid: false
+    description: Must be invalid if string is provided
+    data: foo
+  - valid: false
+    description: Must be invalid if array is provided
+    data:
+      - 10
+      - 20
+  - valid: false
+    description: Must be invalid if object is provided
+    data:
+      foo: 10

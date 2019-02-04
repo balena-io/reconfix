@@ -1,0 +1,22 @@
+schema:
+  version: 1
+  type: array
+  items:
+    type: string
+  minItems: 2
+tests:
+  - valid: true
+    description: Must be valid if number of items is greater than minItems
+    data:
+      - foo
+      - bar
+      - baz
+  - valid: true
+    description: Must be valid if number of items equals to minItems
+    data:
+      - foo
+      - bar
+  - valid: false
+    description: Must be invalid if number of items is lower than minItems
+    data:
+      - foo

@@ -1,0 +1,15 @@
+schema:
+  version: 1
+  type: array
+  items:
+    properties:
+      - ssid:
+          type: string
+  uniqueItems:
+    - ssid
+tests:
+  - description: Error keyword must equal to uniqueItems
+    data:
+      - ssid: foo
+      - ssid: foo
+    keyword: uniqueItems

@@ -1,0 +1,10 @@
+schema:
+  version: 1
+  type: string
+  enum:
+    - foo
+    - bar
+tests:
+  - description: Error keyword must equal to enum
+    data: baz
+    keyword: enum

@@ -1,0 +1,42 @@
+schema:
+  type: port  # port is integer based and limited to 0 - 65535 range
+tests:
+  - valid: true
+    description: Must be valid if the value >= 0
+    data: 0
+  - valid: false
+    description: Must be invalid if the value < 0
+    data: -1
+  - valid: true
+    description: Must be valid if the value <= 65535
+    data: 65535
+  - valid: false
+    description: Must be invalid if the value > 65535
+    data: 65536
+  - valid: true
+    description: Must be valid if the value is in the 0 .. 65535 range
+    data: 1024
+#
+# Other types must not be accepted
+#
+  - valid: false
+    description: Must be invalid if boolean value is provided
+    data: true
+  - valid: false
+    description: Must be invalid if float is provided
+    data: 10.5
+  - valid: false
+    description: Must be invalid if null is provided
+    data: ~
+  - valid: false
+    description: Must be invalid if string is provided
+    data: foo
+  - valid: false
+    description: Must be invalid if array is provided
+    data:
+      - 10
+      - 20
+  - valid: false
+    description: Must be invalid if object is provided
+    data:
+      foo: 10

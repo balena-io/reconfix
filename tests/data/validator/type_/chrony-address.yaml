@@ -1,0 +1,51 @@
+# https://github.com/balena-os/meta-balena/blob/v2.29.2/meta-resin-common/recipes-connectivity/resin-ntp-config/resin-ntp-config/resin-ntp-config#L19
+#
+# add server address [option]...
+#
+#  The add server command allows a new NTP server to be added whilst chronyd is running.
+#  Following the words add server, the syntax of the following parameters and options is similar to that
+#  for the server directive in the configuration file. The following server options can be set in the
+#  command: port, minpoll, maxpoll, presend, maxdelayratio, maxdelay, key.
+#  An example of using this command is shown below:
+#  add server foo.example.net minpoll 6 maxpoll 10 key 25
+#
+# Additional options not supported, validate either as ipv4, ipv6 or hostname
+schema:
+  type: chrony-address
+tests:
+  - valid: true
+    description: Must be valid if IPv4 is provided
+    data: 10.0.0.3
+  - valid: true
+    description: Must be valid if IPv6 is provided
+    data: 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+  - valid: true
+    description: Must be valid if hostname is provided
+    data: foo.bar.com
+  - valid: false
+    description: Must be invalid if any other string is provided
+    data: foo$@
+#
+# Other types must not be accepted
+#
+  - valid: false
+    description: Must be invalid if integer is provided
+    data: 10
+  - valid: false
+    description: Must be invalid if float is provided
+    data: 10.5
+  - valid: false
+    description: Must be invalid if boolean value is provided
+    data: true
+  - valid: false
+    description: Must be invalid if null is provided
+    data: ~
+  - valid: false
+    description: Must be invalid if array is provided
+    data:
+      - foo
+      - bar
+  - valid: false
+    description: Must be invalid if object is provided
+    data:
+      foo: bar

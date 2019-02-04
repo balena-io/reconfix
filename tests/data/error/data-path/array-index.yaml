@@ -1,0 +1,20 @@
+schema:
+  version: 1
+  properties:
+    - list:
+        type: array
+        items:
+          properties:
+            - name:
+                type: string
+tests:
+  - description: Error data-path must equal to list[0].name
+    data:
+      list: [{}]
+    data-path: list[0].name
+  - description: Error data-path must equal to list[1].name
+    data:
+      list:
+        - name: foo
+        - name: 123
+    data-path: list[1].name

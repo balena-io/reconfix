@@ -138,6 +138,7 @@ impl<T> ResultExt<T> for Result<T> {
 }
 
 /// Error type
+#[derive(Clone)]
 pub struct Error {
     // Box is not really required here, but we'd like to keep
     // Result as small as possible. Inner can be very huge
@@ -258,6 +259,7 @@ impl error::Error for Error {
     }
 }
 
+#[derive(Debug, Clone)]
 struct Inner {
     message: Display,
     frames: Vec<Frame>,
@@ -275,6 +277,7 @@ impl Inner {
     }
 }
 
+#[derive(Debug, Clone)]
 struct Frame {
     name: Option<Display>,
     context: Vec<(Display, Display)>,

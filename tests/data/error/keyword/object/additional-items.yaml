@@ -1,0 +1,8 @@
+schema:
+  version: 1
+  additionalProperties: false
+tests:
+  - description: Error keyword must equal to additionalProperties
+    data:
+      foo: bar
+    keyword: additionalProperties

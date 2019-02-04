@@ -1,0 +1,22 @@
+schema:
+  version: 1
+  type: array
+  items:
+    type: string
+  maxItems: 2
+tests:
+  - valid: false
+    description: Must be invalid if number of items is greater than maxItems
+    data:
+      - foo
+      - bar
+      - baz
+  - valid: true
+    description: Must be valid if number of items equals to maxItems
+    data:
+      - foo
+      - bar
+  - valid: true
+    description: Must be valid if number of items is lower than maxItems
+    data:
+      - foo

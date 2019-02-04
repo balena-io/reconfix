@@ -1,0 +1,54 @@
+    #[test]
+    fn {name}() -> Result<(), serde_yaml::Error> {{
+        let mut content: serde_yaml::Value = serde_yaml::from_str(include_str!("{path}")).unwrap();
+        let mapping = content.as_mapping_mut().unwrap();
+
+        let schema: reconfix::schema::Schema = mapping
+            .remove(&serde_yaml::Value::String("schema".to_string()))
+            .ok_or_else(|| serde::de::Error::custom("missing 'schema' key"))
+            .and_then(serde_yaml::from_value)?;
+
+        let mut tests: serde_yaml::Value = mapping
+            .remove(&serde_yaml::Value::String("tests".to_string()))
+            .ok_or_else(|| serde::de::Error::custom("missing 'tests' key"))?;
+
+        let tests = tests.as_sequence_mut().ok_or_else(|| serde::de::Error::custom("invalid 'tests' key, array expected"))?;
+
+        for test in tests.iter_mut() {{
+            let test = test.as_mapping_mut().unwrap();
+
+            let data: serde_json::Value = test
+                .remove(&serde_yaml::Value::String("data".to_string()))
+                .ok_or_else(|| serde::de::Error::custom("missing 'data' key"))
+                .and_then(serde_yaml::from_value)?;
+
+            let should_be_valid: bool = test
+                .remove(&serde_yaml::Value::String("valid".to_string()))
+                .ok_or_else(|| serde::de::Error::custom("missing 'valid' key"))
+                .and_then(|x| {{
+                    x.as_bool()
+                        .ok_or_else(|| serde::de::Error::custom("invalid 'valid' key: expect bool"))
+                }})?;
+
+            let description: String = test
+                .remove(&serde_yaml::Value::String("description".to_string()))
+                .ok_or_else(|| serde::de::Error::custom(""))
+                .and_then(|x| {{
+                    x.as_str()
+                        .map(|x| x.to_string())
+                        .ok_or_else(|| serde::de::Error::custom("invalid 'description' key: expect str"))
+                }})?;
+
+            let state = reconfix::validator::validate(&schema, &data);
+            if should_be_valid != state.is_valid() {{
+                panic!(r##"assertion failed: `(should_be_valid == is_valid)`
+    should_be_valid: `{{}}`,
+    is_valid: `{{}}`
+    description: `{{}}`
+    errors: `{{:?}}`"##,
+                    should_be_valid, state.is_valid(), description, state.errors());
+            }}
+        }}
+
+        Ok(())
+    }}

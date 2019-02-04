@@ -1,0 +1,8 @@
+schema:
+  version: 1
+  type: integer
+  exclusiveMax: 10
+tests:
+  - description: Error keyword must equal to exclusiveMax
+    data: 11
+    keyword: exclusiveMax

@@ -1,0 +1,10 @@
+schema:
+  version: 1
+  type: array
+  items:
+    type: integer
+  minItems: 5
+tests:
+  - description: Error keyword must equal to minItems
+    data: [1, 2, 3]
+    keyword: minItems

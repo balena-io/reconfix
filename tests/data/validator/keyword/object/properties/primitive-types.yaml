@@ -1,0 +1,25 @@
+schema:
+  properties:
+    - str:
+        type: string
+    - int:
+        type: integer?
+tests:
+  - valid: true
+    description: Must be valid if both properties are provided
+    data:
+      str: foo
+      int: 10
+  - valid: true
+    description: Must be valid if optional properties are omitted
+    data:
+      str: foo
+  - valid: false
+    description: Must be invalid if required property is of another type
+    data:
+      str: 123
+  - valid: false
+    description: Must be invalid if optional property is of another type
+    data:
+      str: foo
+      int: bar

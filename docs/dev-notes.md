@@ -1,6 +1,19 @@
 # Specification
 
-## mapping.targets.*.glob
+## New types
 
-We should remove `glob` and allow glob patterns (like `/system-connections/*`) in `location.path` instead.
-One less property in this way.
+* stringlist
+* file (was binary)
+* iptables-address
+* chrony-address
+* dnsmasq-address
+
+## New formats
+
+* text
+* redsocks
+
+## New keywords
+
+* separator (stringlist)
+* keys & values (stringlist)

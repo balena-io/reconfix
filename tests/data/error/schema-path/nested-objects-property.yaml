@@ -1,0 +1,29 @@
+schema:
+  version: 1
+  properties:
+    - childA:
+        properties:
+          - childB:
+              properties:
+                - name:
+                    type: string
+                    minLength: 10
+tests:
+  - description: "Error schema-path must equal to #properties[0].childA.type"
+    data: {}
+    schema-path: "#properties[0].childA.type"
+  - description: "Error schema-path must equal to #properties[0].childA.properties[0].childB.type"
+    data:
+      childA: {}
+    schema-path: "#properties[0].childA.properties[0].childB.type"
+  - description: "Error schema-path must equal to #properties[0].childA.properties[0].childB.properties[0].name.type"
+    data:
+      childA:
+        childB: {}
+    schema-path: "#properties[0].childA.properties[0].childB.properties[0].name.type"
+  - description: "Error schema-path must equal to #properties[0].childA.properties[0].childB.properties[0].name.minLength"
+    data:
+      childA:
+        childB:
+          name: foo
+    schema-path: "#properties[0].childA.properties[0].childB.properties[0].name.minLength"

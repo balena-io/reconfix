@@ -1,0 +1,16 @@
+schema:
+  version: 1
+  type: string
+  enum:
+    - foo
+    - bar
+tests:
+  - valid: true
+    description: Must be valid if matches any enum variant
+    data: foo
+  - valid: true
+    description: Must be valid if matches any enum variant
+    data: bar
+  - valid: false
+    description: Must be invalid if does not match any enum variant
+    data: baz

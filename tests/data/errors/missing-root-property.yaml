@@ -1,0 +1,11 @@
+schema:
+  version: 1
+  properties:
+    - name:
+        type: string
+tests:
+  - description: Missing property of the root object
+    data: {}
+    data-path: name
+    schema-path: name
+    keyword: type

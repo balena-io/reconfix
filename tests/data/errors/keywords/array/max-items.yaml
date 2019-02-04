@@ -1,0 +1,10 @@
+schema:
+  version: 1
+  type: array
+  items:
+    type: integer
+  maxItems: 2
+tests:
+  - description: Error keyword must equal to maxItems
+    data: [1, 2, 3]
+    keyword: maxItems

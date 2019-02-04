@@ -1,0 +1,8 @@
+schema:
+  version: 1
+  type: integer
+  max: 10
+tests:
+  - description: Error keyword must equal to max
+    data: 11
+    keyword: max

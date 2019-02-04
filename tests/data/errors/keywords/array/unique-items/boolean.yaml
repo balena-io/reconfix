@@ -1,0 +1,10 @@
+schema:
+  version: 1
+  type: array
+  items:
+    type: integer
+  uniqueItems: true
+tests:
+  - description: Error keyword must equal to uniqueItems
+    data: [1, 1, 1]
+    keyword: uniqueItems

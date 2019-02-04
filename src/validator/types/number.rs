@@ -41,13 +41,13 @@ where
 
     if let Some(max) = schema.max().and_then(schema_number_value) {
         if value > max {
-            state.push_error(scope.error("exclusiveMin", format!("expected '<= {}", max)));
+            state.push_error(scope.error("max", format!("expected '<= {}", max)));
         }
     }
 
     if let Some(exclusive_max) = schema.exclusive_max().and_then(schema_number_value) {
         if value >= exclusive_max {
-            state.push_error(scope.error("exclusiveMin", format!("expected '< {}", exclusive_max)));
+            state.push_error(scope.error("exclusiveMax", format!("expected '< {}", exclusive_max)));
         }
     }
 

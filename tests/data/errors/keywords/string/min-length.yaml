@@ -1,0 +1,8 @@
+schema:
+  version: 1
+  type: string
+  minLength: 5
+tests:
+  - description: Error keyword must equal to minLength
+    data: foo
+    keyword: minLength

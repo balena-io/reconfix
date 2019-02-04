@@ -8,6 +8,37 @@ use std::{
 
 fn main() -> Result<(), Error> {
     generate_validator_tests()?;
+    generate_errors_tests()?;
+    Ok(())
+}
+
+fn generate_errors_tests() -> Result<(), Error> {
+    let out_dir = env::var("OUT_DIR")?;
+    let destination = Path::new(&out_dir).join("errors_tests.rs");
+    let mut test_file = File::create(&destination)?;
+    generate_errors_tests_module(&mut test_file, &PathBuf::from_str("./tests/data/errors").unwrap())?;
+    Ok(())
+}
+
+fn generate_errors_tests_module(mut test_file: &mut File, dir: &PathBuf) -> Result<(), Error> {
+    let module_name = normalize_file_stem(dir)?;
+    start_module(&mut test_file, &module_name)?;
+
+    for entry in read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path().canonicalize()?;
+
+        if path.is_dir() {
+            generate_errors_tests_module(test_file, &path)?;
+        } else {
+            match path.extension() {
+                Some(ext) if ext == "yaml" => write_errors_test(test_file, &path)?,
+                _ => {}
+            };
+        }
+    }
+
+    end_module(&mut test_file)?;
     Ok(())
 }
 
@@ -21,7 +52,7 @@ fn generate_validator_tests() -> Result<(), Error> {
 
 fn generate_validator_tests_module(mut test_file: &mut File, dir: &PathBuf) -> Result<(), Error> {
     let module_name = normalize_file_stem(dir)?;
-    start_validator_module(&mut test_file, &module_name)?;
+    start_module(&mut test_file, &module_name)?;
 
     for entry in read_dir(dir)? {
         let entry = entry?;
@@ -62,7 +93,7 @@ impl From<env::VarError> for Error {
     }
 }
 
-fn start_validator_module(test_file: &mut File, name: &str) -> Result<(), Error> {
+fn start_module(test_file: &mut File, name: &str) -> Result<(), Error> {
     write!(
         test_file,
         r#"
@@ -104,6 +135,18 @@ fn write_validator_test(test_file: &mut File, path: &PathBuf) -> Result<(), Erro
     write!(
         test_file,
         include_str!("./tests/validator_test_template"),
+        name = name,
+        path = path.display()
+    )?;
+    Ok(())
+}
+
+fn write_errors_test(test_file: &mut File, path: &PathBuf) -> Result<(), Error> {
+    let name = format!("{}", normalize_file_stem(&path)?);
+
+    write!(
+        test_file,
+        include_str!("./tests/errors_test_template"),
         name = name,
         path = path.display()
     )?;

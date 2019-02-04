@@ -1,0 +1,94 @@
+    #[test]
+    fn {name}() -> Result<(), serde_yaml::Error> {{
+        let mut content: serde_yaml::Value = serde_yaml::from_str(include_str!("{path}")).unwrap();
+        let mapping = content.as_mapping_mut().unwrap();
+
+        let schema: reconfix::schema::Schema = mapping
+            .remove(&serde_yaml::Value::String("schema".to_string()))
+            .ok_or_else(|| serde::de::Error::custom("missing 'schema' key"))
+            .and_then(serde_yaml::from_value)?;
+
+        let mut tests: serde_yaml::Value = mapping
+            .remove(&serde_yaml::Value::String("tests".to_string()))
+            .ok_or_else(|| serde::de::Error::custom("missing 'tests' key"))?;
+
+        let tests = tests.as_sequence_mut().ok_or_else(|| serde::de::Error::custom("invalid 'tests' key, array expected"))?;
+
+        for test in tests.iter_mut() {{
+            let test = test.as_mapping_mut().unwrap();
+
+            let data: serde_json::Value = test
+                .remove(&serde_yaml::Value::String("data".to_string()))
+                .ok_or_else(|| serde::de::Error::custom("missing 'data' key"))
+                .and_then(serde_yaml::from_value)?;
+
+            let data_path: Option<String> = test
+                .remove(&serde_yaml::Value::String("data-path".to_string()))
+                .and_then(|x| x.as_str().map(|x| x.to_string()));
+
+            let schema_path: Option<String> = test
+                .remove(&serde_yaml::Value::String("schema-path".to_string()))
+                .and_then(|x| x.as_str().map(|x| x.to_string()));
+
+            let keyword: Option<String> = test
+                .remove(&serde_yaml::Value::String("keyword".to_string()))
+                .and_then(|x| x.as_str().map(|x| x.to_string()));
+
+            let description: String = test
+                .remove(&serde_yaml::Value::String("description".to_string()))
+                .ok_or_else(|| serde::de::Error::custom(""))
+                .and_then(|x| {{
+                    x.as_str()
+                        .map(|x| x.to_string())
+                        .ok_or_else(|| serde::de::Error::custom("invalid 'description' key: expect str"))
+                }})?;
+
+            let state = reconfix::validator::validate(&schema, &data);
+
+            if state.is_valid() {{
+                panic!(r##"assertion failed: `(is_valid == false)`
+    is_valid: `{{}}`,
+    description: `{{}}`"##,
+                    state.is_valid(), description);
+            }}
+
+            if let Some(data_path) = data_path {{
+                let first_error = state.errors().first().unwrap();
+                if first_error.data_path() != data_path {{
+                    panic!(r##"assertion failed: `(expected_data_path == data_path)`
+    expected_data_path: `{{}}`,
+    data_path: `{{}}`
+    description: `{{}}`
+    errors: `{{:?}}`"##,
+                        data_path, first_error.data_path(), description, state.errors());
+                }}
+            }}
+
+            if let Some(schema_path) = schema_path {{
+                let first_error = state.errors().first().unwrap();
+                if first_error.schema_path() != schema_path {{
+                    panic!(r##"assertion failed: `(expected_schema_path == schema_path)`
+    expected_schema_path: `{{}}`,
+    schema_path: `{{}}`
+    description: `{{}}`
+    errors: `{{:?}}`"##,
+                        schema_path, first_error.schema_path(), description, state.errors());
+                }}
+            }}
+
+            if let Some(keyword) = keyword {{
+                let first_error = state.errors().first().unwrap();
+                if first_error.keyword() != keyword {{
+                    panic!(r##"assertion failed: `(expected_keyword == keyword)`
+    expected_keyword: `{{}}`,
+    keyword: `{{}}`
+    description: `{{}}`
+    errors: `{{:?}}`"##,
+                        keyword, first_error.keyword(), description, state.errors());
+                }}
+            }}
+
+        }}
+
+        Ok(())
+    }}

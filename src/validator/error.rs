@@ -9,6 +9,24 @@ pub struct ValidationError {
 }
 
 impl ValidationError {
+    pub fn keyword(&self) -> &str {
+        &self.keyword
+    }
+
+    pub fn schema_path(&self) -> &str {
+        &self.schema_path
+    }
+
+    pub fn data_path(&self) -> &str {
+        &self.data_path
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl ValidationError {
     pub fn new<S1, S2, S3, S4>(keyword: S1, schema_path: S2, data_path: S3, message: S4) -> ValidationError
     where
         S1: Into<String>,

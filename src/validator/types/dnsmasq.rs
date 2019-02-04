@@ -1,8 +1,9 @@
 use serde_json::Value;
 
-use super::{
-    super::{scope::ScopedSchema, state::ValidationState},
-    ip::{validate_as_ipv4, validate_as_ipv6},
+use crate::validator::{
+    scope::ScopedSchema,
+    state::ValidationState,
+    types::{validate_as_ipv4, validate_as_ipv6},
 };
 
 // https://github.com/balena-os/meta-balena/blob/v2.29.2/meta-resin-common/recipes-connectivity/resin-net-config/resin-net-config/resin-net-config#L34-L39

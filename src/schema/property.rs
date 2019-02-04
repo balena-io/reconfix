@@ -2,7 +2,7 @@ use std::fmt;
 
 use serde::de;
 
-use super::Schema;
+use crate::schema::Schema;
 
 #[derive(Debug)]
 pub struct Property {

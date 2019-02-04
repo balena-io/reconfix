@@ -1,7 +1,7 @@
 use serde_json::Value;
 use serde_yaml::Number;
 
-use super::super::{scope::ScopedSchema, state::ValidationState};
+use crate::validator::{scope::ScopedSchema, state::ValidationState};
 
 fn validate_as<T, F1, F2>(
     scope: &ScopedSchema,

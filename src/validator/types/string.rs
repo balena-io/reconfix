@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use super::super::{scope::ScopedSchema, state::ValidationState};
+use crate::validator::{scope::ScopedSchema, state::ValidationState};
 
 pub fn validate_as_string(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let string = match data.as_str() {

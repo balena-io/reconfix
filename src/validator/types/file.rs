@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
 
-use super::super::{scope::ScopedSchema, state::ValidationState};
+use crate::validator::{scope::ScopedSchema, state::ValidationState};
 
 lazy_static! {
     // data:text/plain;name=test.txt;base64,aGV...

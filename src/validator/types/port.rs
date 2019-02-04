@@ -1,9 +1,6 @@
 use serde_json::Value;
 
-use super::{
-    super::{scope::ScopedSchema, state::ValidationState},
-    number::validate_as_integer,
-};
+use crate::validator::{scope::ScopedSchema, state::ValidationState, types::validate_as_integer};
 
 pub fn validate_as_port(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let mut state = validate_as_integer(scope, data);

@@ -2,10 +2,7 @@ use std::net::IpAddr;
 
 use serde_json::Value;
 
-use super::{
-    super::{scope::ScopedSchema, state::ValidationState},
-    string::validate_as_string,
-};
+use crate::validator::{scope::ScopedSchema, state::ValidationState, types::validate_as_string};
 
 pub fn validate_as_ipv4(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let mut state = validate_as_string(scope, data);

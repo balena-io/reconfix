@@ -1,8 +1,9 @@
 use serde_json::Value;
 
-use super::{
-    super::{scope::ScopedSchema, state::ValidationState},
-    ip::{validate_as_ipv4, validate_as_ipv6},
+use crate::validator::{
+    scope::ScopedSchema,
+    state::ValidationState,
+    types::{validate_as_ipv4, validate_as_ipv6},
 };
 
 //

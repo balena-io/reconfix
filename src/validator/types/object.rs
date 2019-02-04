@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use serde_json::Value;
 
-use super::super::{scope::ScopedSchema, state::ValidationState, Validator};
+use crate::validator::{scope::ScopedSchema, state::ValidationState, Validator};
 
 pub fn validate_as_object(scope: &ScopedSchema, data: &Value) -> ValidationState {
     let object = match data.as_object() {

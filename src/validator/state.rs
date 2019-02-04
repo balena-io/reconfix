@@ -1,4 +1,4 @@
-use super::error::ValidationError;
+use crate::validator::error::ValidationError;
 
 #[derive(Debug, Default)]
 pub struct ValidationState {

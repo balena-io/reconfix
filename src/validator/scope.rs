@@ -1,7 +1,7 @@
-use crate::schema::{Property, Schema};
-
-use super::error::ValidationError;
-use super::path::PathBuf;
+use crate::{
+    schema::{Property, Schema},
+    validator::{error::ValidationError, path::PathBuf},
+};
 
 #[derive(Debug, Clone)]
 pub struct ScopedSchema<'a> {

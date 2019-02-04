@@ -1,9 +1,9 @@
 use serde_json::Value;
 
-use super::{
-    super::{scope::ScopedSchema, state::ValidationState},
-    hostname::validate_as_hostname,
-    ip::{validate_as_ipv4, validate_as_ipv6},
+use crate::validator::{
+    scope::ScopedSchema,
+    state::ValidationState,
+    types::{validate_as_hostname, validate_as_ipv4, validate_as_ipv6},
 };
 
 // https://github.com/balena-os/meta-balena/blob/v2.29.2/meta-resin-common/recipes-connectivity/resin-ntp-config/resin-ntp-config/resin-ntp-config#L19

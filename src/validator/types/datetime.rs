@@ -31,7 +31,7 @@ pub fn validate_as_datetime(scope: &ScopedSchema, data: &Value) -> ValidationSta
 
 fn is_leap_year(year: usize) -> bool {
     // https://tools.ietf.org/html/rfc3339#appendix-C
-    return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
 }
 
 fn days(year: usize, month: usize) -> usize {

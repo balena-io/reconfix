@@ -36,10 +36,11 @@ wasm-pack build --target browser --out-dir "${BROWSER_PKG_DIR}"
 echo "Building isomorphic NPM package..."
 cp -r "${BROWSER_PKG_DIR}" "${PKG_DIR}/"
 PKG_NAME=$(jq -r .name "${PKG_DIR}/package.json" | sed 's/\-/_/g')
-cp -v "${NODE_PKG_DIR}/${PKG_NAME}.js" "${PKG_DIR}/${PKG_NAME}_main.js"
+sed "s/require[\(]'\.\/${PKG_NAME}_bg/require\('\.\/${PKG_NAME}_wasm/" "${NODE_PKG_DIR}/${PKG_NAME}.js" \
+    > "${PKG_DIR}/${PKG_NAME}_main.js"
 sed "s/require[\(]'\.\/${PKG_NAME}/require\('\.\/${PKG_NAME}_main/" "${NODE_PKG_DIR}/${PKG_NAME}_bg.js" \
-    > "${PKG_DIR}/${PKG_NAME}_bg.js"
-jq ".files += [\"${PKG_NAME}_bg.js\"]" ${PKG_DIR}/package.json \
+    > "${PKG_DIR}/${PKG_NAME}_wasm.js"
+jq ".files += [\"${PKG_NAME}_wasm.js\"]" ${PKG_DIR}/package.json \
     | jq ".main = \"${PKG_NAME}_main.js\"" \
     > ${PKG_DIR}/temp.json
 mv -v "${PKG_DIR}/temp.json" "${PKG_DIR}/package.json"

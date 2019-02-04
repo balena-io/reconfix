@@ -105,7 +105,7 @@ pub struct Schema {
     #[serde(default, rename = "exclusiveMin", skip_serializing_if = "Option::is_none")]
     exclusive_min: Option<Number>,
     //
-    // String validation keywords
+    // String based types validation keywords
     //
     #[serde(default, rename = "maxLength", skip_serializing_if = "Option::is_none")]
     max_length: Option<usize>,
@@ -236,7 +236,7 @@ impl Schema {
 }
 
 //
-// String validation keywords
+// String based types validation keywords
 //
 impl Schema {
     pub fn max_length(&self) -> Option<usize> {

@@ -6,8 +6,8 @@ set -o pipefail
 echo "Installing Rust toolchain..."
 curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $(cat rust-toolchain)
 source "${HOME}/.cargo/env"
-rustup component add clippy-preview
-rustup component add rustfmt-preview
+rustup component add clippy
+rustup component add rustfmt
 
 echo "Updating Rust toolchain..."
 (test -x "${HOME}/.cargo/bin/cargo-install-update" || cargo install cargo-update)

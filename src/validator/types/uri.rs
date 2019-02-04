@@ -4,10 +4,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
 
-use super::{
-    super::{scope::ScopedSchema, state::ValidationState},
-    regex::validate_as_string_with_regex,
-};
+use crate::validator::{scope::ScopedSchema, state::ValidationState, types::validate_as_string_with_regex};
 
 lazy_static! {
     // ajv v6.7.0 compatible

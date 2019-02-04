@@ -31,8 +31,29 @@ mod number;
 mod object;
 mod password;
 mod port;
-mod regex;
 mod string;
 mod stringlist;
 mod text;
 mod uri;
+
+//
+// Shared helpers
+//
+
+use regex::Regex;
+use serde_json::Value;
+
+use crate::validator::{scope::ScopedSchema, ValidationState};
+
+pub(crate) fn validate_as_string_with_regex(scope: &ScopedSchema, data: &Value, regex: &Regex) -> ValidationState {
+    let mut state = validate_as_string(scope, data);
+
+    if state.is_valid() && !regex.is_match(data.as_str().expect("invalid validate_as_string")) {
+        state.push_error(scope.error(
+            "type",
+            format!("expected '{}'", scope.schema().type_().primitive_type().as_ref()),
+        ));
+    }
+
+    state
+}

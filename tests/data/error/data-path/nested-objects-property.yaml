@@ -1,0 +1,22 @@
+schema:
+  version: 1
+  properties:
+    - childA:
+        properties:
+          - childB:
+              properties:
+                - name:
+                    type: string
+tests:
+  - description: Error data-path must equal to childA
+    data: {}
+    data-path: childA
+  - description: Error data-path must equal to childA.childB
+    data:
+      childA: {}
+    data-path: childA.childB
+  - description: Error data-path must equal to childA.childB.name
+    data:
+      childA:
+        childB: {}
+    data-path: childA.childB.name

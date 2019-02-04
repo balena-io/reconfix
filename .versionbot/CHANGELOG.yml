@@ -1,4 +1,16 @@
 - commits:
+    - subject: Add validator
+      hash: 6683ccae57beda2517d49519a65afdb5c42d8cf6
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+  version: 0.3.0
+  date: 2019-02-04T14:12:55.570Z
+- commits:
     - subject: Fix project name
       hash: 057cbd68a40c6f86a1c39c6e0940ad733ef50a41
       body: ''

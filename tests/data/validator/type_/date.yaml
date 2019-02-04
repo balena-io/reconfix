@@ -1,0 +1,16 @@
+schema:
+  type: date
+tests:
+#
+# AJV
+# https://github.com/epoberezkin/ajv/blob/v6.7.0/spec/tests/rules/format.json#L476
+#
+  - valid: true
+    description: Valid date
+    data: 1963-06-19
+  - valid: false
+    description: Invalid date
+    data: 06/19/1963
+  - valid: false
+    description: Only RFC3339 not all of ISO 8601 are valid
+    data: 2013-350

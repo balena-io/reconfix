@@ -15,8 +15,8 @@ pub fn validate_as_object(scope: &ScopedSchema, data: &Value) -> ValidationState
     let mut remaining_keys: HashSet<&str> = object.keys().map(AsRef::as_ref).collect();
 
     // Validate .properties first
-    for property in scope.schema().properties() {
-        let nested_scope = scope.scope_with_property(property);
+    for (index, property) in scope.schema().properties().iter().enumerate() {
+        let nested_scope = scope.scope_with_property(index, property);
         let nested_state = nested_scope.validate(object.get(property.name()));
         state.extend(nested_state);
         remaining_keys.remove(property.name());

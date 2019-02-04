@@ -44,11 +44,13 @@ impl<'a> ScopedSchema<'a> {
         }
     }
 
-    pub fn scope_with_property<'b>(&self, property: &'b Property) -> ScopedSchema<'b> {
+    pub fn scope_with_property<'b>(&self, index: usize, property: &'b Property) -> ScopedSchema<'b> {
         let mut data_path = self.data_path.clone();
         data_path.push_property(property.name());
 
         let mut schema_path = self.schema_path.clone();
+        schema_path.push_property("properties");
+        schema_path.push_index(index);
         schema_path.push_property(property.name());
 
         ScopedSchema {
@@ -87,11 +89,13 @@ impl<'a> ScopedSchema<'a> {
         S1: Into<String>,
         S2: Into<String>,
     {
-        ValidationError::new(
-            keyword,
-            self.schema_path().to_string(),
-            self.data_path().to_string(),
-            message,
-        )
+        let keyword = keyword.into();
+
+        let mut schema_path = self.schema_path().clone();
+        schema_path.push_property(keyword.clone());
+
+        let schema_path = format!("#{}", schema_path);
+
+        ValidationError::new(keyword, schema_path, self.data_path().to_string(), message)
     }
 }

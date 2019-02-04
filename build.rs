@@ -16,7 +16,7 @@ fn generate_errors_tests() -> Result<(), Error> {
     let out_dir = env::var("OUT_DIR")?;
     let destination = Path::new(&out_dir).join("errors_tests.rs");
     let mut test_file = File::create(&destination)?;
-    generate_errors_tests_module(&mut test_file, &PathBuf::from_str("./tests/data/errors").unwrap())?;
+    generate_errors_tests_module(&mut test_file, &PathBuf::from_str("./tests/data/error").unwrap())?;
     Ok(())
 }
 

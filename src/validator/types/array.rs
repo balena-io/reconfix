@@ -97,6 +97,7 @@ fn validate_unique_items(scope: &ScopedSchema, values: &[Value]) -> ValidationSt
 }
 
 pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState {
+    // Validate type
     let data_array = match data.as_array() {
         Some(x) => x,
         None => return scope.error("type", "expected 'array'").into(),
@@ -106,6 +107,7 @@ pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState 
 
     let mut state = ValidationState::new();
 
+    // Validate array keywords (min/max items)
     if let Some(min) = schema.min_items() {
         if data_array.len() < min {
             state.push_error(scope.error("minItems", format!("should contain at least '{}' items", min)));
@@ -118,8 +120,10 @@ pub fn validate_as_array(scope: &ScopedSchema, data: &Value) -> ValidationState 
         }
     }
 
+    // Validate uniqueItems keyword
     state.extend(validate_unique_items(scope, data_array));
 
+    // Validate items keyword
     let scope = scope.scope_with_schema_keyword("items");
 
     for (idx, item) in data_array.iter().enumerate() {

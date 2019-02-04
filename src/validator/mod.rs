@@ -34,11 +34,11 @@ fn validate_optional(scope: &ScopedSchema, data: Option<&Value>) -> ValidationSt
         _ => true,
     };
 
-    if !value_exists && scope.schema().type_().is_required() {
+    if !value_exists && scope.schema().r#type().is_required() {
         return scope
             .error(
                 "type",
-                format!("'{}' is not an optional type", scope.schema().type_().to_string()),
+                format!("'{}' is not an optional type", scope.schema().r#type().to_string()),
             )
             .into();
     }
@@ -47,14 +47,14 @@ fn validate_optional(scope: &ScopedSchema, data: Option<&Value>) -> ValidationSt
 }
 
 fn validate_const(scope: &ScopedSchema, data: &Value) -> ValidationState {
-    match scope.schema().const_() {
+    match scope.schema().r#const() {
         Some(constant) if value::ne(constant, data) => scope.error("const", "value does not match").into(),
         _ => ValidationState::new(),
     }
 }
 
 fn validate_enum(scope: &ScopedSchema, data: &Value) -> ValidationState {
-    let enum_entries = scope.schema().enum_();
+    let enum_entries = scope.schema().r#enum();
 
     if enum_entries.is_empty() {
         return ValidationState::new();
@@ -83,7 +83,7 @@ impl<'a> Validator for ScopedSchema<'a> {
         bail_if_invalid!(validate_const(self, data));
         bail_if_invalid!(validate_enum(self, data));
 
-        match self.schema().type_().primitive_type() {
+        match self.schema().r#type().primitive_type() {
             PrimitiveType::String => types::validate_as_string(self, data),
             PrimitiveType::Array => types::validate_as_array(self, data),
             PrimitiveType::Boolean => types::validate_as_boolean(self, data),

@@ -8,7 +8,7 @@ pub fn validate_as_string(scope: &ScopedSchema, data: &Value) -> ValidationState
         None => {
             return ValidationState::new_with_error(scope.error(
                 "type",
-                format!("expected '{}'", scope.schema().type_().primitive_type().as_ref()),
+                format!("expected '{}'", scope.schema().r#type().primitive_type().as_ref()),
             ));
         }
     };

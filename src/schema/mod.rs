@@ -8,9 +8,9 @@ pub use serde_yaml::{Number, Value};
 
 // Reexport everything except mapping, which is a public module
 pub use self::{
-    enum_::EnumEntry,
     property::Property,
-    type_::{PrimitiveType, Type},
+    r#enum::EnumEntry,
+    r#type::{PrimitiveType, Type},
     unique_items::UniqueItems,
     version::Version,
 };
@@ -20,10 +20,10 @@ use crate::{
     utils::deref::OptionDeref,
 };
 
-mod enum_;
+mod r#enum;
 pub mod mapping;
 mod property;
-mod type_;
+mod r#type;
 mod unique_items;
 mod version;
 
@@ -40,13 +40,13 @@ pub struct Schema {
     // Any instance type validation keywords
     //
     #[serde(default, rename = "type", deserialize_with = "deserialize_from_str")]
-    type_: Type,
+    r#type: Type,
     #[serde(default, rename = "const", skip_serializing_if = "Option::is_none")]
-    const_: Option<Value>,
+    r#const: Option<Value>,
     #[serde(default, rename = "default", skip_serializing_if = "Option::is_none")]
-    default_: Option<Value>,
+    r#default: Option<Value>,
     #[serde(default, rename = "enum", skip_serializing_if = "Vec::is_empty")]
-    enum_: Vec<EnumEntry>,
+    r#enum: Vec<EnumEntry>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     formula: Option<String>,
     //
@@ -129,20 +129,20 @@ impl Schema {
 // Any instance type
 //
 impl Schema {
-    pub fn type_(&self) -> &Type {
-        &self.type_
+    pub fn r#type(&self) -> &Type {
+        &self.r#type
     }
 
-    pub fn const_(&self) -> Option<&Value> {
-        self.const_.as_ref()
+    pub fn r#const(&self) -> Option<&Value> {
+        self.r#const.as_ref()
     }
 
-    pub fn default_(&self) -> Option<&Value> {
-        self.default_.as_ref()
+    pub fn r#default(&self) -> Option<&Value> {
+        self.r#default.as_ref()
     }
 
-    pub fn enum_(&self) -> &[EnumEntry] {
-        self.enum_.as_slice()
+    pub fn r#enum(&self) -> &[EnumEntry] {
+        self.r#enum.as_slice()
     }
 
     pub fn formula(&self) -> Option<&str> {

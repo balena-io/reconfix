@@ -1,3 +1,4 @@
+// TODO Investigate if it's a clippy bug or buggy regex
 #![allow(clippy::invalid_regex)]
 
 use lazy_static::lazy_static;

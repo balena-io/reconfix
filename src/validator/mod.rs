@@ -119,25 +119,3 @@ impl Validator for Schema {
 pub fn validate(schema: &Schema, data: &Value) -> ValidationState {
     schema.validate(Some(data))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_yaml;
-
-    #[test]
-    fn string_type() {
-        let schema = r#"
-            version: 1
-            type: string?
-            minLength: 5
-            maxLength: 10
-        "#;
-        let schema: Schema = serde_yaml::from_str(schema).unwrap();
-
-        let data: Value = serde_json::from_str(r#""hallo""#).unwrap();
-        let state = validate(&schema, &data);
-        eprintln!("{:?}", state);
-        assert!(state.is_valid());
-    }
-}

@@ -26,7 +26,6 @@ pub fn validate_as_object(scope: &ScopedSchema, data: &Value) -> ValidationState
         // Schema contains keys & values, validate pattern properties
         (Some(schema_keys), Some(schema_values)) => {
             for key in remaining_keys {
-                // FIXME schema & data path
                 let value = object.get(key);
                 state.extend(schema_keys.validate(Some(&Value::String(key.to_string()))));
                 state.extend(schema_values.validate(value));

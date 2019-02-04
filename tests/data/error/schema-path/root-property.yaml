@@ -1,0 +1,9 @@
+schema:
+  version: 1
+  properties:
+    - name:
+        type: string
+tests:
+  - description: Error schema-path must equal to "#properties[0].name.type"
+    data: {}
+    schema-path: "#properties[0].name.type"

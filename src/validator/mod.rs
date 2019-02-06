@@ -5,8 +5,9 @@ use crate::{
     utils::value,
 };
 
+pub use error::ValidationError;
 use scope::ScopedSchema;
-use state::ValidationState;
+pub use state::ValidationState;
 
 mod error;
 mod path;

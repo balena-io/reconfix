@@ -18,7 +18,14 @@ crate-type = ["lib", "cdylib"]
 travis-ci = { repository = "balena-io/reconfix", branch = "master" }
 
 [dependencies.balena-temen]
-version = "0"
+# 0.5.1 introduces disable-wasm-bindings features
+version = "~0.5.1"
+features = ["disable-wasm-bindings"]
+
+[dependencies.balena-cdsl]
+# 0.10.4 introduces disable-wasm-bindings features
+version = "~0.10.4"
+features = ["disable-wasm-bindings"]
 
 [dependencies.base64]
 version = "0"

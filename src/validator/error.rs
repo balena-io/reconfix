@@ -1,9 +1,12 @@
+use serde_derive::Serialize;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ValidationError {
     keyword: String,
+    #[serde(rename = "schemaPath")]
     schema_path: String,
+    #[serde(rename = "dataPath")]
     data_path: String,
     message: String,
 }

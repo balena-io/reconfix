@@ -1,4 +1,34 @@
 - commits:
+    - subject: Add experimental note
+      hash: 771db0f955c727e309e641fdfbfb1d21ec2add68
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+    - subject: Add initial JS API
+      hash: e9fca233db6dbe7962def1eaccdf1a6aed87c373
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+    - subject: 'Remove # from the schema path'
+      hash: 266c52dc478354efaab615738a4f917eeb8f0df6
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+  version: 1.0.0
+  date: 2019-02-06T08:07:11.401Z
+- commits:
     - subject: Add validator
       hash: 6683ccae57beda2517d49519a65afdb5c42d8cf6
       body: ''

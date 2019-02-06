@@ -94,8 +94,6 @@ impl<'a> ScopedSchema<'a> {
         let mut schema_path = self.schema_path().clone();
         schema_path.push_property(keyword.clone());
 
-        let schema_path = format!("#{}", schema_path);
-
-        ValidationError::new(keyword, schema_path, self.data_path().to_string(), message)
+        ValidationError::new(keyword, schema_path.to_string(), self.data_path().to_string(), message)
     }
 }

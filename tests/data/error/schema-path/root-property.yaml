@@ -4,6 +4,6 @@ schema:
     - name:
         type: string
 tests:
-  - description: Error schema-path must equal to "#properties[0].name.type"
+  - description: Error schema-path must equal to "properties[0].name.type"
     data: {}
-    schema-path: "#properties[0].name.type"
+    schema-path: "properties[0].name.type"

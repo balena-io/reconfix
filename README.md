@@ -11,6 +11,8 @@
   <sub>an open source :satellite: project by <a href="https://www.balena.io">balena.io</a></sub>
 </div>
 
+**EXPERIMENTAL**
+
 ## Support
 
 If you're having any problem, please [raise an issue] on GitHub or [contact us], and the [balena.io] team

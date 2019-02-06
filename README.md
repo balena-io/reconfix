@@ -11,7 +11,13 @@
   <sub>an open source :satellite: project by <a href="https://www.balena.io">balena.io</a></sub>
 </div>
 
-**EXPERIMENTAL**
+## EXPERIMENTAL
+
+Version:
+
+* `< 1.0` - initial NodeJS implementation
+* `>= 1.0 && < 2.0` - experimental Rust implementation with different API & functionality
+* `>= 2.0` - will be used for initial stable Rust based release
 
 ## Support
 

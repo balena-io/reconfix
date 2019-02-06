@@ -18,7 +18,7 @@ pub struct JellySchema {
     last_validation_state: ValidationState,
 }
 
-mod eval;
+mod temen;
 
 #[wasm_bindgen]
 #[allow(non_snake_case)]

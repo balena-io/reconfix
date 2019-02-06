@@ -17,10 +17,6 @@ pub fn evaluate(data: &JsValue) -> Result<JsValue, JsValue> {
     set_panic_hook_once();
 
     let data = data.into_serde().map_err(|e| JsValue::from(format!("{}", e)))?;
-
     let evaluated = temen::evaluate(data).map_err(|e| JsValue::from(format!("{}", e)))?;
-
-    let result = JsValue::from_serde(&evaluated).map_err(|e| JsValue::from(format!("{}", e)))?;
-
-    Ok(result)
+    JsValue::from_serde(&evaluated).map_err(|e| JsValue::from(format!("{}", e)))
 }

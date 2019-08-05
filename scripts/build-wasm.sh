@@ -3,15 +3,16 @@
 set -e
 set -o pipefail
 
-
 # Check if jq is installed
 if ! [ -x "$(command -v jq)" ]; then
     echo "jq is not installed" >& 2
     exit 1
 fi
 
+source "${HOME}/.nvm/nvm.sh"
+nvm use
+source "${HOME}/.cargo/env"
 
-# Temporary directory for NPM package builds
 TARGET_DIR="target/npm"
 # Browser specific NPM package
 BROWSER_PKG_DIR="${TARGET_DIR}/pkg-browser"
@@ -20,12 +21,10 @@ NODE_PKG_DIR="${TARGET_DIR}/pkg-node"
 # Final / isomorphic NPM package
 PKG_DIR="${TARGET_DIR}/pkg"
 
-
 if [ -d "${TARGET_DIR}" ]; then
     rm -rf "${TARGET_DIR}"
 fi
 mkdir -p "${TARGET_DIR}"
-
 
 echo "Packing NodeJS NPM package..."
 wasm-pack build --target nodejs  --out-dir "${NODE_PKG_DIR}"

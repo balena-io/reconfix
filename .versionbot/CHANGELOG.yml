@@ -1,4 +1,17 @@
 - commits:
+    - subject: Add a practical guide to CUE
+      hash: bbf6d704f3ad1b6731b1c7363b67ee03e018aee4
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Carol Schulze <carol@balena.io>
+        signed-off-by: Carol Schulze <carol@balena.io>
+      author: Carol Schulze
+      nested: []
+  version: 0.3.1
+  date: 2020-10-20T15:36:50.535Z
+- commits:
     - subject: Add validator
       hash: 6683ccae57beda2517d49519a65afdb5c42d8cf6
       body: ''

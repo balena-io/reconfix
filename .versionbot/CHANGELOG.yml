@@ -1,4 +1,17 @@
 - commits:
+    - subject: Replace travis with balenaCI docker pipeline
+      hash: 7b424b5f919cca95dc019f692da577c20cb69a58
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Josh Bowling <josh@balena.io>
+        signed-off-by: Josh Bowling <josh@balena.io>
+      author: Josh Bowling
+      nested: []
+  version: 0.3.1
+  date: 2020-10-21T05:18:20.338Z
+- commits:
     - subject: Add validator
       hash: 6683ccae57beda2517d49519a65afdb5c42d8cf6
       body: ''

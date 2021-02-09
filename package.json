@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test": "npm run lint && npm run unit",
-    "unit": "ava tests",
+    "unit": "ava",
     "lint": "eslint lib tests"
   },
   "keywords": [

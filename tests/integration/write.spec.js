@@ -34,7 +34,7 @@ const createTemporaryFileFromFile = (file) => {
   });
 };
 
-ava.test('should switch an ethernet resin image into a wifi one', (test) => {
+ava('should switch an ethernet resin image into a wifi one', (test) => {
   const fixturesPath = path.join(__dirname, 'fixtures');
 
   const files = {
@@ -60,7 +60,7 @@ ava.test('should switch an ethernet resin image into a wifi one', (test) => {
   });
 });
 
-ava.test('should switch a wifi resin image into an ethernet one', (test) => {
+ava('should switch a wifi resin image into an ethernet one', (test) => {
   const fixturesPath = path.join(__dirname, 'fixtures');
 
   const files = {
@@ -86,7 +86,7 @@ ava.test('should switch a wifi resin image into an ethernet one', (test) => {
   });
 });
 
-ava.test('should extend the current values instead of overwriting', (test) => {
+ava('should extend the current values instead of overwriting', (test) => {
   const fixturesPath = path.join(__dirname, 'fixtures');
   const schema = require(path.join(fixturesPath, 'resinos-v1-ethernet', 'schema.json'));
   const fixtureImage = path.join(fixturesPath, 'resinos-v1-ethernet', 'image.img');
@@ -121,7 +121,7 @@ ava.test('should extend the current values instead of overwriting', (test) => {
 
 });
 
-ava.test('should be able to modify a fileset', (test) => {
+ava('should be able to modify a fileset', (test) => {
   const fixturesPath = path.join(__dirname, 'fixtures');
   const schema = require(path.join(fixturesPath, 'resinos-v2', 'schema.json'));
   const fixtureImage = path.join(fixturesPath, 'resinos-v2', 'image.img');
@@ -166,7 +166,7 @@ ava.test('should be able to modify a fileset', (test) => {
   });
 });
 
-ava.test('should not override custom properties inside a fileset', (test) => {
+ava('should not override custom properties inside a fileset', (test) => {
   const fixturesPath = path.join(__dirname, 'fixtures');
   const schema = require(path.join(fixturesPath, 'resinos-v2', 'schema.json'));
   const fixtureImage = path.join(fixturesPath, 'resinos-v2', 'image.img');

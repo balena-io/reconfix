@@ -24,13 +24,13 @@ const parseLines = (lines) => {
 };
 
 exports.testParse = (module, title, lines, object) => {
-  ava.test(`should parse ${title}`, (test) => {
+  ava(`should parse ${title}`, (test) => {
     test.deepEqual(module.parse(parseLines(lines)), object);
   });
 };
 
 exports.testSerialize = (module, title, lines, object) => {
-  ava.test(`should serialise ${title}`, (test) => {
+  ava(`should serialise ${title}`, (test) => {
     test.deepEqual(module.serialise(object), parseLines(lines));
   });
 };

@@ -33,13 +33,13 @@ const testReadFixture = (name) => {
     data: require(path.join(fixturePath, 'data.json'))
   };
 
-  ava.test(`.readImageData() (${name}) should read files`, (test) => {
+  ava(`.readImageData() (${name}) should read files`, (test) => {
     return filesystem.readImageData(files.schema, files.image).then((data) => {
       test.deepEqual(data, files.data);
     });
   });
 
-  ava.test(`.readImageConfiguration() (${name}) should read configuration`, (test) => {
+  ava(`.readImageConfiguration() (${name}) should read configuration`, (test) => {
     return filesystem.readImageConfiguration(files.schema, files.image).then((data) => {
       test.deepEqual(data, files.wet);
     });
@@ -65,7 +65,7 @@ const testWriteFixture = (name) => {
     wet: require(path.join(fixturePath, 'wet.json'))
   };
 
-  ava.test(`(${name}) should write/read settings`, (test) => {
+  ava(`(${name}) should write/read settings`, (test) => {
     return createTemporaryFileFromFile(files.image).then((temporaryFilePath) => {
       return filesystem.writeImageConfiguration(files.schema, temporaryFilePath, files.wet).then(() => {
         return filesystem.readImageConfiguration(files.schema, temporaryFilePath).then((data) => {

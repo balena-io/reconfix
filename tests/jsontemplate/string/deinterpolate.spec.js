@@ -19,67 +19,67 @@
 const ava = require('ava');
 const string = require('../../../lib/jsontemplate/string');
 
-ava.test('.deinterpolate() should throw if strings do not match', (test) => {
+ava('.deinterpolate() should throw if strings do not match', (test) => {
   test.throws(() => {
     string.deinterpolate('Hello {{name}}!', 'Hi John Doe!');
   }, 'No match for \'name\'');
 });
 
-ava.test('.deinterpolate() should throw if interpolation result is missing', (test) => {
+ava('.deinterpolate() should throw if interpolation result is missing', (test) => {
   test.throws(() => {
     string.deinterpolate('Hello {{name}}!', 'Hi !');
   }, 'No match for \'name\'');
 });
 
-ava.test('.deinterpolate() should accept a number type on an independent string', (test) => {
+ava('.deinterpolate() should accept a number type on an independent string', (test) => {
   test.deepEqual(string.deinterpolate('{{number:age}}', '21'), {
     age: 21
   });
 });
 
-ava.test('.deinterpolate() should accept a number type on a dependent string', (test) => {
+ava('.deinterpolate() should accept a number type on a dependent string', (test) => {
   test.deepEqual(string.deinterpolate('I am {{number:age}} years old', 'I am 21 years old'), {
     age: 21
   });
 });
 
-ava.test('.deinterpolate() should parse a float from an independent string', (test) => {
+ava('.deinterpolate() should parse a float from an independent string', (test) => {
   test.deepEqual(string.deinterpolate('{{number:foo}}', '21.123'), {
     foo: 21.123
   });
 });
 
-ava.test('.deinterpolate() should parse a float from an dependent string', (test) => {
+ava('.deinterpolate() should parse a float from an dependent string', (test) => {
   test.deepEqual(string.deinterpolate('Foo {{number:foo}} Foo', 'Foo 21.123 Foo'), {
     foo: 21.123
   });
 });
 
-ava.test('.deinterpolate() should be able to cast a zero', (test) => {
+ava('.deinterpolate() should be able to cast a zero', (test) => {
   test.deepEqual(string.deinterpolate('{{number:foo}}', '0'), {
     foo: 0
   });
 });
 
-ava.test('.deinterpolate() should be able to cast a negative number', (test) => {
+ava('.deinterpolate() should be able to cast a negative number', (test) => {
   test.deepEqual(string.deinterpolate('{{number:foo}}', '-5'), {
     foo: -5
   });
 });
 
-ava.test('.deinterpolate() should throw if independent string casted to number becomes NaN', (test) => {
+ava('.deinterpolate() should throw if independent string casted to number becomes NaN', (test) => {
   test.throws(() => {
     string.deinterpolate('{{number:age}}', 'foo');
   }, 'Can\'t convert foo to number');
 });
 
-ava.test('.deinterpolate() should throw if dependent string casted to number becomes NaN', (test) => {
+ava('.deinterpolate() should throw if dependent string casted to number becomes NaN', (test) => {
   test.throws(() => {
     string.deinterpolate('I am {{number:age}} years old', 'I am foo years old');
   }, 'Can\'t convert foo to number');
 });
 
-ava.test('.deinterpolate() should accept a string type', (test) => {
+ava('.deinterpolate() should accept a string type', (test) => {
   test.deepEqual(string.deinterpolate('{{string:age}}', 21), {
     age: '21'
   });

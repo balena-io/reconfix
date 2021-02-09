@@ -20,7 +20,7 @@ const ava = require('ava');
 const _ = require('lodash');
 const cli = require('../../../visuals/cli');
 
-ava.test('should throw if type is not recognised', (test) => {
+ava('should throw if type is not recognised', (test) => {
   test.throws(() => {
     cli.transpileQuestion({
       title: 'Foo',
@@ -30,7 +30,7 @@ ava.test('should throw if type is not recognised', (test) => {
   }, 'Unknown question type: foo');
 });
 
-ava.test('should throw if question has no title', (test) => {
+ava('should throw if question has no title', (test) => {
   test.throws(() => {
     cli.transpileQuestion({
       name: 'foo',
@@ -39,7 +39,7 @@ ava.test('should throw if question has no title', (test) => {
   }, 'Invalid question title: undefined');
 });
 
-ava.test('should throw if question has an invalid title', (test) => {
+ava('should throw if question has an invalid title', (test) => {
   test.throws(() => {
     cli.transpileQuestion({
       title: [ 'foo', 'bar' ],
@@ -49,7 +49,7 @@ ava.test('should throw if question has an invalid title', (test) => {
   }, 'Invalid question title: foo,bar');
 });
 
-ava.test('should throw if question has no name', (test) => {
+ava('should throw if question has no name', (test) => {
   test.throws(() => {
     cli.transpileQuestion({
       title: 'Foo',
@@ -58,7 +58,7 @@ ava.test('should throw if question has no name', (test) => {
   }, 'Invalid question name: undefined');
 });
 
-ava.test('should throw if question has an invalid name', (test) => {
+ava('should throw if question has an invalid name', (test) => {
   test.throws(() => {
     cli.transpileQuestion({
       title: 'Foo',
@@ -68,7 +68,7 @@ ava.test('should throw if question has an invalid name', (test) => {
   }, 'Invalid question name: foo,bar');
 });
 
-ava.test('it should transpile a basic text question', (test) => {
+ava('it should transpile a basic text question', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
@@ -80,7 +80,7 @@ ava.test('it should transpile a basic text question', (test) => {
   });
 });
 
-ava.test('it should transpile a basic password question', (test) => {
+ava('it should transpile a basic password question', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Wifi Key',
     name: 'key',
@@ -92,7 +92,7 @@ ava.test('it should transpile a basic password question', (test) => {
   });
 });
 
-ava.test('it should transpile a basic number question', (test) => {
+ava('it should transpile a basic number question', (test) => {
   const question = cli.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
@@ -140,7 +140,7 @@ _.each([
     expected: 'Invalid number'
   }
 ], (testCase) => {
-  ava.test(`it should return ${testCase.expected} for ${testCase.value} number validation`, (test) => {
+  ava(`it should return ${testCase.expected} for ${testCase.value} number validation`, (test) => {
     const question = cli.transpileQuestion({
       title: 'Update Poll Interval',
       name: 'updatePollInterval',
@@ -177,7 +177,7 @@ _.each([
     expected: -10.3
   }
 ], (testCase) => {
-  ava.test(`it should return ${testCase.expected} for ${testCase.value} number filter`, (test) => {
+  ava(`it should return ${testCase.expected} for ${testCase.value} number filter`, (test) => {
     const question = cli.transpileQuestion({
       title: 'Update Poll Interval',
       name: 'updatePollInterval',
@@ -188,7 +188,7 @@ _.each([
   });
 });
 
-ava.test('it should transpile a basic editor question', (test) => {
+ava('it should transpile a basic editor question', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Welcome message',
     name: 'welcome',
@@ -200,7 +200,7 @@ ava.test('it should transpile a basic editor question', (test) => {
   });
 });
 
-ava.test('it should allow a default text value', (test) => {
+ava('it should allow a default text value', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Wifi SSID',
     name: 'ssid',
@@ -214,7 +214,7 @@ ava.test('it should allow a default text value', (test) => {
   });
 });
 
-ava.test('it should allow a default password value', (test) => {
+ava('it should allow a default password value', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Wifi Key',
     name: 'key',
@@ -228,7 +228,7 @@ ava.test('it should allow a default password value', (test) => {
   });
 });
 
-ava.test('it should allow a default number value', (test) => {
+ava('it should allow a default number value', (test) => {
   const question = cli.transpileQuestion({
     title: 'Update Poll Interval',
     name: 'updatePollInterval',
@@ -244,7 +244,7 @@ ava.test('it should allow a default number value', (test) => {
   });
 });
 
-ava.test('it should allow a default editor value', (test) => {
+ava('it should allow a default editor value', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Welcome message',
     name: 'welcome',
@@ -258,7 +258,7 @@ ava.test('it should allow a default editor value', (test) => {
   });
 });
 
-ava.test('it should transpile a basic list question', (test) => {
+ava('it should transpile a basic list question', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Network Type',
     name: 'networkType',
@@ -290,7 +290,7 @@ ava.test('it should transpile a basic list question', (test) => {
   });
 });
 
-ava.test('it should allow a default list value', (test) => {
+ava('it should allow a default list value', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Network Type',
     name: 'networkType',
@@ -324,7 +324,7 @@ ava.test('it should allow a default list value', (test) => {
   });
 });
 
-ava.test('it should transpile a basic checkbox question', (test) => {
+ava('it should transpile a basic checkbox question', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Enable HDMI',
     name: 'hdmi',
@@ -336,7 +336,7 @@ ava.test('it should transpile a basic checkbox question', (test) => {
   });
 });
 
-ava.test('it should allow a default checkbox value', (test) => {
+ava('it should allow a default checkbox value', (test) => {
   test.deepEqual(cli.transpileQuestion({
     title: 'Enable HDMI',
     name: 'hdmi',

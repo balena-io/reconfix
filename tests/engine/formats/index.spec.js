@@ -20,13 +20,13 @@ const ava = require('ava');
 const _ = require('lodash');
 const formats = require('../../../lib/engine/formats');
 
-ava.test('.parse() should throw if type is not supported', (test) => {
+ava('.parse() should throw if type is not supported', (test) => {
   test.throws(() => {
     formats.parse('foo', 'hello=world');
   }, 'Unsupported type: foo');
 });
 
-ava.test('.serialise() should throw if type is not supported', (test) => {
+ava('.serialise() should throw if type is not supported', (test) => {
   test.throws(() => {
     formats.serialise('foo', {
       hello: 'world'
@@ -56,7 +56,7 @@ _.each([
   }
 ], (testCase) => {
 
-  ava.test(`should handle ${testCase.type}`, (test) => {
+  ava(`should handle ${testCase.type}`, (test) => {
     const parsed = formats.parse(testCase.type, testCase.string);
     const serialised = formats.serialise(testCase.type, parsed);
     test.deepEqual(serialised, testCase.string);

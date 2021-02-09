@@ -29,22 +29,22 @@ const testFixture = (name) => {
     schema: require(path.join(fixturePath, 'schema.json'))
   };
 
-  ava.test(`(${name}) should generate configuration`, (test) => {
+  ava(`(${name}) should generate configuration`, (test) => {
     test.deepEqual(configuration.generate(files.schema, files.dry), files.wet);
   });
 
-  ava.test(`(${name}) should extract settings`, (test) => {
+  ava(`(${name}) should extract settings`, (test) => {
     test.deepEqual(configuration.extract(files.schema, files.wet), files.dry);
   });
 
-  ava.test(`(${name}) should ignore extra settings when extracting`, (test) => {
+  ava(`(${name}) should ignore extra settings when extracting`, (test) => {
     test.deepEqual(configuration.extract(files.schema, files.wetExtra), files.dry);
   });
 };
 
 testFixture('resinos-v1');
 
-ava.test('.generate() should preserve custom defaults values', (test) => {
+ava('.generate() should preserve custom defaults values', (test) => {
 
   /* eslint-disable camelcase */
 
@@ -79,7 +79,7 @@ ava.test('.generate() should preserve custom defaults values', (test) => {
 
 });
 
-ava.test('.generate() should override custom default values in choices', (test) => {
+ava('.generate() should override custom default values in choices', (test) => {
 
   /* eslint-disable camelcase */
 

@@ -30,30 +30,30 @@ _.attempt(() => {
     }
   });
 
-  ava.test('(string property) should return false for an empty object', (test) => {
+  ava('(string property) should return false for an empty object', (test) => {
     test.false(question.when({}));
   });
 
-  ava.test('(string property) should return true if it matches', (test) => {
+  ava('(string property) should return true if it matches', (test) => {
     test.true(question.when({
       networkType: 'wifi'
     }));
   });
 
-  ava.test('(string property) should return true if is a subset', (test) => {
+  ava('(string property) should return true if is a subset', (test) => {
     test.true(question.when({
       networkType: 'wifi',
       wifiKey: 'foo bar'
     }));
   });
 
-  ava.test('(string property) should return false if is not a subset', (test) => {
+  ava('(string property) should return false if is not a subset', (test) => {
     test.false(question.when({
       wifiKey: 'foo bar'
     }));
   });
 
-  ava.test('(string property) should return true if it does not match', (test) => {
+  ava('(string property) should return true if it does not match', (test) => {
     test.false(question.when({
       networkType: 'ethernet'
     }));
@@ -70,41 +70,41 @@ _.attempt(() => {
     }
   });
 
-  ava.test('(boolean property) should return false for an empty object', (test) => {
+  ava('(boolean property) should return false for an empty object', (test) => {
     test.false(question.when({}));
   });
 
-  ava.test('(boolean property) should return true if true', (test) => {
+  ava('(boolean property) should return true if true', (test) => {
     test.true(question.when({
       enableScreen: true
     }));
   });
 
-  ava.test('(boolean property) should return false if false', (test) => {
+  ava('(boolean property) should return false if false', (test) => {
     test.false(question.when({
       enableScreen: false
     }));
   });
 
-  ava.test('(boolean property) should return false if 0', (test) => {
+  ava('(boolean property) should return false if 0', (test) => {
     test.false(question.when({
       enableScreen: 0
     }));
   });
 
-  ava.test('(boolean property) should return false if 1', (test) => {
+  ava('(boolean property) should return false if 1', (test) => {
     test.false(question.when({
       enableScreen: 0
     }));
   });
 
-  ava.test('(boolean property) should return false if undefined', (test) => {
+  ava('(boolean property) should return false if undefined', (test) => {
     test.false(question.when({
       enableScreen: undefined
     }));
   });
 
-  ava.test('(boolean property) should return false if null', (test) => {
+  ava('(boolean property) should return false if null', (test) => {
     test.false(question.when({
       enableScreen: undefined
     }));
@@ -125,11 +125,11 @@ _.attempt(() => {
     }
   });
 
-  ava.test('(string array property) should return false if empty object', (test) => {
+  ava('(string array property) should return false if empty object', (test) => {
     test.false(question.when({}));
   });
 
-  ava.test('(string array property) should return true if it matches', (test) => {
+  ava('(string array property) should return true if it matches', (test) => {
     test.true(question.when({
       capabilities: [
         'screen',
@@ -139,7 +139,7 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(string array property) should return false if subset', (test) => {
+  ava('(string array property) should return false if subset', (test) => {
     test.false(question.when({
       capabilities: [
         'screen',
@@ -148,7 +148,7 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(string array property) should return true if superset', (test) => {
+  ava('(string array property) should return true if superset', (test) => {
     test.true(question.when({
       capabilities: [
         'screen',
@@ -178,11 +178,11 @@ _.attempt(() => {
     }
   });
 
-  ava.test('(nested object property) should return false if empty object', (test) => {
+  ava('(nested object property) should return false if empty object', (test) => {
     test.false(question.when({}));
   });
 
-  ava.test('(nested object property) should return true if it matches', (test) => {
+  ava('(nested object property) should return true if it matches', (test) => {
     test.true(question.when({
       screen: {
         type: 'led',
@@ -194,7 +194,7 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(nested object property) should return false if subset', (test) => {
+  ava('(nested object property) should return false if subset', (test) => {
     test.false(question.when({
       screen: {
         manufacturer: {
@@ -205,7 +205,7 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(nested object property) should return true if superset', (test) => {
+  ava('(nested object property) should return true if superset', (test) => {
     test.true(question.when({
       screen: {
         type: 'led',
@@ -242,11 +242,11 @@ _.attempt(() => {
     }
   });
 
-  ava.test('(object array property) should return false if empty object', (test) => {
+  ava('(object array property) should return false if empty object', (test) => {
     test.false(question.when({}));
   });
 
-  ava.test('(object array property) should return true if it matches', (test) => {
+  ava('(object array property) should return true if it matches', (test) => {
     test.true(question.when({
       capabilities: [
         {
@@ -262,7 +262,7 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(object array property) should return false if subset', (test) => {
+  ava('(object array property) should return false if subset', (test) => {
     test.false(question.when({
       capabilities: [
         {
@@ -275,7 +275,7 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(object array property) should return true if superset', (test) => {
+  ava('(object array property) should return true if superset', (test) => {
     test.true(question.when({
       capabilities: [
         {
@@ -311,7 +311,7 @@ _.attempt(() => {
     }
   });
 
-  ava.test('(multiple string property) should return true if it matches', (test) => {
+  ava('(multiple string property) should return true if it matches', (test) => {
     test.true(question.when({
       enableWifi: true,
       network: true,
@@ -319,7 +319,7 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(multiple string property) should return true if is a subset', (test) => {
+  ava('(multiple string property) should return true if is a subset', (test) => {
     test.true(question.when({
       enableWifi: true,
       network: true,
@@ -329,14 +329,14 @@ _.attempt(() => {
     }));
   });
 
-  ava.test('(multiple string property) should return false if is not a subset', (test) => {
+  ava('(multiple string property) should return false if is not a subset', (test) => {
     test.false(question.when({
       enableWifi: true,
       networkType: 'wifi'
     }));
   });
 
-  ava.test('(multiple string property) should return true if it does not match', (test) => {
+  ava('(multiple string property) should return true if it does not match', (test) => {
     test.false(question.when({
       enableWifi: true,
       network: false,

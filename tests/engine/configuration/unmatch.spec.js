@@ -19,7 +19,7 @@
 const ava = require('ava');
 const configuration = require('../../../lib/engine/configuration');
 
-ava.test('.extract() throw if current data does not match the schema', (test) => {
+ava('.extract() throw if current data does not match the schema', (test) => {
 
   /* eslint-disable camelcase */
 

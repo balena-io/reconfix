@@ -27,7 +27,7 @@ _.each([
   'resinos-v2'
 ], (fixtureName) => {
 
-  ava.test(`(${fixtureName}) should read settings`, (test) => {
+  ava(`(${fixtureName}) should read settings`, (test) => {
     const fixturePath = path.join(__dirname, 'fixtures', fixtureName);
     const imagePath = path.join(fixturePath, 'image.img');
     const schema = require(path.join(fixturePath, 'schema.json'));

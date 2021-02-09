@@ -26,7 +26,7 @@ const testFixture = (name) => {
   const fixture = require(path.join(fixturesPath, `${name}.json`));
 
   _.each(fixture.choices, (choice) => {
-    ava.test(`.matches() (${name}) should be ${choice.matches} for ${choice.title}`, (test) => {
+    ava(`.matches() (${name}) should be ${choice.matches} for ${choice.title}`, (test) => {
       test.is(jsontemplate.matches(choice.template, fixture.object), choice.matches);
     });
   });

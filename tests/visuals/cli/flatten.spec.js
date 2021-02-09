@@ -19,7 +19,7 @@
 const ava = require('ava');
 const cli = require('../../../visuals/cli');
 
-ava.test('should flatten a list without nested questions', (test) => {
+ava('should flatten a list without nested questions', (test) => {
   test.deepEqual(cli.flatten([
     {
       title: 'Network Type',
@@ -55,7 +55,7 @@ ava.test('should flatten a list without nested questions', (test) => {
   ]);
 });
 
-ava.test('should flatten a list with single-level nested questions', (test) => {
+ava('should flatten a list with single-level nested questions', (test) => {
   test.deepEqual(cli.flatten([
     {
       title: 'Network Type',
@@ -119,7 +119,7 @@ ava.test('should flatten a list with single-level nested questions', (test) => {
   ]);
 });
 
-ava.test('should flatten a list with two-level nested questions', (test) => {
+ava('should flatten a list with two-level nested questions', (test) => {
   test.deepEqual(cli.flatten([
     {
       title: 'Network Type',

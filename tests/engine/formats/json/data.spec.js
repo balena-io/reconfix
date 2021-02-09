@@ -23,7 +23,7 @@ const fs = Bluebird.promisifyAll(require('fs'));
 const json = require('../../../../lib/engine/formats/json');
 
 const testFile = (filename) => {
-  ava.test(`should parse ${filename}`, (test) => {
+  ava(`should parse ${filename}`, (test) => {
     const absolutePath = path.join(__dirname, 'fixtures', filename);
 
     return fs.readFileAsync(`${absolutePath}.json`, {

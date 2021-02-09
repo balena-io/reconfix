@@ -20,11 +20,11 @@ const ava = require('ava');
 const jsontemplate = require('../../lib/jsontemplate');
 
 const testBidirectionalCompilation = (title, template, data, result) => {
-  ava.test(`.compile() should compile ${title}`, (test) => {
+  ava(`.compile() should compile ${title}`, (test) => {
     test.deepEqual(jsontemplate.compile(template, data), result);
   });
 
-  ava.test(`.decompile() should decompile ${title}`, (test) => {
+  ava(`.decompile() should decompile ${title}`, (test) => {
     test.deepEqual(jsontemplate.decompile(template, result), data);
   });
 };

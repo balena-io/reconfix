@@ -236,14 +236,14 @@ _.each([
 
 ], (testCase) => {
 
-  ava.test(`.interpolate() should interpolate ${testCase.template}`, (test) => {
+  ava(`.interpolate() should interpolate ${testCase.template}`, (test) => {
     test.deepEqual(string.interpolate(
       testCase.template,
       testCase.data
     ), testCase.result);
   });
 
-  ava.test(`.deinterpolate() should deinterpolate ${testCase.result}`, (test) => {
+  ava(`.deinterpolate() should deinterpolate ${testCase.result}`, (test) => {
     test.deepEqual(string.deinterpolate(
       testCase.template,
       testCase.result

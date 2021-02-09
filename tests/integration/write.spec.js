@@ -20,7 +20,7 @@ const ava = require('ava');
 const Bluebird = require('bluebird');
 const tmp = Bluebird.promisifyAll(require('tmp'));
 const path = require('path');
-const imagefs = require('resin-image-fs');
+const imagefs = require('balena-image-fs');
 const fs = require('fs');
 const rindle = require('rindle');
 const filesystem = require('../../lib/engine/filesystem');
@@ -127,23 +127,18 @@ ava.test('should be able to modify a fileset', (test) => {
   const fixtureImage = path.join(fixturesPath, 'resinos-v2', 'image.img');
 
   const readFiles = (image) => {
-    return Bluebird.props({
-      cellular: imagefs.readFile({
-        image: image,
-        partition: schema.files.system_connections.location.partition,
-        path: path.posix.join(schema.files.system_connections.location.path, 'cellular')
-      }),
-      ethernet: imagefs.readFile({
-        image: image,
-        partition: schema.files.system_connections.location.partition,
-        path: path.posix.join(schema.files.system_connections.location.path, 'ethernet')
-      }),
-      wifi: imagefs.readFile({
-        image: image,
-        partition: schema.files.system_connections.location.partition,
-        path: path.posix.join(schema.files.system_connections.location.path, 'wifi')
-      })
-    });
+    return imagefs.interact(
+      image,
+      schema.files.system_connections.location.partition,
+      (_fs) => {
+        const readFileAsync = Bluebird.promisify(_fs.readFile);
+        return Bluebird.props({
+          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')),
+          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')),
+          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi'))
+        });
+      }
+    );
   };
 
   return createTemporaryFileFromFile(fixtureImage).then((imagePath) => {
@@ -177,31 +172,31 @@ ava.test('should not override custom properties inside a fileset', (test) => {
   const fixtureImage = path.join(fixturesPath, 'resinos-v2', 'image.img');
 
   const readFiles = (image) => {
-    return Bluebird.props({
-      cellular: imagefs.readFile({
-        image: image,
-        partition: schema.files.system_connections.location.partition,
-        path: path.posix.join(schema.files.system_connections.location.path, 'cellular')
-      }),
-      ethernet: imagefs.readFile({
-        image: image,
-        partition: schema.files.system_connections.location.partition,
-        path: path.posix.join(schema.files.system_connections.location.path, 'ethernet')
-      }),
-      wifi: imagefs.readFile({
-        image: image,
-        partition: schema.files.system_connections.location.partition,
-        path: path.posix.join(schema.files.system_connections.location.path, 'wifi')
-      })
-    });
+    return imagefs.interact(
+      image,
+      schema.files.system_connections.location.partition,
+      (_fs) => {
+        const readFileAsync = Bluebird.promisify(_fs.readFile);
+        return Bluebird.props({
+          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')),
+          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')),
+          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi'))
+        });
+      }
+    );
   };
 
   return createTemporaryFileFromFile(fixtureImage).then((imagePath) => {
-    return imagefs.writeFile({
-      image: imagePath,
-      partition: schema.files.system_connections.location.partition,
-      path: path.posix.join(schema.files.system_connections.location.path, 'cellular')
-    }, '[connection]\nname=cellular\nfoo=bar\nbar=baz').then(() => {
+    return imagefs.interact(
+      imagePath,
+      schema.files.system_connections.location.partition,
+      (_fs) => {
+        const writeFileAsync = Bluebird.promisify(_fs.writeFile);
+        const filePath = path.posix.join(schema.files.system_connections.location.path, 'cellular');
+        return writeFileAsync(filePath, '[connection]\nname=cellular\nfoo=bar\nbar=baz');
+      }
+    )
+    .then(() => {
       return reconfix.writeConfiguration(schema, {
         cellularConnectionName: 'newcellular',
         ethernetConnectionName: 'newethernet',

@@ -196,20 +196,20 @@ ava.test('should not override custom properties inside a fileset', (test) => {
         return writeFileAsync(filePath, '[connection]\nname=cellular\nfoo=bar\nbar=baz');
       }
     )
-    .then(() => {
-      return reconfix.writeConfiguration(schema, {
-        cellularConnectionName: 'newcellular',
-        ethernetConnectionName: 'newethernet',
-        wifiConnectionName: 'newwifi'
-      }, imagePath);
-    }).then(() => {
-      return readFiles(imagePath);
-    }).then((files) => {
-      test.deepEqual(files, {
-        cellular: '[connection]\nname=newcellular\nfoo=bar\nbar=baz',
-        ethernet: '[connection]\nname=newethernet',
-        wifi: '[connection]\nname=newwifi'
+      .then(() => {
+        return reconfix.writeConfiguration(schema, {
+          cellularConnectionName: 'newcellular',
+          ethernetConnectionName: 'newethernet',
+          wifiConnectionName: 'newwifi'
+        }, imagePath);
+      }).then(() => {
+        return readFiles(imagePath);
+      }).then((files) => {
+        test.deepEqual(files, {
+          cellular: '[connection]\nname=newcellular\nfoo=bar\nbar=baz',
+          ethernet: '[connection]\nname=newethernet',
+          wifi: '[connection]\nname=newwifi'
+        });
       });
-    });
   });
 });

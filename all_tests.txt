@@ -7,9 +7,9 @@
 ./tests/jsontemplate/string/deinterpolate.spec.js PASS
 ./tests/visuals/cli/transpile-question-when.spec.js PASS
 ./tests/visuals/cli/transpile-question.spec.js PASS
-./tests/visuals/cli/flatten.spec.js FAIL*
+./tests/visuals/cli/flatten.spec.js PASS
 ./tests/engine/configuration/bidirectional.spec.js PASS
-./tests/engine/configuration/unmatch.spec.js FAIL*
+./tests/engine/configuration/unmatch.spec.js PASS
 ./tests/engine/formats/index.spec.js FAIL*
 ./tests/engine/formats/ini/unit.spec.js PASS
 ./tests/engine/formats/ini/data.spec.js PASS

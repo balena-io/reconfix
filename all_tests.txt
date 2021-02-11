@@ -2,7 +2,7 @@
 ./tests/integration/write.spec.js PASS
 ./tests/jsontemplate/matches.spec.js PASS
 ./tests/jsontemplate/bidirectional.spec.js PASS
-./tests/jsontemplate/string/bidirectional.spec.js FAIL*
+./tests/jsontemplate/string/bidirectional.spec.js PASS
 ./tests/jsontemplate/string/interpolate.spec.js FAIL*
 ./tests/jsontemplate/string/deinterpolate.spec.js FAIL*
 ./tests/visuals/cli/transpile-question-when.spec.js PASS

@@ -10,7 +10,7 @@
 ./tests/visuals/cli/flatten.spec.js PASS
 ./tests/engine/configuration/bidirectional.spec.js PASS
 ./tests/engine/configuration/unmatch.spec.js PASS
-./tests/engine/formats/index.spec.js FAIL*
+./tests/engine/formats/index.spec.js PASS
 ./tests/engine/formats/ini/unit.spec.js PASS
 ./tests/engine/formats/ini/data.spec.js PASS
 ./tests/engine/formats/json/unit.spec.js PASS

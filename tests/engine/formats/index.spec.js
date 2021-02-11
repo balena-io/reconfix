@@ -23,7 +23,9 @@ const formats = require('../../../lib/engine/formats');
 ava('.parse() should throw if type is not supported', (test) => {
   test.throws(() => {
     formats.parse('foo', 'hello=world');
-  }, 'Unsupported type: foo');
+  }, {
+    message: 'Unsupported type: foo'
+  });
 });
 
 ava('.serialise() should throw if type is not supported', (test) => {
@@ -31,7 +33,9 @@ ava('.serialise() should throw if type is not supported', (test) => {
     formats.serialise('foo', {
       hello: 'world'
     });
-  }, 'Unsupported type: foo');
+  }, {
+    message: 'Unsupported type: foo'
+  });
 });
 
 _.each([

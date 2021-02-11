@@ -6,7 +6,7 @@
 ./tests/jsontemplate/string/interpolate.spec.js PASS
 ./tests/jsontemplate/string/deinterpolate.spec.js PASS
 ./tests/visuals/cli/transpile-question-when.spec.js PASS
-./tests/visuals/cli/transpile-question.spec.js FAIL*
+./tests/visuals/cli/transpile-question.spec.js PASS
 ./tests/visuals/cli/flatten.spec.js FAIL*
 ./tests/engine/configuration/bidirectional.spec.js PASS
 ./tests/engine/configuration/unmatch.spec.js FAIL*

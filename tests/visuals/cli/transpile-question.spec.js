@@ -27,7 +27,9 @@ ava('should throw if type is not recognised', (test) => {
       name: 'foo',
       type: 'foo'
     });
-  }, 'Unknown question type: foo');
+  }, {
+    message: 'Unknown question type: foo'
+  });
 });
 
 ava('should throw if question has no title', (test) => {
@@ -36,7 +38,9 @@ ava('should throw if question has no title', (test) => {
       name: 'foo',
       type: 'text'
     });
-  }, 'Invalid question title: undefined');
+  }, {
+    message: 'Invalid question title: undefined'
+  });
 });
 
 ava('should throw if question has an invalid title', (test) => {
@@ -46,7 +50,9 @@ ava('should throw if question has an invalid title', (test) => {
       name: 'foo',
       type: 'text'
     });
-  }, 'Invalid question title: foo,bar');
+  }, {
+    message: 'Invalid question title: foo,bar'
+  });
 });
 
 ava('should throw if question has no name', (test) => {
@@ -55,7 +61,9 @@ ava('should throw if question has no name', (test) => {
       title: 'Foo',
       type: 'text'
     });
-  }, 'Invalid question name: undefined');
+  }, {
+    message: 'Invalid question name: undefined'
+  });
 });
 
 ava('should throw if question has an invalid name', (test) => {
@@ -65,7 +73,9 @@ ava('should throw if question has an invalid name', (test) => {
       name: [ 'foo', 'bar' ],
       type: 'text'
     });
-  }, 'Invalid question name: foo,bar');
+  }, {
+    message: 'Invalid question name: foo,bar'
+  });
 });
 
 ava('it should transpile a basic text question', (test) => {

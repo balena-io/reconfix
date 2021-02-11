@@ -15,7 +15,5 @@
 ./tests/engine/formats/ini/data.spec.js PASS
 ./tests/engine/formats/json/unit.spec.js PASS
 ./tests/engine/formats/json/data.spec.js PASS
-./tests/engine/filesystem/image.spec.js FAIL
+./tests/engine/filesystem/image.spec.js PASS
 ./tests/engine/filesystem/manifest.spec.js PASS
-
-FAIL* is 'The second argument to `t.throws()` must be an expectation object'

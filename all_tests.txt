@@ -4,7 +4,7 @@
 ./tests/jsontemplate/bidirectional.spec.js PASS
 ./tests/jsontemplate/string/bidirectional.spec.js PASS
 ./tests/jsontemplate/string/interpolate.spec.js PASS
-./tests/jsontemplate/string/deinterpolate.spec.js FAIL*
+./tests/jsontemplate/string/deinterpolate.spec.js PASS
 ./tests/visuals/cli/transpile-question-when.spec.js PASS
 ./tests/visuals/cli/transpile-question.spec.js FAIL*
 ./tests/visuals/cli/flatten.spec.js FAIL*

@@ -22,13 +22,17 @@ const string = require('../../../lib/jsontemplate/string');
 ava('.deinterpolate() should throw if strings do not match', (test) => {
   test.throws(() => {
     string.deinterpolate('Hello {{name}}!', 'Hi John Doe!');
-  }, 'No match for \'name\'');
+  }, {
+    message: 'No match for \'name\''
+  });
 });
 
 ava('.deinterpolate() should throw if interpolation result is missing', (test) => {
   test.throws(() => {
     string.deinterpolate('Hello {{name}}!', 'Hi !');
-  }, 'No match for \'name\'');
+  }, {
+    message: 'No match for \'name\''
+  });
 });
 
 ava('.deinterpolate() should accept a number type on an independent string', (test) => {
@@ -70,13 +74,17 @@ ava('.deinterpolate() should be able to cast a negative number', (test) => {
 ava('.deinterpolate() should throw if independent string casted to number becomes NaN', (test) => {
   test.throws(() => {
     string.deinterpolate('{{number:age}}', 'foo');
-  }, 'Can\'t convert foo to number');
+  }, {
+    message: 'Can\'t convert foo to number'
+  });
 });
 
 ava('.deinterpolate() should throw if dependent string casted to number becomes NaN', (test) => {
   test.throws(() => {
     string.deinterpolate('I am {{number:age}} years old', 'I am foo years old');
-  }, 'Can\'t convert foo to number');
+  }, {
+    message: 'Can\'t convert foo to number'
+  });
 });
 
 ava('.deinterpolate() should accept a string type', (test) => {

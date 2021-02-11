@@ -58,7 +58,9 @@ ava('.interpolate() should cast false to string if interpolation has context', (
 ava('.interpolate() should throw if a referenced variable does not exist', (test) => {
   test.throws(() => {
     string.interpolate('{{foo}}', {});
-  }, 'Missing variable foo');
+  }, {
+    message: 'Missing variable foo'
+  });
 });
 
 ava('.interpolate() should throw if a referenced variable is null', (test) => {
@@ -66,13 +68,17 @@ ava('.interpolate() should throw if a referenced variable is null', (test) => {
     string.interpolate('{{foo}}', {
       foo: null
     });
-  }, 'Missing variable foo');
+  }, {
+    message: 'Missing variable foo'
+  });
 });
 
 ava('.interpolate() should throw if a referenced nested variable does not exist', (test) => {
   test.throws(() => {
     string.interpolate('{{foo.bar.baz}}', {});
-  }, 'Missing variable foo.bar.baz');
+  }, {
+    message: 'Missing variable foo.bar.baz'
+  });
 });
 
 ava('.interpolate() should ignore unused data variables', (test) => {

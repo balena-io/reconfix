@@ -1,4 +1,4 @@
-./tests/integration/read.spec.js FAIL
+./tests/integration/read.spec.js PASS
 ./tests/integration/write.spec.js FAIL
 ./tests/jsontemplate/matches.spec.js PASS
 ./tests/jsontemplate/bidirectional.spec.js PASS

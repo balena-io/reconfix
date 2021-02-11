@@ -133,9 +133,15 @@ ava('should be able to modify a fileset', (test) => {
       (_fs) => {
         const readFileAsync = Bluebird.promisify(_fs.readFile);
         return Bluebird.props({
-          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')),
-          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')),
-          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi'))
+          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')).then((b) => {
+            return b.toString();
+          }),
+          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')).then((b) => {
+            return b.toString();
+          }),
+          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi')).then((b) => {
+            return b.toString();
+          })
         });
       }
     );
@@ -178,9 +184,15 @@ ava('should not override custom properties inside a fileset', (test) => {
       (_fs) => {
         const readFileAsync = Bluebird.promisify(_fs.readFile);
         return Bluebird.props({
-          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')),
-          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')),
-          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi'))
+          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')).then((b) => {
+            return b.toString();
+          }),
+          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')).then((b) => {
+            return b.toString();
+          }),
+          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi')).then((b) => {
+            return b.toString();
+          })
         });
       }
     );

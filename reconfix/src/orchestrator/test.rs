@@ -1,9 +1,7 @@
 use super::{Orchestrator, ResolvedNode};
-use crate::{external_data::Patcher, ExternalData, Lens};
+use crate::{external_data::Synchronizer, ExternalData, Lens};
 use async_trait::async_trait;
-use json_patch::{Patch, PatchOperation, ReplaceOperation};
 use lazy_static::lazy_static;
-use maplit::hashmap;
 use petgraph::Direction;
 use serde_json::Value;
 use std::sync::Arc;
@@ -29,11 +27,11 @@ struct DummyExternalData;
 
 #[async_trait]
 impl ExternalData for DummyExternalData {
-    async fn listen(&self, _: Patcher) -> anyhow::Result<()> {
+    async fn listen(&self, _: Synchronizer) -> anyhow::Result<()> {
         Ok(())
     }
 
-    async fn commit(&self, _: Patch) -> anyhow::Result<()> {
+    async fn commit(&self, _: &Arc<Value>) -> anyhow::Result<()> {
         Ok(())
     }
 }
@@ -45,15 +43,10 @@ fn resolve_external_data_to_external_data() {
     let b = orchestrator.add_node(DummyExternalData);
     orchestrator.add_edge(a, b);
     let a_value = Value::from(0);
-    let b_value = Value::from(1);
-    let patch_to = a_value.clone();
+    let final_value = a_value.clone();
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {
-                a.0.index() => a_value.clone(),
-                b.0.index() => b_value,
-            },
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Outgoing,
             b.0,
@@ -62,15 +55,9 @@ fn resolve_external_data_to_external_data() {
 
     assert_eq!(
         resolved.0,
-        ResolvedNode::ExternalData(Arc::new(patch_to.clone()))
+        ResolvedNode::ExternalData(Arc::new(final_value.clone()))
     );
-    assert_eq!(
-        resolved.1.unwrap().0,
-        vec![PatchOperation::Replace(ReplaceOperation {
-            path: "/".to_string(),
-            value: patch_to,
-        })]
-    );
+    assert_eq!(resolved.1, Some(Arc::new(final_value)));
 }
 
 #[test]
@@ -80,15 +67,10 @@ fn resolve_external_data_from_external_data() {
     let b = orchestrator.add_node(DummyExternalData);
     orchestrator.add_edge(a, b);
     let a_value = Value::from(0);
-    let b_value = Value::from(1);
-    let patch_to = a_value.clone();
+    let final_value = a_value.clone();
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {
-                a.0.index() => a_value.clone(),
-                b.0.index() => b_value,
-            },
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Incoming,
             b.0,
@@ -97,15 +79,9 @@ fn resolve_external_data_from_external_data() {
 
     assert_eq!(
         resolved.0,
-        ResolvedNode::ExternalData(Arc::new(patch_to.clone()))
+        ResolvedNode::ExternalData(Arc::new(final_value.clone()))
     );
-    assert_eq!(
-        resolved.1.unwrap().0,
-        vec![PatchOperation::Replace(ReplaceOperation {
-            path: "/".to_string(),
-            value: patch_to,
-        })]
-    );
+    assert_eq!(resolved.1, Some(Arc::new(final_value)));
 }
 
 #[test]
@@ -120,9 +96,6 @@ fn resolve_external_data_to_lens() {
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {
-                a.0.index() => a_value.clone(),
-            },
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Outgoing,
             b.0,
@@ -148,9 +121,6 @@ fn resolve_external_data_from_lens() {
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {
-                a.0.index() => a_value.clone(),
-            },
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Incoming,
             b.0,
@@ -172,14 +142,10 @@ fn resolve_lens_to_external_data() {
     orchestrator.add_edge(a, b);
     let a_x_value = Value::from(1);
     let a_y_value = Value::from(0);
-    let b_value = Value::from(1);
-    let patch_to = a_y_value.clone();
+    let final_value = a_y_value.clone();
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {
-                b.0.index() => b_value.clone(),
-            },
             &ResolvedNode::XY(Arc::new(a_x_value), Arc::new(a_y_value)),
             Direction::Outgoing,
             b.0,
@@ -188,15 +154,9 @@ fn resolve_lens_to_external_data() {
 
     assert_eq!(
         resolved.0,
-        ResolvedNode::ExternalData(Arc::new(patch_to.clone()))
+        ResolvedNode::ExternalData(Arc::new(final_value.clone()))
     );
-    assert_eq!(
-        resolved.1.unwrap().0,
-        vec![PatchOperation::Replace(ReplaceOperation {
-            path: "/".to_string(),
-            value: patch_to,
-        })]
-    );
+    assert_eq!(resolved.1, Some(Arc::new(final_value)));
 }
 
 #[test]
@@ -207,14 +167,10 @@ fn resolve_lens_from_external_data() {
     orchestrator.add_edge(a, b);
     let a_x_value = Value::from(1);
     let a_y_value = Value::from(0);
-    let b_value = Value::from(0);
-    let patch_to = a_x_value.clone();
+    let final_value = a_x_value.clone();
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {
-                b.0.index() => b_value.clone(),
-            },
             &ResolvedNode::XY(Arc::new(a_x_value), Arc::new(a_y_value)),
             Direction::Incoming,
             b.0,
@@ -223,15 +179,9 @@ fn resolve_lens_from_external_data() {
 
     assert_eq!(
         resolved.0,
-        ResolvedNode::ExternalData(Arc::new(patch_to.clone()))
+        ResolvedNode::ExternalData(Arc::new(final_value.clone()))
     );
-    assert_eq!(
-        resolved.1.unwrap().0,
-        vec![PatchOperation::Replace(ReplaceOperation {
-            path: "/".to_string(),
-            value: patch_to,
-        })]
-    );
+    assert_eq!(resolved.1, Some(Arc::new(final_value)));
 }
 
 #[test]
@@ -245,7 +195,6 @@ fn resolve_lens_to_lens() {
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {},
             &ResolvedNode::XY(Arc::new(a_x_value), a_y_value.clone()),
             Direction::Outgoing,
             b.0,
@@ -267,7 +216,6 @@ fn resolve_lens_from_lens() {
 
     let resolved = orchestrator
         .resolve(
-            &mut hashmap! {},
             &ResolvedNode::XY(a_x_value.clone(), Arc::new(a_y_value)),
             Direction::Incoming,
             b.0,

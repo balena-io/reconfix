@@ -1,12 +1,14 @@
 //! Build and run transformation graphs.
 //!
-//! A transformation graph is an undirected graph where nodes are either
+//! A transformation graph is an directed graph where nodes are either
 //! [`Lens`](crate::Lens)es or [`ExternalData`](crate::ExternalData) instances.
-//! [`Orchestrator`] encapsulates a transformation graph and everything
-//! required to execute it.
+//! The [`Orchestrator`] struct encapsulates a transformation graph and
+//! everything required to execute it.
 
 use crate::{
-    external_data::{ApplyError, ApplyResult, PatchRequest, Patcher},
+    external_data::{
+        ApplyError, ApplyResult, SynchronizationRequest, Synchronizer,
+    },
     lens::Lens,
     Error, ExternalData, Result,
 };
@@ -14,7 +16,6 @@ use futures::{
     future,
     stream::{self, FuturesUnordered, StreamExt},
 };
-use json_patch::{AddOperation, Patch, PatchOperation, ReplaceOperation};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use serde_json::Value;
 use std::{
@@ -34,8 +35,8 @@ pub enum Node<'a> {
     Lens(Lens),
 
     /// An [`ExternalData`](crate::ExternalData) instance asynchronously
-    /// providing and accepting patches in accordance with some external data
-    /// repository.
+    /// providing and accepting new values in accordance with some external
+    /// data repository.
     ExternalData(Box<dyn ExternalData + Send + Sync + 'a>),
 }
 
@@ -99,7 +100,7 @@ impl<'a> Orchestrator<'a> {
     ///   unified with `b.X`.
     /// - `a` is a [`Lens`] node and `b` is an [`ExternalData`] node: `a.Y` is
     ///   unified with `b`.
-    /// - `a` and `b` are [`Lens`] nodes: `a.X` is unified with `b.Y`.
+    /// - `a` and `b` are [`Lens`] nodes: `a.Y` is unified with `b.X`.
     ///
     /// # Panics
     ///
@@ -122,58 +123,39 @@ impl<'a> Orchestrator<'a> {
 
         // Setup all external data nodes. These will drive the tranformation
         // graph
-        let (external_data, patch_sources) =
+        let (external_data, new_value_sources) =
             self.start_external_data_nodes().await?;
-
-        // Run an initial check to make sure all external data nodes are
-        // coherent
-        // TODO: check if there are any patches too. Also, have to take into
-        // account disconnected subgraphs
-        self.propagate_external_value(
-            self.external_data_nodes[0],
-            external_data
-                .get(&self.external_data_nodes[0].index())
-                .expect("BUG: external data node has not been setup"),
-            &external_data,
-        )?;
-
-        // Setup some shared state for the runner task. Wrapping these in a
-        // mutex is not strictly necessary because all patch requests are
-        // processed serially and thus these are never contended. But because
-        // `Stream::for_each` (see below) takes a future there's no way to
-        // prove this fact to the type system. Overhead is minimal though
         let external_data = Mutex::new(external_data);
-        let external_node_gens = Mutex::new(
-            self.external_data_nodes
-                .iter()
-                .map(|x| (x.index(), 0_usize))
-                .collect::<HashMap<_, _>>(),
-        );
 
-        // Listen for patch requests and apply them as they come. We do this by
-        // multiplexing all channels `Patcher`s push `PatchRequest`s into into
-        // a single asynchronous `Stream`. We then process each patch request
-        // serially as they come. It would be unsafe to process patch requests
-        // concurrently since different patches may end up creating conflicting
+        // Listen for synchronization requests and apply them as they come. We
+        // do this by multiplexing all `Synchronizer` channels pushing
+        // `SynchronizationRequest`s into into a single asynchronous `Stream`.
+        // We then process each synchronization request as they come, one by
+        // one. It would be unsafe to process synchronization requests
+        // concurrently since different values may end up creating conflicting
         // internal states
         let external_data = &external_data;
-        let external_node_gens = &external_node_gens;
-        stream::select_all(patch_sources.into_iter().map(|patch_source| {
-            // Convert a `Receiver` into a `Stream` to make it easier to poll
-            // them concurrently
-            Box::pin(stream::unfold(patch_source, |mut patch_source| async {
-                patch_source.recv().await.map(|patch| (patch, patch_source))
-            }))
-        }))
+        stream::select_all(new_value_sources.into_iter().map(
+            |new_value_source| {
+                // Convert a `Receiver` into a `Stream` to make it easier to poll
+                // them concurrently
+                Box::pin(stream::unfold(
+                    new_value_source,
+                    |mut new_value_source| async {
+                        new_value_source
+                            .recv()
+                            .await
+                            .map(|new_value| (new_value, new_value_source))
+                    },
+                ))
+            },
+        ))
         .for_each(|request| async move {
-            // TODO: increase `gen` on error
             let _ = request.response_sink.send(
                 self.process_request(
                     request.id,
-                    request.gen,
-                    &request.patch,
-                    &*external_node_gens.lock().await,
-                    &mut *external_data.lock().await,
+                    request.new_value,
+                    &external_data,
                 )
                 .await,
             );
@@ -185,7 +167,10 @@ impl<'a> Orchestrator<'a> {
 
     async fn start_external_data_nodes(
         &self,
-    ) -> Result<(HashMap<usize, Value>, Vec<Receiver<PatchRequest>>)> {
+    ) -> Result<(
+        HashMap<usize, Arc<Value>>,
+        Vec<Receiver<SynchronizationRequest>>,
+    )> {
         // Initialize all external data nodes concurrently. It would be better
         // to spawn each in its own task to potentially run all initializations
         // in parallel, but that would create a dependency on a specific
@@ -197,24 +182,24 @@ impl<'a> Orchestrator<'a> {
             .map(move |index| self.start_external_data_node(index))
             .collect::<FuturesUnordered<_>>();
         let mut initial_data = HashMap::new();
-        let mut patch_sources = Vec::new();
+        let mut request_sources = Vec::new();
         while let Some(res) = external_data_init.next().await {
             let (index, initial_value, source) = res?;
             initial_data.insert(index, initial_value);
-            patch_sources.push(source);
+            request_sources.push(source);
         }
 
-        Ok((initial_data, patch_sources))
+        Ok((initial_data, request_sources))
     }
 
     async fn start_external_data_node(
         &self,
         index: NodeIndex<usize>,
-    ) -> Result<(usize, Value, Receiver<PatchRequest>)> {
-        // Create a `Patcher` and ask this node to use it through the
+    ) -> Result<(usize, Arc<Value>, Receiver<SynchronizationRequest>)> {
+        // Create a `Synchronizer` and ask this node to use it through the
         // `listen()` method
         let id = index.index();
-        let (patcher, mut source) = Patcher::new(id);
+        let (synchronizer, mut source) = Synchronizer::new(id);
         let node = self
             .graph
             .node_weight(index)
@@ -223,7 +208,7 @@ impl<'a> Orchestrator<'a> {
             match node {
                 Node::ExternalData(external_data) => {
                     external_data
-                        .listen(patcher)
+                        .listen(synchronizer)
                         .await
                         .map_err(|x| Error::ListenError(id, x))?
                 }
@@ -233,127 +218,70 @@ impl<'a> Orchestrator<'a> {
             Result::Ok(())
         };
 
-        // Get the first patch and use that as the initial value for
-        // this node
+        // Get the initial value for this node
         let initial_value_future = async {
-            Ok(match source.recv().await {
+            match source.recv().await {
                 Some(request) => {
                     assert_eq!(request.id, id);
-                    assert_eq!(request.gen, 0);
-                    match Self::process_initial_patch(id, request.patch) {
-                        Ok(value) => {
-                            let _ = request.response_sink.send(Ok(()));
+                    let _ = request.response_sink.send(Ok(()));
 
-                            value
-                        }
-                        Err(err) => {
-                            let _ = request
-                                .response_sink
-                                .send(Err(ApplyError::InvalidInitialPatch));
-
-                            return Err(err);
-                        }
-                    }
+                    request.new_value
                 }
-                None => Value::Null,
-            })
+                None => Arc::new(Value::Null),
+            }
         };
 
-        // Since `listen()` can await on the first call to `Patcher::apply()`,
-        // awaiting on it could cause a deadlock. On the other hand if
-        // `listen()` doesn't await on it, awaiting fist on the first patch
-        // would cause a deadlock too. Thus the only correct way is to await on
-        // both concurrently
+        // Since `listen()` can await on the first call to
+        // `Synchronizer::apply()`, awaiting on it could cause a deadlock. On
+        // the other hand if `listen()` doesn't await on it, awaiting fist on
+        // the first value would cause a deadlock too. Thus the only correct
+        // way is to await on both concurrently
         let (listen_res, initial_value) =
             future::join(listen_future, initial_value_future).await;
         listen_res?;
 
-        Ok((id, initial_value?, source))
-    }
-
-    fn process_initial_patch(id: usize, mut patch: Patch) -> Result<Value> {
-        if patch.0.len() != 1 {
-            return Err(Error::InvalidInitialPatch(id, patch));
-        }
-
-        match patch.0.pop() {
-            Some(PatchOperation::Add(AddOperation { path, value }))
-                if path.is_empty() =>
-            {
-                Ok(value)
-            }
-            x => Err(Error::InvalidInitialPatch(id, Patch(vec![x.unwrap()]))),
-        }
+        Ok((id, initial_value, source))
     }
 
     async fn process_request(
         &self,
         id: usize,
-        gen: usize,
-        patch: &Patch,
-        external_node_gens: &HashMap<usize, usize>,
-        external_data: &mut HashMap<usize, Value>,
+        new_value: Arc<Value>,
+        external_data: &Mutex<HashMap<usize, Arc<Value>>>,
     ) -> ApplyResult {
-        // Ignore the request if its `gen` is lower than expected. See the docs
-        // for `Patcher::apply()` for the explanation
-        let expected_gen = *external_node_gens
-            .get(&id)
-            .expect("BUG: received a patch request with an unknown ID");
-        assert!(gen <= expected_gen);
-        if gen < expected_gen {
-            return Err(ApplyError::SequenceError);
+        let mut external_data_guard = external_data.lock().await;
+
+        // There's nothing to do if the new value is already synchronized
+        if new_value == *external_data_guard.get(&id).unwrap() {
+            return Ok(());
         }
 
-        // Try to apply the patch into a copy of the current value for the
-        // specified external data node
-        let mut patched_value = external_data.get(&id).unwrap().clone();
-        json_patch::patch_unsafe(&mut patched_value, patch)
-            .map_err(|x| ApplyError::PatchConflicts(x.into()))?;
-
         // Try to propagate changes
-        let patches = self
+        let new_values = self
             .propagate_external_value(
                 NodeIndex::from(id),
-                &patched_value,
-                external_data,
+                &new_value,
+                &*external_data_guard,
             )
-            .map_err(|x| ApplyError::PatchConflicts(x.into()))?;
+            .map_err(|x| ApplyError::NewValueConflicts(x.into()))?;
 
         // If it all goes well, we can commit all changes concurrently
-        external_data.insert(id, patched_value);
-        patches
+        external_data_guard.insert(id, new_value);
+        drop(external_data_guard);
+        new_values
             .into_iter()
-            .map(|(index, mut patch)| {
-                // JSON patch generates an invalid patch if the whole document
-                // has been replaced. Fix that here before applying the patch.
-                // See https://github.com/idubrov/json-patch/issues/12
-                for operation in &mut patch.0 {
-                    match operation {
-                        PatchOperation::Replace(ReplaceOperation {
-                            ref mut path,
-                            ..
-                        }) => *path = String::new(),
-                        _ => unimplemented!(),
-                    }
-                }
-
-                json_patch::patch_unsafe(
-                    external_data.get_mut(&index.index()).unwrap(),
-                    &patch,
-                )
-                .unwrap();
-                let is_empty = patch.0.is_empty();
-
+            .map(|(index, new_value)| {
                 async move {
-                    if is_empty {
-                        return;
-                    }
-
                     // TODO: handle `commit()` failures
                     if let Node::ExternalData(external_data_node) =
                         self.graph.node_weight(index).unwrap()
                     {
-                        external_data_node.commit(patch).await.unwrap();
+                        external_data_node.commit(&new_value).await.unwrap();
+                        *external_data
+                            .lock()
+                            .await
+                            .get_mut(&index.index())
+                            .unwrap() = new_value;
                     } else {
                         unreachable!();
                     }
@@ -370,8 +298,8 @@ impl<'a> Orchestrator<'a> {
         &self,
         index: NodeIndex<usize>,
         set_to: &Value,
-        external_data: &HashMap<usize, Value>,
-    ) -> Result<Vec<(NodeIndex<usize>, Patch)>> {
+        external_data: &HashMap<usize, Arc<Value>>,
+    ) -> Result<Vec<(NodeIndex<usize>, Arc<Value>)>> {
         assert!(matches!(
             self.graph.node_weight(index).unwrap(),
             Node::ExternalData(_)
@@ -405,7 +333,7 @@ impl<'a> Orchestrator<'a> {
         // Exhaust the `resolvable` queue by filling the `resolved` map with
         // concrete values and checking for internal consistency
         // TODO: we can actually build some pretty good errors here
-        let mut patches = Vec::new();
+        let mut new_values = Vec::new();
         while let Some((resolved_index, resolvable_index)) = resolvable.pop() {
             let (_, direction) = self
                 .graph
@@ -429,17 +357,20 @@ impl<'a> Orchestrator<'a> {
                     // Otherwise, resolve the node and enqueue all untraversed
                     // edges
 
-                    let (resolvable_data, patch) = self.resolve(
-                        external_data,
+                    let (resolvable_data, new_value) = self.resolve(
                         &resolved_data,
                         direction,
                         resolvable_index,
                     )?;
                     entry.insert(resolvable_data);
 
-                    if let Some(patch) = patch {
-                        if !patch.0.is_empty() {
-                            patches.push((resolvable_index, patch));
+                    if let Some(new_value) = new_value {
+                        if new_value
+                            != *external_data
+                                .get(&resolvable_index.index())
+                                .unwrap()
+                        {
+                            new_values.push((resolvable_index, new_value));
                         }
                     }
 
@@ -455,7 +386,7 @@ impl<'a> Orchestrator<'a> {
             }
         }
 
-        Ok(patches)
+        Ok(new_values)
     }
 
     fn check_conflict(
@@ -517,13 +448,10 @@ impl<'a> Orchestrator<'a> {
 
     fn resolve(
         &self,
-        external_data: &HashMap<usize, Value>,
         left: &ResolvedNode,
         direction: Direction,
         right_index: NodeIndex<usize>,
-    ) -> Result<(ResolvedNode, Option<Patch>)> {
-        let right_id = right_index.index();
-
+    ) -> Result<(ResolvedNode, Option<Arc<Value>>)> {
         match (
             left,
             direction,
@@ -535,10 +463,7 @@ impl<'a> Orchestrator<'a> {
                 Node::ExternalData(_),
             ) => Ok((
                 ResolvedNode::ExternalData(left_value.clone()),
-                Some(json_patch::diff(
-                    external_data.get(&right_id).unwrap(),
-                    left_value,
-                )),
+                Some(left_value.clone()),
             )),
             (
                 ResolvedNode::ExternalData(left_value),
@@ -572,10 +497,7 @@ impl<'a> Orchestrator<'a> {
                 Node::ExternalData(_),
             ) => Ok((
                 ResolvedNode::ExternalData(left_y_value.clone()),
-                Some(json_patch::diff(
-                    external_data.get(&right_id).unwrap(),
-                    left_y_value,
-                )),
+                Some(left_y_value.clone()),
             )),
             (
                 ResolvedNode::XY(left_x_value, _),
@@ -583,10 +505,7 @@ impl<'a> Orchestrator<'a> {
                 Node::ExternalData(_),
             ) => Ok((
                 ResolvedNode::ExternalData(left_x_value.clone()),
-                Some(json_patch::diff(
-                    external_data.get(&right_id).unwrap(),
-                    left_x_value,
-                )),
+                Some(left_x_value.clone()),
             )),
             (
                 ResolvedNode::XY(_, left_y_value),

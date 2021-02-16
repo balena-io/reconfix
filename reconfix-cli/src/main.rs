@@ -2,10 +2,9 @@ use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
 use clap::{clap_app, AppSettings, ArgMatches};
 use ex::fs;
-use json_patch::{AddOperation, Patch, PatchOperation, ReplaceOperation};
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use reconfix::{
-    external_data::Patcher, orchestrator::Node, ExternalData, Lens,
+    external_data::Synchronizer, orchestrator::Node, ExternalData, Lens,
     Orchestrator,
 };
 use serde_json::Value;
@@ -27,7 +26,7 @@ struct JsonFileExternalData {
     path: PathBuf,
     debounce_delay: Duration,
     watcher: Mutex<Option<RecommendedWatcher>>,
-    value: Arc<Mutex<Value>>,
+    value: Arc<Mutex<Arc<Value>>>,
 }
 
 impl JsonFileExternalData {
@@ -39,26 +38,15 @@ impl JsonFileExternalData {
             path: path.into(),
             debounce_delay: debounce_delay.unwrap_or(DEFAULT_DEBOUNCE_DELAY),
             watcher: Mutex::new(None),
-            value: Arc::new(Mutex::new(Value::Null)),
+            value: Arc::new(Mutex::new(Arc::new(Value::Null))),
         }
     }
 }
 
 #[async_trait]
 impl ExternalData for JsonFileExternalData {
-    async fn listen(&self, patcher: Patcher) -> Result<()> {
-        // Parse the JSON file and send the first patch
-        let value = serde_json::from_str::<Value>(
-            &tokio::fs::read_to_string(&self.path).await?,
-        )?;
-        patcher
-            .apply(Patch(vec![PatchOperation::Add(AddOperation {
-                path: String::new(),
-                value: value.clone(),
-            })]))
-            .await?;
-
-        // Watch the JSON file so we can send a patch when it changes
+    async fn listen(&self, synchronizer: Synchronizer) -> Result<()> {
+        // Watch the JSON file so we can send a new value when it changes
         let (watcher_sink, watcher_source) = mpsc::channel();
         let mut watcher = notify::watcher(watcher_sink, self.debounce_delay)?;
         watcher.watch(&self.path, RecursiveMode::NonRecursive)?;
@@ -74,48 +62,49 @@ impl ExternalData for JsonFileExternalData {
             }
         });
 
-        *self.watcher.lock().await = Some(watcher);
+        // Parse the JSON file and send the first value
+        let value = Arc::new(serde_json::from_str::<Value>(
+            &tokio::fs::read_to_string(&self.path).await?,
+        )?);
+        synchronizer.apply(value.clone()).await?;
         *self.value.lock().await = value;
 
+        // If there's no error, keep the watcher
+        *self.watcher.lock().await = Some(watcher);
+
+        // Spawn the pusher task
         let value = self.value.clone();
         tokio::spawn(async move {
             while let Some(event) = async_watcher_source.recv().await {
                 if let DebouncedEvent::Write(path) = event {
                     let mut value = value.lock().await;
-                    let res: Result<Value> = async {
-                        let new_value = serde_json::from_str::<Value>(
-                            &tokio::fs::read_to_string(&path).await.unwrap(),
-                        )
-                        .unwrap();
-                        if new_value != *value {
-                            patcher
-                                .apply(Patch(vec![PatchOperation::Replace(
-                                    ReplaceOperation {
-                                        path: String::new(),
-                                        value: new_value.clone(),
-                                    },
-                                )]))
-                                .await?;
-                        }
+                    let res: Result<()> = async {
+                        let new_value = Arc::new(
+                            serde_json::from_str::<Value>(
+                                &tokio::fs::read_to_string(&path)
+                                    .await
+                                    .unwrap(),
+                            )
+                            .unwrap(),
+                        );
+                        synchronizer.apply(new_value.clone()).await?;
+                        *value = new_value;
 
-                        Ok(new_value)
+                        Ok(())
                     }
                     .await;
-                    match res {
-                        Ok(new_value) => *value = new_value,
-                        Err(err) => {
-                            eprintln!(
-                                    "cannot synchronize {}, reverting due to: {:#?}",
-                                    path.display(),
-                                    err
-                                );
-                            tokio::fs::write(
-                                path,
-                                &serde_json::to_vec(&*value).unwrap(),
-                            )
-                            .await
-                            .unwrap();
-                        }
+                    if let Err(err) = res {
+                        eprintln!(
+                            "cannot synchronize {}, reverting due to: {:#?}",
+                            path.display(),
+                            err
+                        );
+                        tokio::fs::write(
+                            path,
+                            &serde_json::to_vec(&**value).unwrap(),
+                        )
+                        .await
+                        .unwrap();
                     }
                 }
             }
@@ -124,10 +113,11 @@ impl ExternalData for JsonFileExternalData {
         Ok(())
     }
 
-    async fn commit(&self, patch: Patch) -> Result<()> {
+    async fn commit(&self, new_value: &Arc<Value>) -> Result<()> {
         let mut value = self.value.lock().await;
-        json_patch::patch(&mut value, &patch)?;
-        tokio::fs::write(&self.path, &serde_json::to_vec(&*value)?).await?;
+        tokio::fs::write(&self.path, &serde_json::to_vec(&**new_value)?)
+            .await?;
+        *value = new_value.clone();
 
         Ok(())
     }

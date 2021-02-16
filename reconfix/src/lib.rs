@@ -118,7 +118,6 @@
 //! ```
 
 use external_data::ApplyError;
-use json_patch::Patch;
 use serde_json::Value;
 use std::{result, sync::Arc};
 use thiserror::Error;
@@ -138,11 +137,12 @@ pub use crate::{
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum Error {
-    /// [`Patcher::apply`](crate::external_data::Patcher::apply) failed.
-    #[error("`Patcher::apply()` failed: {0}")]
+    /// [`Synchronizer::apply`](crate::external_data::Synchronizer::apply) failed.
+    #[error("`Synchronizer::apply()` failed: {0}")]
     ApplyError(#[from] ApplyError),
 
-    /// Found a conflict while propagating a patch in a transformation graph.
+    /// Found a conflict between two nodes while propagating values in a
+    /// transformation graph.
     #[error("conflict between nodes {0} and {2}. Node {0} is:\n\n{1}\n\nwhile node {2} is:\n\n{3}")]
     Conflict(usize, Arc<Value>, usize, Arc<Value>),
 
@@ -153,10 +153,6 @@ pub enum Error {
     /// A CUE lens is invalid.
     #[error("invalid lens:\n\n{0}\n\ndue to: {1}")]
     InvalidLens(String, #[source] anyhow::Error),
-
-    /// The initial patch sent by an [`ExternalData`] node is invalid.
-    #[error("the initial patch sent by the external data node {0} is invalid:\n{1:#?}")]
-    InvalidInitialPatch(usize, Patch),
 
     /// A CUE value is invalid.
     #[error("invalid value: {0}")]

@@ -28,7 +28,7 @@ async fn running_graph_without_external_data_should_resolve() {
 }
 
 #[tokio::test]
-async fn running_graph_should_resolve_when_all_patchers_drop() {
+async fn running_graph_should_resolve_when_all_synchronizers_drop() {
     let data = InMemoryExternalData::new(&()).unwrap();
     let mut orchestrator = Orchestrator::new();
     orchestrator.add_node(data.clone());

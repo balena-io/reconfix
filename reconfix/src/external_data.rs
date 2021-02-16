@@ -3,11 +3,10 @@
 //! Interaction with data outside a transformation graph is abstracted through
 //! objects implementing the [`ExternalData`] trait. This trait defines an
 //! asynchronous, bidirectional, event-based interface that communicates
-//! using JSON patches.
+//! using JSON values.
 
 use crate::{Error, Result};
 use async_trait::async_trait;
-use json_patch::{AddOperation, Patch, PatchOperation, ReplaceOperation};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
 use std::{marker::PhantomData, result, sync::Arc};
@@ -25,21 +24,21 @@ use tokio::sync::{
 #[async_trait]
 pub trait ExternalData {
     /// Spawn a task that listens for changes from some external data
-    /// repository and pushes deltas into `patcher` as they happen. The
-    /// implementor must set the initial value for the data it represents with
-    /// a single, root [`AddOperation`](json_patch::AddOperation) before
-    /// sending delta patches.
+    /// repository and pushes new values into the transformation graph as they
+    /// happen. The implementor must set the initial value for the data it
+    /// represents with an initial call to [`Synchronizer::apply`] before
+    /// sending new values through the same method.
     ///
     /// It is not required that implementors support repeated calls to
     /// `listen()` after it returned `Ok(())` once.
     ///
     /// **TODO: actually this probably should take `self` by value. Would
     /// require splitting this trait into two though**
-    async fn listen(&self, patcher: Patcher) -> anyhow::Result<()>;
+    async fn listen(&self, synchronizer: Synchronizer) -> anyhow::Result<()>;
 
-    /// Commit a patch to the external resource. A successful commit
-    /// **must not** cycle back into a call to [`Patcher::apply`].
-    async fn commit(&self, patch: Patch) -> anyhow::Result<()>;
+    /// Commit a new value to the external resource. A successful commit
+    /// may cycle back into a call to [`Synchronizer::apply`].
+    async fn commit(&self, new_value: &Arc<Value>) -> anyhow::Result<()>;
 }
 
 #[async_trait]
@@ -47,45 +46,43 @@ impl<'a, T> ExternalData for &'a T
 where
     T: ExternalData + Sync + 'a,
 {
-    async fn listen(&self, patcher: Patcher) -> anyhow::Result<()> {
-        T::listen(self, patcher).await
+    async fn listen(&self, synchronizer: Synchronizer) -> anyhow::Result<()> {
+        T::listen(self, synchronizer).await
     }
 
-    async fn commit(&self, patch: Patch) -> anyhow::Result<()> {
-        T::commit(self, patch).await
+    async fn commit(&self, new_value: &Arc<Value>) -> anyhow::Result<()> {
+        T::commit(self, new_value).await
     }
 }
 
-/// Object responsible for transporting changes from [`ExternalData`] objects
-/// into the transformation graph.
-pub struct Patcher {
+/// Object responsible for transporting new values from [`ExternalData`]
+/// objects into a transformation graph.
+pub struct Synchronizer {
     id: usize,
-    gen: usize,
-    sink: Sender<PatchRequest>,
+    sink: Sender<SynchronizationRequest>,
 }
 
-impl Patcher {
-    pub(crate) fn new(id: usize) -> (Self, Receiver<PatchRequest>) {
+impl Synchronizer {
+    pub(crate) fn new(id: usize) -> (Self, Receiver<SynchronizationRequest>) {
         let (sink, source) = mpsc::channel(1);
 
-        (Self { id, gen: 0, sink }, source)
+        (Self { id, sink }, source)
     }
 
-    /// Apply and propagate a patch inside the transformation graph. This
+    /// Apply and propagate a new value inside the transformation graph. This
     /// function will fail if the transformation graph is being shut down or
-    /// if the patch fails to synchronize due to conflicts.
+    /// if the new value fails to synchronize due to conflicts.
     ///
     /// It is safe to call this function again before a previous call fully
-    /// resolves as all patches are serialized before being applied. But in
-    /// this case, if one patch fails all other pending patches from this
-    /// [`Patcher`] will also fail with a [`ApplyError::SequenceError`] error.
-    /// This is done to avoid desynchronization and the caller must handle
-    /// this case gracefully.
+    /// resolves as all values are serialized before being synchronized.
     ///
     /// No changes are commited if `apply()` fails.
-    pub async fn apply(&self, patch: Patch) -> ApplyResult {
+    pub async fn apply<A>(&self, new_value: A) -> ApplyResult
+    where
+        A: Into<Arc<Value>>,
+    {
         let (request, response_source) =
-            PatchRequest::new(self.id, self.gen, patch);
+            SynchronizationRequest::new(self.id, new_value.into());
         self.sink
             .send(request)
             .await
@@ -98,51 +95,39 @@ impl Patcher {
     }
 }
 
-/// Possible error values for a failed [`Patcher::apply`] call.
+/// Possible error values for a failed [`Synchronizer::apply`] call.
 #[derive(Debug, thiserror::Error)]
 pub enum ApplyError {
-    /// This is an initial patch and it was invalid.
-    #[error("initial patch was invalid")]
-    InvalidInitialPatch,
+    /// The new value caused a conflict within the transformation graph.
+    #[error("new value conflicts: {0}")]
+    NewValueConflicts(#[from] anyhow::Error),
 
-    /// The patch caused a conflict within the transformation graph.
-    #[error("patch conflicts: {0}")]
-    PatchConflicts(#[from] anyhow::Error),
-
-    /// Patch was skipped due to a previous enqueued patch from the same
-    /// [`Patcher`] failing.
-    #[error("correlated patch failed")]
-    SequenceError,
-
-    /// The transformation graph is being shut down and so no more patches can
-    /// be applied.
-    #[error("transformation graph is being shut down")]
+    /// The transformation graph is being shut down and so no more values can
+    /// be pushed.
+    #[error("the transformation graph is being shut down")]
     ShuttingDown,
 }
 
-/// [`Result`](std::result::Result) type for [`Patcher::apply`].
+/// [`Result`](std::result::Result) type for [`Synchronizer::apply`].
 pub type ApplyResult = result::Result<(), ApplyError>;
 
-pub(crate) struct PatchRequest {
+pub(crate) struct SynchronizationRequest {
     pub(crate) id: usize,
-    pub(crate) gen: usize,
-    pub(crate) patch: Patch,
+    pub(crate) new_value: Arc<Value>,
     pub(crate) response_sink: oneshot::Sender<ApplyResult>,
 }
 
-impl PatchRequest {
+impl SynchronizationRequest {
     pub(crate) fn new(
         id: usize,
-        gen: usize,
-        patch: Patch,
+        new_value: Arc<Value>,
     ) -> (Self, oneshot::Receiver<ApplyResult>) {
         let (sink, source) = oneshot::channel();
 
         (
             Self {
                 id,
-                gen,
-                patch,
+                new_value,
                 response_sink: sink,
             },
             source,
@@ -171,18 +156,18 @@ impl<T> InMemoryExternalData<T> {
     /// successfully called on this struct.
     ///
     /// If this function returns true, any subsequent call to
-    /// [`set_cloned`](InMemoryExternalData::set_cloned) will push a patch into
-    /// the associated transformation graph.
+    /// [`set_cloned`](InMemoryExternalData::set_cloned) will push the new
+    /// value into the associated transformation graph.
     pub async fn is_listening(&self) -> bool {
-        self.inner.lock().await.patcher.is_some()
+        self.inner.lock().await.synchronizer.is_some()
     }
 
-    /// Stop sending patches into the transformation graph.
+    /// Stop sending new values into the transformation graph.
     ///
     /// The orchestrator may still call
     /// [`commit`](InMemoryExternalData::commit).
     pub async fn unlisten(&self) {
-        self.inner.lock().await.patcher.take();
+        self.inner.lock().await.synchronizer.take();
     }
 }
 
@@ -194,9 +179,11 @@ where
     pub fn new(data: &T) -> Result<Self> {
         Ok(Self {
             inner: Arc::new(Mutex::new(InMemoryExternalDataInner {
-                data: serde_json::to_value(data)
-                    .map_err(Error::JsonSerializationError)?,
-                patcher: None,
+                data: Arc::new(
+                    serde_json::to_value(data)
+                        .map_err(Error::JsonSerializationError)?,
+                ),
+                synchronizer: None,
 
                 _phantom: PhantomData,
             })),
@@ -205,20 +192,17 @@ where
 
     /// Set the wrapped value for this struct.
     ///
-    /// A patch will be pushed into the transformation graph if
+    /// The new value will be pushed into the transformation graph if
     /// [`listen`](InMemoryExternalData::listen) has been called on this
     /// struct. In case this fails, `set_cloned()` returns an error.
     pub async fn set_cloned(&self, new_data: &T) -> Result<&Self> {
-        let new_data = serde_json::to_value(new_data)
-            .map_err(Error::JsonSerializationError)?;
+        let new_data = Arc::new(
+            serde_json::to_value(new_data)
+                .map_err(Error::JsonSerializationError)?,
+        );
         let mut inner = self.inner.lock().await;
-        if let Some(patcher) = &inner.patcher {
-            patcher
-                .apply(Patch(vec![PatchOperation::Replace(ReplaceOperation {
-                    path: String::new(),
-                    value: new_data.clone(),
-                })]))
-                .await?;
+        if let Some(synchronizer) = &inner.synchronizer {
+            synchronizer.apply(new_data.clone()).await?;
         }
         inner.data = new_data;
 
@@ -232,7 +216,7 @@ where
 {
     /// Get a deserialized clone of the wrapped data.
     pub async fn get_cloned(&self) -> Result<T> {
-        serde_json::from_value(self.inner.lock().await.data.clone())
+        serde_json::from_value((*self.inner.lock().await.data).clone())
             .map_err(Error::JsonDeserializationError)
     }
 }
@@ -242,29 +226,23 @@ impl<T> ExternalData for InMemoryExternalData<T>
 where
     T: Send + 'static,
 {
-    async fn listen(&self, patcher: Patcher) -> anyhow::Result<()> {
+    async fn listen(&self, synchronizer: Synchronizer) -> anyhow::Result<()> {
         let mut inner = self.inner.lock().await;
-        patcher
-            .apply(Patch(vec![PatchOperation::Add(AddOperation {
-                path: String::new(),
-                value: inner.data.clone(),
-            })]))
-            .await
-            .unwrap();
-        inner.patcher = Some(patcher);
+        synchronizer.apply(inner.data.clone()).await.unwrap();
+        inner.synchronizer = Some(synchronizer);
 
         Ok(())
     }
 
-    async fn commit(&self, patch: Patch) -> anyhow::Result<()> {
-        json_patch::patch(&mut self.inner.lock().await.data, &patch)?;
+    async fn commit(&self, new_value: &Arc<Value>) -> anyhow::Result<()> {
+        self.inner.lock().await.data = new_value.clone();
 
         Ok(())
     }
 }
 
 struct InMemoryExternalDataInner<T> {
-    data: Value,
-    patcher: Option<Patcher>,
+    data: Arc<Value>,
+    synchronizer: Option<Synchronizer>,
     _phantom: PhantomData<T>,
 }

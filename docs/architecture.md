@@ -114,25 +114,21 @@ While it is certainly possible to implement this functionality using stateful op
 
 ## External Data
 
-Reconfix synchronizes "external data repositories". An external data repository is any dataset that can be represented in a single JSON document. Acessing, parsing, and modifying these datasets is left to arbitrary objects implementing the `ExternalData` trait. The only thing reconfix is concerned with are receiving changes from those external data repositories, and pushing new changes as a result of a successful synchronization.
+Reconfix synchronizes "external data repositories". An external data repository is any dataset that can be represented in a single JSON document. Acessing, parsing, and modifying these datasets is left to arbitrary objects implementing the `ExternalData` trait. The only thing reconfix is concerned with are receiving new values from those external data repositories, and pushing new values to other nodes as a result of a successful synchronization.
 
-The `ExternalData` trait defines an interface based on patches. While the orchestrator must maintain the full dataset in memory, implementors may choose to communicate changes as partial deltas. The orchestrator also push changes as delta patches.
-
-In line with the orchestrator's push-based design, `ExternalData` objects are responsible for asynchronously pushing changes as they happen. Implementors must be prepared to deal with a possible rejection appropriately. Possible responses to an error include reverting the change and retrying with an updated patchset.
-
-**TODO: there's actually a lot of unecessary copying around due to how the `serde_json` and `json-patch` crates are designed. We probably want a better solution in the future**
+In line with the orchestrator's push-based design, `ExternalData` objects are responsible for asynchronously pushing new values as they happen. Implementors must be prepared to deal with a possible rejection appropriately. Possible responses to an error include reverting the new value and retrying with an updated value.
 
 ## Orchestration
 
 Lenses, transforms, and `ExternalData` objects are composed into a *transformation graph*. Transformation graphs are directed, possibly cyclic graphs but the direction of edges only define composition between nodes and not any kind of order. Transformation graphs have no defined order of evaluation, there is no guarantee than any lenses or transforms will be evaluated at all, and lenses and transforms may be evaluated any number of times. Lenses and transforms are assumed to be purely functional with no side-effects, so this is not a problem.
 
-Given a transformation graph containing at least two `ExternalData` nodes, the orchestrator can enter an event loop. The graph is immutable while the event loop is running. The event loop has a single purpose: accept change requests from external data nodes and propagate those changes through the graph into all other external data nodes.
+Given a transformation graph containing at least two `ExternalData` nodes, the orchestrator can enter an event loop. The graph is immutable while the event loop is running. The event loop has a single purpose: accept new values from external data nodes and propagate those changes through the graph into all other external data nodes.
 
 The orchestrator is transactional: a change is only synchronized and persisted if no lenses nor transforms fails, and all external data nodes accept the transformed change.
 
 ### Event Loop
 
-At start the orchestrator gives a `Patcher` object to each external data node in the transformation graph. Each `ExternalData` object is expected is setup its own triggers to forward changes to the orchestrator through that `Patcher` object. This may involve, for example, setting up `inotify` hooks or polling tasks.
+At start the orchestrator gives a `Synchronizer` object to each external data node in the transformation graph. Each `ExternalData` object is expected is setup its own triggers to forward changes to the orchestrator through that `Synchronizer` object. This may involve, for example, setting up `inotify` hooks or polling tasks.
 
 The orchestrator then awaits for an initial value from each of those objects. The orchestrator always keeps a full (and sometimes more than one) copy of the data that each external data node exposes to reconfix.
 

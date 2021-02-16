@@ -2,8 +2,8 @@ use crate::orchestrator::NodeHandle;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use js_sys::{Function, Promise};
-use json_patch::Patch;
-use std::{rc::Rc, result};
+use serde_json::Value;
+use std::{rc::Rc, result, sync::Arc};
 use tokio::sync::oneshot;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use wasm_bindgen_futures::JsFuture;
@@ -59,32 +59,28 @@ impl Orchestrator {
 }
 
 #[wasm_bindgen]
-pub struct Patcher(Rc<crate::external_data::Patcher>);
+pub struct Synchronizer(Rc<crate::external_data::Synchronizer>);
 
 #[wasm_bindgen]
-impl Patcher {
-    pub fn apply(&self, patch: JsValue) -> Promise {
-        let patcher = self.0.clone();
+impl Synchronizer {
+    pub fn apply(&self, new_value: JsValue) -> Promise {
+        let synchronizer = self.0.clone();
 
         wasm_bindgen_futures::future_to_promise(async move {
-            patcher
-                .apply(JsValue::into_serde(&patch).map_err(|_| ApplyError {
-                    message: format!("invalid patch: {:?}", patch),
-                    code: ApplyErrorCode::InvalidPatch,
-                })?)
+            synchronizer
+                .apply(JsValue::into_serde::<Value>(&new_value).map_err(
+                    |_| ApplyError {
+                        message: format!("invalid value: {:?}", new_value),
+                        code: ApplyErrorCode::InvalidValue,
+                    },
+                )?)
                 .await
                 .map(|_| JsValue::NULL)
                 .map_err(|x| {
                     let code = match x {
-                        crate::external_data::ApplyError::InvalidInitialPatch => {
-                            ApplyErrorCode::InvalidInitialPatch
-                        }
-                        crate::external_data::ApplyError::PatchConflicts(_) => {
-                            ApplyErrorCode::PatchConflicts
-                        }
-                        crate::external_data::ApplyError::SequenceError => {
-                            ApplyErrorCode::SequenceError
-                        }
+                        crate::external_data::ApplyError::NewValueConflicts(
+                            _,
+                        ) => ApplyErrorCode::NewValueConflicts,
                         crate::external_data::ApplyError::ShuttingDown => {
                             ApplyErrorCode::ShuttingDown
                         }
@@ -120,10 +116,8 @@ impl ApplyError {
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 pub enum ApplyErrorCode {
-    InvalidPatch,
-    InvalidInitialPatch,
-    PatchConflicts,
-    SequenceError,
+    InvalidValue,
+    NewValueConflicts,
     ShuttingDown,
 }
 
@@ -151,7 +145,7 @@ impl JsExternalData {
 impl crate::ExternalData for JsExternalData {
     async fn listen(
         &self,
-        patcher: crate::external_data::Patcher,
+        synchronizer: crate::external_data::Synchronizer,
     ) -> anyhow::Result<()> {
         // Due to Send/!Send shenanigans, we cannot await on a JS
         // `commit()` here. Instead we have to use
@@ -171,7 +165,7 @@ impl crate::ExternalData for JsExternalData {
                     .0
                     .call1(
                         &JsValue::NULL,
-                        &JsValue::from(Patcher(Rc::new(patcher))),
+                        &JsValue::from(Synchronizer(Rc::new(synchronizer))),
                     )
                     .map_err(|x| {
                         anyhow!("failed to call JS `listen()`: {:?}", x)
@@ -189,18 +183,21 @@ impl crate::ExternalData for JsExternalData {
         res_source.await.unwrap()
     }
 
-    async fn commit(&self, patch: Patch) -> anyhow::Result<()> {
+    async fn commit(&self, new_value: &Arc<Value>) -> anyhow::Result<()> {
         // See `listen()` above
         let commit = SendableFunction(self.commit.clone());
 
+        let new_value = (**new_value).clone();
         let (res_sink, res_source) = oneshot::channel();
         wasm_bindgen_futures::spawn_local(async move {
             let res = async move {
-                let patch = JsValue::from_serde(&patch)
-                    .map_err(|x| anyhow!("failed to serialize patch: {}", x))?
+                let new_value = JsValue::from_serde(&new_value)
+                    .map_err(|x| {
+                        anyhow!("failed to serialize new value: {}", x)
+                    })?
                     .into();
                 let commit_value =
-                    commit.0.call1(&JsValue::NULL, &patch).map_err(|x| {
+                    commit.0.call1(&JsValue::NULL, &new_value).map_err(|x| {
                         anyhow!("failed to call JS `commit()`: {:?}", x)
                     })?;
 

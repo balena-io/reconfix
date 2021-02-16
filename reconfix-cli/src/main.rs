@@ -45,7 +45,7 @@ impl JsonFileExternalData {
 
 #[async_trait]
 impl ExternalData for JsonFileExternalData {
-    async fn listen(&self, synchronizer: Synchronizer) -> Result<()> {
+    async fn listen(&self, synchronizer: Synchronizer) -> Result<Arc<Value>> {
         // Watch the JSON file so we can send a new value when it changes
         let (watcher_sink, watcher_source) = mpsc::channel();
         let mut watcher = notify::watcher(watcher_sink, self.debounce_delay)?;
@@ -63,11 +63,10 @@ impl ExternalData for JsonFileExternalData {
         });
 
         // Parse the JSON file and send the first value
-        let value = Arc::new(serde_json::from_str::<Value>(
+        let initial_value = Arc::new(serde_json::from_str::<Value>(
             &tokio::fs::read_to_string(&self.path).await?,
         )?);
-        synchronizer.apply(value.clone()).await?;
-        *self.value.lock().await = value;
+        *self.value.lock().await = initial_value.clone();
 
         // If there's no error, keep the watcher
         *self.watcher.lock().await = Some(watcher);
@@ -110,7 +109,7 @@ impl ExternalData for JsonFileExternalData {
             }
         });
 
-        Ok(())
+        Ok(initial_value)
     }
 
     async fn commit(&self, new_value: &Arc<Value>) -> Result<()> {

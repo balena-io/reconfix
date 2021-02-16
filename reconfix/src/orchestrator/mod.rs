@@ -12,10 +12,7 @@ use crate::{
     lens::Lens,
     Error, ExternalData, Result,
 };
-use futures::{
-    future,
-    stream::{self, FuturesUnordered, StreamExt},
-};
+use futures::stream::{self, FuturesUnordered, StreamExt};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use serde_json::Value;
 use std::{
@@ -199,46 +196,20 @@ impl<'a> Orchestrator<'a> {
         // Create a `Synchronizer` and ask this node to use it through the
         // `listen()` method
         let id = index.index();
-        let (synchronizer, mut source) = Synchronizer::new(id);
+        let (synchronizer, source) = Synchronizer::new(id);
         let node = self
             .graph
             .node_weight(index)
             .expect("BUG: saved external data node index is invalid");
-        let listen_future = async {
-            match node {
-                Node::ExternalData(external_data) => {
-                    external_data
-                        .listen(synchronizer)
-                        .await
-                        .map_err(|x| Error::ListenError(id, x))?
-                }
-                _ => panic!("BUG: saved external data node does not point to an external data node"),
+        let initial_value = match node {
+            Node::ExternalData(external_data) => {
+                external_data
+                    .listen(synchronizer)
+                    .await
+                    .map_err(|x| Error::ListenError(id, x))?
             }
-
-            Result::Ok(())
+            _ => panic!("BUG: saved external data node does not point to an external data node"),
         };
-
-        // Get the initial value for this node
-        let initial_value_future = async {
-            match source.recv().await {
-                Some(request) => {
-                    assert_eq!(request.id, id);
-                    let _ = request.response_sink.send(Ok(()));
-
-                    request.new_value
-                }
-                None => Arc::new(Value::Null),
-            }
-        };
-
-        // Since `listen()` can await on the first call to
-        // `Synchronizer::apply()`, awaiting on it could cause a deadlock. On
-        // the other hand if `listen()` doesn't await on it, awaiting fist on
-        // the first value would cause a deadlock too. Thus the only correct
-        // way is to await on both concurrently
-        let (listen_res, initial_value) =
-            future::join(listen_future, initial_value_future).await;
-        listen_res?;
 
         Ok((id, initial_value, source))
     }

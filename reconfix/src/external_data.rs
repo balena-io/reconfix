@@ -25,16 +25,15 @@ use tokio::sync::{
 pub trait ExternalData {
     /// Spawn a task that listens for changes from some external data
     /// repository and pushes new values into the transformation graph as they
-    /// happen. The implementor must set the initial value for the data it
-    /// represents with an initial call to [`Synchronizer::apply`] before
-    /// sending new values through the same method.
+    /// happen, through [`Synchronizer::apply`]. The implementor must return
+    /// the initial value for the data it represents.
     ///
     /// It is not required that implementors support repeated calls to
     /// `listen()` after it returned `Ok(())` once.
-    ///
-    /// **TODO: actually this probably should take `self` by value. Would
-    /// require splitting this trait into two though**
-    async fn listen(&self, synchronizer: Synchronizer) -> anyhow::Result<()>;
+    async fn listen(
+        &self,
+        synchronizer: Synchronizer,
+    ) -> anyhow::Result<Arc<Value>>;
 
     /// Commit a new value to the external resource. A successful commit
     /// may cycle back into a call to [`Synchronizer::apply`].
@@ -46,7 +45,10 @@ impl<'a, T> ExternalData for &'a T
 where
     T: ExternalData + Sync + 'a,
 {
-    async fn listen(&self, synchronizer: Synchronizer) -> anyhow::Result<()> {
+    async fn listen(
+        &self,
+        synchronizer: Synchronizer,
+    ) -> anyhow::Result<Arc<Value>> {
         T::listen(self, synchronizer).await
     }
 
@@ -226,12 +228,14 @@ impl<T> ExternalData for InMemoryExternalData<T>
 where
     T: Send + 'static,
 {
-    async fn listen(&self, synchronizer: Synchronizer) -> anyhow::Result<()> {
+    async fn listen(
+        &self,
+        synchronizer: Synchronizer,
+    ) -> anyhow::Result<Arc<Value>> {
         let mut inner = self.inner.lock().await;
-        synchronizer.apply(inner.data.clone()).await.unwrap();
         inner.synchronizer = Some(synchronizer);
 
-        Ok(())
+        Ok(inner.data.clone())
     }
 
     async fn commit(&self, new_value: &Arc<Value>) -> anyhow::Result<()> {

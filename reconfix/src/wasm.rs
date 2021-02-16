@@ -146,7 +146,7 @@ impl crate::ExternalData for JsExternalData {
     async fn listen(
         &self,
         synchronizer: crate::external_data::Synchronizer,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<Arc<Value>> {
         // Due to Send/!Send shenanigans, we cannot await on a JS
         // `commit()` here. Instead we have to use
         // `wasm_bindgen_futures::spawn_local`. We cannot send `&self` into
@@ -173,8 +173,18 @@ impl crate::ExternalData for JsExternalData {
 
                 JsFuture::from(Promise::from(listen_value))
                     .await
-                    .map(|_| ())
                     .map_err(|x| anyhow!("{:?}", x))
+                    .and_then(|x| {
+                        Ok(Arc::new(
+                            JsValue::into_serde(&x)
+                                .map_err(|err| {
+                                    anyhow!(
+                                        "failed to deserialize the initial value returned by `listen()`: {}",
+                                        err
+                                    )
+                                })?
+                        ))
+                    })
             }
             .await;
             let _ = res_sink.send(res);
@@ -197,9 +207,9 @@ impl crate::ExternalData for JsExternalData {
                     })?
                     .into();
                 let commit_value =
-                    commit.0.call1(&JsValue::NULL, &new_value).map_err(|x| {
-                        anyhow!("failed to call JS `commit()`: {:?}", x)
-                    })?;
+                    commit.0.call1(&JsValue::NULL, &new_value).map_err(
+                        |x| anyhow!("failed to call JS `commit()`: {:?}", x),
+                    )?;
 
                 JsFuture::from(Promise::from(commit_value))
                     .await

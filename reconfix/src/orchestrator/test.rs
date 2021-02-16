@@ -27,8 +27,8 @@ struct DummyExternalData;
 
 #[async_trait]
 impl ExternalData for DummyExternalData {
-    async fn listen(&self, _: Synchronizer) -> anyhow::Result<()> {
-        Ok(())
+    async fn listen(&self, _: Synchronizer) -> anyhow::Result<Arc<Value>> {
+        Ok(Arc::new(Value::Null))
     }
 
     async fn commit(&self, _: &Arc<Value>) -> anyhow::Result<()> {

@@ -37,12 +37,6 @@ pub enum Node<'a> {
     ExternalData(Box<dyn ExternalData + Send + Sync + 'a>),
 }
 
-impl<'a> Node<'a> {
-    fn is_external_data(&self) -> bool {
-        matches!(self, Self::ExternalData(_))
-    }
-}
-
 impl<'a> From<Lens> for Node<'a> {
     fn from(x: Lens) -> Self {
         Self::Lens(x)
@@ -62,7 +56,6 @@ where
 #[derive(Default)]
 pub struct Orchestrator<'a> {
     graph: Graph<Node<'a>, (), Directed, usize>,
-    external_data_nodes: Vec<NodeIndex<usize>>,
 }
 
 impl<'a> Orchestrator<'a> {
@@ -78,11 +71,7 @@ impl<'a> Orchestrator<'a> {
         N: Into<Node<'a>>,
     {
         let node = node.into();
-        let is_external_data_node = node.is_external_data();
         let index = self.graph.add_node(node);
-        if is_external_data_node {
-            self.external_data_nodes.push(index);
-        }
 
         NodeHandle(index)
     }
@@ -112,17 +101,19 @@ impl<'a> Orchestrator<'a> {
     ///
     /// **TODO: might be useful to expose a separate `init` method**
     pub async fn run(&self) -> Result<()> {
-        if self.external_data_nodes.is_empty() {
-            // Running a transformation graph without a single external data
-            // node is just a no op
-            return Ok(());
-        }
-
         // Setup all external data nodes. These will drive the tranformation
         // graph
-        let (external_data, new_value_sources) =
-            self.start_external_data_nodes().await?;
-        let external_data = Mutex::new(external_data);
+        let (state_map, request_sources) =
+            if let Some(x) = self.initialize().await? {
+                x
+            } else {
+                return Ok(());
+            };
+
+        // Technically this doesn't need to be inside a mutex, but because of
+        // the `for_each()` call below we would need >1 &mut references, which
+        // is forbidden.
+        let state_map = Mutex::new(state_map);
 
         // Listen for synchronization requests and apply them as they come. We
         // do this by multiplexing all `Synchronizer` channels pushing
@@ -131,8 +122,8 @@ impl<'a> Orchestrator<'a> {
         // one. It would be unsafe to process synchronization requests
         // concurrently since different values may end up creating conflicting
         // internal states
-        let external_data = &external_data;
-        stream::select_all(new_value_sources.into_iter().map(
+        let state_map = &state_map;
+        stream::select_all(request_sources.into_iter().map(
             |new_value_source| {
                 // Convert a `Receiver` into a `Stream` to make it easier to poll
                 // them concurrently
@@ -152,7 +143,7 @@ impl<'a> Orchestrator<'a> {
                 self.process_request(
                     request.id,
                     request.new_value,
-                    &external_data,
+                    &mut *state_map.lock().await,
                 )
                 .await,
             );
@@ -162,105 +153,122 @@ impl<'a> Orchestrator<'a> {
         Ok(())
     }
 
-    async fn start_external_data_nodes(
+    async fn initialize(
         &self,
-    ) -> Result<(
-        HashMap<usize, Arc<Value>>,
-        Vec<Receiver<SynchronizationRequest>>,
-    )> {
+    ) -> Result<
+        Option<(
+            HashMap<usize, Arc<Value>>,
+            Vec<Receiver<SynchronizationRequest>>,
+        )>,
+    > {
+        // First, find all nodes that hold state so we can initialize them
+        let mut external_data_nodes = Vec::new();
+        let mut stateful_lenses = Vec::new();
+        for node_index in self.graph.node_indices() {
+            match self.graph.node_weight(node_index).unwrap() {
+                Node::ExternalData(external_data) => {
+                    external_data_nodes.push((node_index, external_data))
+                }
+                Node::Lens(lens) if lens.is_stateful() => {
+                    stateful_lenses.push(node_index)
+                }
+                _ => (),
+            }
+        }
+
+        if external_data_nodes.is_empty() {
+            // Running a transformation graph without a single external data
+            // node is just a no op
+            return Ok(None);
+        }
+
         // Initialize all external data nodes concurrently. It would be better
         // to spawn each in its own task to potentially run all initializations
         // in parallel, but that would create a dependency on a specific
         // executor
-        let mut external_data_init = self
-            .external_data_nodes
-            .iter()
-            .copied()
-            .map(move |index| self.start_external_data_node(index))
+        let mut external_data_init = external_data_nodes
+            .into_iter()
+            .map(move |(index, node)| {
+                self.start_external_data_node(index, node)
+            })
             .collect::<FuturesUnordered<_>>();
-        let mut initial_data = HashMap::new();
+        let mut state_map = HashMap::new();
         let mut request_sources = Vec::new();
         while let Some(res) = external_data_init.next().await {
             let (index, initial_value, source) = res?;
-            initial_data.insert(index, initial_value);
+            state_map.insert(index, initial_value);
             request_sources.push(source);
         }
 
-        Ok((initial_data, request_sources))
+        // Derive the initial state for lenses. We do this by deriving the
+        // actual initial state based on the initial state of each external
+        // data node in isolation, and then merging them. This process errors
+        // out if the merge conflicts, or if there are lenses without an
+        // initial state
+        unimplemented!();
+
+        Ok(Some((state_map, request_sources)))
     }
 
     async fn start_external_data_node(
         &self,
         index: NodeIndex<usize>,
+        node: &Box<dyn ExternalData + Send + Sync + 'a>,
     ) -> Result<(usize, Arc<Value>, Receiver<SynchronizationRequest>)> {
         // Create a `Synchronizer` and ask this node to use it through the
         // `listen()` method
         let id = index.index();
-        let (synchronizer, source) = Synchronizer::new(id);
-        let node = self
-            .graph
-            .node_weight(index)
-            .expect("BUG: saved external data node index is invalid");
-        let initial_value = match node {
-            Node::ExternalData(external_data) => {
-                external_data
-                    .listen(synchronizer)
-                    .await
-                    .map_err(|x| Error::ListenError(id, x))?
-            }
-            _ => panic!("BUG: saved external data node does not point to an external data node"),
-        };
+        let (synchronizer, request_source) = Synchronizer::new(id);
+        let initial_value = node
+            .listen(synchronizer)
+            .await
+            .map_err(|x| Error::ListenError(id, x))?;
 
-        Ok((id, initial_value, source))
+        Ok((id, initial_value, request_source))
     }
 
     async fn process_request(
         &self,
         id: usize,
         new_value: Arc<Value>,
-        external_data: &Mutex<HashMap<usize, Arc<Value>>>,
+        state_map: &mut HashMap<usize, Arc<Value>>,
     ) -> ApplyResult {
-        let mut external_data_guard = external_data.lock().await;
-
         // There's nothing to do if the new value is already synchronized
-        if new_value == *external_data_guard.get(&id).unwrap() {
+        if *state_map.get(&id).unwrap() == new_value {
             return Ok(());
         }
 
         // Try to propagate changes
-        let new_values = self
+        let new_states = self
             .propagate_external_value(
                 NodeIndex::from(id),
                 &new_value,
-                &*external_data_guard,
+                state_map,
             )
             .map_err(|x| ApplyError::NewValueConflicts(x.into()))?;
 
         // If it all goes well, we can commit all changes concurrently
-        external_data_guard.insert(id, new_value);
-        drop(external_data_guard);
-        new_values
-            .into_iter()
-            .map(|(index, new_value)| {
+        new_states
+            .iter()
+            .map(|(index, new_state)| {
                 async move {
                     // TODO: handle `commit()` failures
                     if let Node::ExternalData(external_data_node) =
-                        self.graph.node_weight(index).unwrap()
+                        self.graph.node_weight(*index).unwrap()
                     {
-                        external_data_node.commit(&new_value).await.unwrap();
-                        *external_data
-                            .lock()
-                            .await
-                            .get_mut(&index.index())
-                            .unwrap() = new_value;
-                    } else {
-                        unreachable!();
+                        external_data_node.commit(new_state).await.unwrap();
                     }
                 }
             })
             .collect::<FuturesUnordered<_>>()
             .for_each(|_| async {})
             .await;
+
+        // Lastly, commit the new state
+        *state_map.get_mut(&id).unwrap() = new_value;
+        for (index, new_state) in new_states {
+            *state_map.get_mut(&index.index()).unwrap() = new_state;
+        }
 
         Ok(())
     }
@@ -269,7 +277,7 @@ impl<'a> Orchestrator<'a> {
         &self,
         index: NodeIndex<usize>,
         set_to: &Value,
-        external_data: &HashMap<usize, Arc<Value>>,
+        state_map: &HashMap<usize, Arc<Value>>,
     ) -> Result<Vec<(NodeIndex<usize>, Arc<Value>)>> {
         assert!(matches!(
             self.graph.node_weight(index).unwrap(),
@@ -284,7 +292,9 @@ impl<'a> Orchestrator<'a> {
             ResolvedNode::ExternalData(Arc::new(set_to.clone())),
         );
 
-        // Build an initial queue of nodes that can be resolved given the above
+        // Build an initial queue of nodes that can be resolved given the
+        // above. This queue is in the form:
+        // `(resolved_index, resolvable_index)`
         let mut resolvable = self
             .graph
             .neighbors_undirected(index)
@@ -302,14 +312,17 @@ impl<'a> Orchestrator<'a> {
             .collect::<HashSet<_>>();
 
         // Exhaust the `resolvable` queue by filling the `resolved` map with
-        // concrete values and checking for internal consistency
+        // concrete values and checking for internal consistency in case the
+        // resolvable node has already been resolved
         // TODO: we can actually build some pretty good errors here
-        let mut new_values = Vec::new();
+        let mut new_states = Vec::new();
         while let Some((resolved_index, resolvable_index)) = resolvable.pop() {
             let (_, direction) = self
                 .graph
                 .find_edge_undirected(resolved_index, resolvable_index)
-                .expect("BUG: trying to resolve unconnected nodes");
+                .expect(
+                    "BUG: trying to propagate values through unconnected nodes",
+                );
 
             let resolved_data = resolved.get(&resolved_index).unwrap().clone();
             match resolved.entry(resolvable_index) {
@@ -328,20 +341,21 @@ impl<'a> Orchestrator<'a> {
                     // Otherwise, resolve the node and enqueue all untraversed
                     // edges
 
-                    let (resolvable_data, new_value) = self.resolve(
+                    let (resolved_node, new_state) = self.resolve(
                         &resolved_data,
                         direction,
                         resolvable_index,
+                        state_map,
                     )?;
-                    entry.insert(resolvable_data);
+                    entry.insert(resolved_node);
 
-                    if let Some(new_value) = new_value {
-                        if new_value
-                            != *external_data
+                    if let Some(new_state) = new_state {
+                        if new_state
+                            != *state_map
                                 .get(&resolvable_index.index())
                                 .unwrap()
                         {
-                            new_values.push((resolvable_index, new_value));
+                            new_states.push((resolvable_index, new_state));
                         }
                     }
 
@@ -357,7 +371,7 @@ impl<'a> Orchestrator<'a> {
             }
         }
 
-        Ok(new_values)
+        Ok(new_states)
     }
 
     fn check_conflict(
@@ -422,7 +436,10 @@ impl<'a> Orchestrator<'a> {
         left: &ResolvedNode,
         direction: Direction,
         right_index: NodeIndex<usize>,
+        state_map: &HashMap<usize, Arc<Value>>,
     ) -> Result<(ResolvedNode, Option<Arc<Value>>)> {
+        let right_id = right_index.index();
+
         match (
             left,
             direction,
@@ -440,28 +457,22 @@ impl<'a> Orchestrator<'a> {
                 ResolvedNode::ExternalData(left_value),
                 Direction::Outgoing,
                 Node::Lens(lens),
-            ) => Ok((
-                ResolvedNode::XY(
-                    left_value.clone(),
-                    Arc::new(cuelang_value_to_json_value(
-                        &lens.apply_x(&**left_value)?,
-                    )?),
-                ),
-                None,
-            )),
+            ) => {
+                let (y, new_state) =
+                    apply_x(lens, &**left_value, state_map, right_id)?;
+
+                Ok((ResolvedNode::XY(left_value.clone(), y), new_state))
+            }
             (
                 ResolvedNode::ExternalData(left_value),
                 Direction::Incoming,
                 Node::Lens(lens),
-            ) => Ok((
-                ResolvedNode::XY(
-                    Arc::new(cuelang_value_to_json_value(
-                        &lens.apply_y(&**left_value)?,
-                    )?),
-                    left_value.clone(),
-                ),
-                None,
-            )),
+            ) => {
+                let (x, new_state) =
+                    apply_y(lens, &**left_value, state_map, right_id)?;
+
+                Ok((ResolvedNode::XY(x, left_value.clone()), new_state))
+            }
             (
                 ResolvedNode::XY(_, left_y_value),
                 Direction::Outgoing,
@@ -482,28 +493,22 @@ impl<'a> Orchestrator<'a> {
                 ResolvedNode::XY(_, left_y_value),
                 Direction::Outgoing,
                 Node::Lens(lens),
-            ) => Ok((
-                ResolvedNode::XY(
-                    left_y_value.clone(),
-                    Arc::new(cuelang_value_to_json_value(
-                        &lens.apply_x(&**left_y_value)?,
-                    )?),
-                ),
-                None,
-            )),
+            ) => {
+                let (y, new_state) =
+                    apply_x(lens, &**left_y_value, state_map, right_id)?;
+
+                Ok((ResolvedNode::XY(left_y_value.clone(), y), new_state))
+            }
             (
                 ResolvedNode::XY(left_x_value, _),
                 Direction::Incoming,
                 Node::Lens(lens),
-            ) => Ok((
-                ResolvedNode::XY(
-                    Arc::new(cuelang_value_to_json_value(
-                        &lens.apply_y(&**left_x_value)?,
-                    )?),
-                    left_x_value.clone(),
-                ),
-                None,
-            )),
+            ) => {
+                let (x, new_state) =
+                    apply_y(lens, &**left_x_value, state_map, right_id)?;
+
+                Ok((ResolvedNode::XY(x, left_x_value.clone()), new_state))
+            }
         }
     }
 }
@@ -520,6 +525,48 @@ enum ResolvedNode {
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct NodeHandle(NodeIndex<usize>);
+
+fn apply_x(
+    lens: &Lens,
+    x: &Value,
+    state_map: &HashMap<usize, Arc<Value>>,
+    id: usize,
+) -> Result<(Arc<Value>, Option<Arc<Value>>)> {
+    let xsave = if lens.has_xsave() {
+        Some(&**state_map.get(&id).unwrap())
+    } else {
+        None
+    };
+    let (y, new_state) = lens.apply_x(x, xsave)?;
+
+    Ok((
+        Arc::new(cuelang_value_to_json_value(&y)?),
+        new_state
+            .map(|save| cuelang_value_to_json_value(&save).map(Arc::new))
+            .transpose()?,
+    ))
+}
+
+fn apply_y(
+    lens: &Lens,
+    y: &Value,
+    state_map: &HashMap<usize, Arc<Value>>,
+    id: usize,
+) -> Result<(Arc<Value>, Option<Arc<Value>>)> {
+    let ysave = if lens.has_ysave() {
+        Some(&**state_map.get(&id).unwrap())
+    } else {
+        None
+    };
+    let (x, new_state) = lens.apply_y(y, ysave)?;
+
+    Ok((
+        Arc::new(cuelang_value_to_json_value(&x)?),
+        new_state
+            .map(|save| cuelang_value_to_json_value(&save).map(Arc::new))
+            .transpose()?,
+    ))
+}
 
 fn cuelang_value_to_json_value(
     cuelang_value: &cuelang::Value,

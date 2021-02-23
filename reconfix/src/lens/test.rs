@@ -72,8 +72,10 @@ fn apply_x() {
         "#,
     )
     .unwrap();
+    let (value, save) = lens.apply_x::<_, ()>(1, None).unwrap();
 
-    assert_eq!(lens.apply_x(1).unwrap().as_int(), Some(0));
+    assert_eq!(value.as_int(), Some(0));
+    assert!(save.is_none())
 }
 
 #[test]
@@ -85,8 +87,10 @@ fn apply_x_on_inverted_lens() {
         "#,
     )
     .unwrap();
+    let (value, save) = lens.invert().apply_x::<_, ()>(1, None).unwrap();
 
-    assert_eq!(lens.invert().apply_x(1).unwrap().as_int(), Some(2));
+    assert_eq!(value.as_int(), Some(2));
+    assert!(save.is_none())
 }
 
 #[test]
@@ -98,8 +102,10 @@ fn apply_y() {
         "#,
     )
     .unwrap();
+    let (value, save) = lens.apply_y::<_, ()>(1, None).unwrap();
 
-    assert_eq!(lens.apply_y(1).unwrap().as_int(), Some(2));
+    assert_eq!(value.as_int(), Some(2));
+    assert!(save.is_none())
 }
 
 #[test]
@@ -111,6 +117,8 @@ fn apply_y_on_inverted_lens() {
         "#,
     )
     .unwrap();
+    let (value, save) = lens.invert().apply_y::<_, ()>(1, None).unwrap();
 
-    assert_eq!(lens.invert().apply_y(1).unwrap().as_int(), Some(0));
+    assert_eq!(value.as_int(), Some(0));
+    assert!(save.is_none())
 }

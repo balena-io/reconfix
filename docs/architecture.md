@@ -85,12 +85,11 @@ CUE does allow cycles but does not recurse. That is, every value within CUE must
 
 Lenses are expected to be purely functional entities free of side-effects. In CUE, stateful functions are exposed through the `tool` package and its subpackages. While it is not forbidden to use those packages, the implementation must be careful to use them in a way that abides by this assumption. Any violation of this rule may cause silent desynchronization.
 
-**WIP: the following is still under consideration**
-
-For some operations, it is useful to keep state between runs. For example, a projections lens:
+For some operations, it is still useful to keep state between runs. For example a projections lens for the `message` field:
 
 ```cue
 X: Y.message
+
 XSAVE: {
     for k, v in Y {
         if k != "message" {
@@ -104,9 +103,9 @@ Y: XSAVE & {
 }
 ```
 
-When calculating `Y` from `X` we need not only the value for the projected field, but also all non-projected fields. In this case, non-projected fields are stored in the `XSAVE` field, and `YSAVE` is also valid if needed.
+When calculating `Y` from `X` we need not only the value for the projected field, but also all non-projected fields. In this case, non-projected fields are stored in the `XSAVE` field, and `YSAVE` is also valid if needed. But lenses cannot declare both `XSAVE` and `YSAVE` at the same time.
 
-While it is certainly possible to implement this functionality using stateful operations, or even `ExternalData` nodes (see the "External Data" section), `XSAVE`/`YSAVE` are both simpler and better integrated into the orchestrator's transactional nature. For more information on how `XSAVE` and `YSAVE` work, see the "Orchestrator/Lens' State" subsection.
+While it is certainly possible to implement this functionality using stateful operations, or even `ExternalData` nodes (see the "External Data" section), `XSAVE`/`YSAVE` are both simpler and better integrated into the orchestrator's transactional nature. For more information on how `XSAVE` and `YSAVE` works, see the "Orchestrator/Lens' State" subsection.
 
 ## Transforms
 
@@ -160,17 +159,16 @@ It may be worth persisting the journal so reconfix can recover from power failur
 
 ### Lens' State
 
-**WIP: the following is still under consideration**
-
 Lenses may define `XSAVE` and `YSAVE` fields. These two fields are independent and optional, and when present they are saved and restored depending on which field is being evaluated:
 
-- When evaluating `X` from a concrete `Y`, `YSAVE` is restored and `XSAVE` is saved.
-- When evaluating `Y` from a concrete `X`, `XSAVE` is restored and `YSAVE` is saved.
+- When evaluating `X` from a concrete `Y`, `YSAVE` is restored and `XSAVE` is initially unset and is saved after execution.
+- When evaluating `Y` from a concrete `X`, `XSAVE` is restored and `YSAVE` is initially unset and is saved after execution.
 
 Take the projection lens as an example:
 
 ```cue
 X: Y.message
+
 XSAVE: {
     for k, v in Y {
         if k != "message" {
@@ -184,9 +182,11 @@ Y: XSAVE & {
 }
 ```
 
-If we are evluating `X`, `Y` will be set to some concrete value. `XSAVE` will also be evaluated, and CUE will also check that the inverse transformation is valid. If the transaction succeeds, `XSAVE` will be saved for future runs.
+If we are evluating `X`, `Y` will have be set to some concrete value. `XSAVE` will also be evaluated, and CUE will also check that the inverse transformation is valid. If the transaction succeeds, `XSAVE` will be saved for future runs.
 
 On the other hand if we are evaluating `Y`, `X` will be set to some concrete value. `XSAVE` will also be set to the concrete value that was last saved.
+
+On initialization, reconfix derives all initial `XSAVE`/`YSAVE` states based on the initial value of every external data node. If there is one or more states that cannot be derived, initialization will error out. It will also error out if the value of one of those states is different depending on which external data node is used to initialize it. This is the reason why both `XSAVE` and `YSAVE` cannot be used at the same time in the same lens: it would increase the complexity of this initialization process by a lot.
 
 ### Automatic Assembly
 

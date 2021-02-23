@@ -17,13 +17,13 @@ cuelang = { path = "../cuelang" }
 
 anyhow = "1.0.38"
 async-trait = "0.1.42"
-futures = { version = "0.3.12", default-features = false, features = ["alloc"] }
+futures = { version = "0.3.13", default-features = false, features = ["alloc"] }
 lazy_static = "1.4.0"
 maplit = "1.0.2"
 petgraph = { version = "0.5.1", default-features = false }
 serde = "1.0.123"
 serde_json = "1.0.62"
-thiserror = "1.0.23"
+thiserror = "1.0.24"
 tokio = { version = "1.2.0", default-features = false, features = ["sync"] }
 wasm-bindgen = { version = "0.2.70", features = ["serde-serialize"] }
 

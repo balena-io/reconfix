@@ -84,13 +84,17 @@ impl Lens {
         let mut found_package = false;
         let mut found_x = false;
         let mut found_y = false;
+        let mut has_xsave = false;
+        let mut has_ysave = false;
         for declaration in ast.declarations() {
             if PackageDeclaration::try_from(&declaration).is_ok() {
                 found_package = true;
             } else if let Ok(field) = FieldDeclaration::try_from(&declaration) {
                 match &*field.name() {
                     "X" => found_x = true,
+                    "XSAVE" => has_xsave = true,
                     "Y" => found_y = true,
+                    "YSAVE" => has_ysave = true,
                     _ => (),
                 }
             }
@@ -113,57 +117,139 @@ impl Lens {
                 anyhow!("missing field: Y"),
             ));
         }
+        if has_xsave && has_ysave {
+            return Err(Error::InvalidLens(
+                source.to_owned(),
+                anyhow!("a single lens cannot declare both XSAVE and YSAVE at the same time"),
+            ));
+        }
 
         let instance = RUNTIME
             .compile_ast(&ast)
             .map_err(|err| Error::InvalidLens(source.to_owned(), err.into()))?;
 
         Ok(Self {
-            shared: Arc::new(LensShared { instance }),
+            shared: Arc::new(LensShared {
+                instance,
+                has_xsave,
+                has_ysave,
+            }),
             invert_xy: false,
         })
     }
 
-    /// Evaluate `Y` with `X` set to the given value.
-    pub fn apply_x<T>(&self, x: T) -> Result<Value>
+    /// Return `true` if this lens is stateful. That is, it declares either an
+    /// `XSAVE` or an `YSAVE` field.
+    pub fn is_stateful(&self) -> bool {
+        self.shared.has_xsave || self.shared.has_ysave
+    }
+
+    /// Return `true` if this lens declares an `XSAVE` field.
+    pub fn has_xsave(&self) -> bool {
+        self.shared.has_xsave
+    }
+
+    /// Return `true` if this lens declares an `YSAVE` field.
+    pub fn has_ysave(&self) -> bool {
+        self.shared.has_ysave
+    }
+
+    /// Evaluate `Y` and `YSAVE` (if present) with `X`, and optionally `XSAVE`,
+    /// set to the given values.
+    pub fn apply_x<X, XS>(
+        &self,
+        x: X,
+        xsave: Option<XS>,
+    ) -> Result<(Value, Option<Value>)>
     where
-        T: Serialize,
+        X: Serialize,
+        XS: Serialize,
     {
         if self.invert_xy {
-            self.apply(x, "Y", "X")
+            self.apply(x, xsave, Field::Y)
         } else {
-            self.apply(x, "X", "Y")
+            self.apply(x, xsave, Field::X)
         }
     }
 
-    /// Evaluate `X` with `Y` set to the given value.
-    pub fn apply_y<T>(&self, y: T) -> Result<Value>
+    /// Evaluate `X` and `XSAVE` (if present) with `Y`, and optionally `YSAVE`,
+    /// set to the given values.
+    pub fn apply_y<Y, YS>(
+        &self,
+        y: Y,
+        ysave: Option<YS>,
+    ) -> Result<(Value, Option<Value>)>
     where
-        T: Serialize,
+        Y: Serialize,
+        YS: Serialize,
     {
         if self.invert_xy {
-            self.apply(y, "X", "Y")
+            self.apply(y, ysave, Field::X)
         } else {
-            self.apply(y, "Y", "X")
+            self.apply(y, ysave, Field::Y)
         }
     }
 
-    fn apply<T>(&self, value: T, apply_to: &str, output: &str) -> Result<Value>
+    fn apply<V, S>(
+        &self,
+        value: V,
+        save: Option<S>,
+        apply_to: Field,
+    ) -> Result<(Value, Option<Value>)>
     where
-        T: Serialize,
+        V: Serialize,
+        S: Serialize,
     {
-        Ok(self
+        if save.is_some() && !self.field_is_saved(apply_to) {
+            return Err(Error::EvalError(
+                "lens has no appropriate SAVE field but one was passed to the apply call".to_string()
+            ));
+        }
+        if !save.is_some() && self.field_is_saved(apply_to) {
+            return Err(Error::EvalError(
+                "lens has a SAVE field but its value was not passed to the apply call".to_string()
+            ));
+        }
+
+        let mut unfied = self
             .shared
             .instance
-            .unify(&[apply_to], value)
-            .map_err(Error::InvalidValue)?
-            .get(&[output])
-            .map_err(|err| {
+            .unify(&[apply_to.as_str()], value)
+            .map_err(Error::InvalidValue)?;
+        if let Some(save) = save {
+            unfied = unfied
+                .unify(&[apply_to.as_save_str()], save)
+                .map_err(Error::InvalidValue)?;
+        }
+
+        let output_field = apply_to.inverse();
+        let output = unfied.get(&[output_field.as_str()]).map_err(|err| {
+            Error::EvalError(format!(
+                "cannot evaluate '{}': {:?}",
+                output_field.as_str(),
+                err
+            ))
+        })?;
+        let output_save = if self.field_is_saved(output_field) {
+            Some(unfied.get(&[output_field.as_save_str()]).map_err(|err| {
                 Error::EvalError(format!(
-                    "missing field '{}': {:?}",
-                    output, err
+                    "cannot evaluate '{}': {:?}",
+                    output_field.as_save_str(),
+                    err
                 ))
             })?)
+        } else {
+            None
+        };
+
+        Ok((output, output_save))
+    }
+
+    fn field_is_saved(&self, field: Field) -> bool {
+        match field {
+            Field::X => self.shared.has_xsave,
+            Field::Y => self.shared.has_ysave,
+        }
     }
 
     /// Rename `X` to `Y` and `Y` to `X`.
@@ -189,4 +275,35 @@ impl Lens {
 
 struct LensShared {
     instance: Instance,
+    has_xsave: bool,
+    has_ysave: bool,
+}
+
+#[derive(Clone, Copy)]
+enum Field {
+    X,
+    Y,
+}
+
+impl Field {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::X => "X",
+            Self::Y => "Y",
+        }
+    }
+
+    fn as_save_str(self) -> &'static str {
+        match self {
+            Self::X => "XSAVE",
+            Self::Y => "YSAVE",
+        }
+    }
+
+    fn inverse(self) -> Self {
+        match self {
+            Self::X => Self::Y,
+            Self::Y => Self::X,
+        }
+    }
 }

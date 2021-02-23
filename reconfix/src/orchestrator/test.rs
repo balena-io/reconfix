@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use lazy_static::lazy_static;
 use petgraph::Direction;
 use serde_json::Value;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 lazy_static! {
     static ref LENS_A: Lens = Lens::new(
@@ -50,6 +50,7 @@ fn resolve_external_data_to_external_data() {
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Outgoing,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 
@@ -74,6 +75,7 @@ fn resolve_external_data_from_external_data() {
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Incoming,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 
@@ -99,6 +101,7 @@ fn resolve_external_data_to_lens() {
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Outgoing,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 
@@ -124,6 +127,7 @@ fn resolve_external_data_from_lens() {
             &ResolvedNode::ExternalData(Arc::new(a_value)),
             Direction::Incoming,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 
@@ -149,6 +153,7 @@ fn resolve_lens_to_external_data() {
             &ResolvedNode::XY(Arc::new(a_x_value), Arc::new(a_y_value)),
             Direction::Outgoing,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 
@@ -174,6 +179,7 @@ fn resolve_lens_from_external_data() {
             &ResolvedNode::XY(Arc::new(a_x_value), Arc::new(a_y_value)),
             Direction::Incoming,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 
@@ -198,6 +204,7 @@ fn resolve_lens_to_lens() {
             &ResolvedNode::XY(Arc::new(a_x_value), a_y_value.clone()),
             Direction::Outgoing,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 
@@ -219,6 +226,7 @@ fn resolve_lens_from_lens() {
             &ResolvedNode::XY(a_x_value.clone(), Arc::new(a_y_value)),
             Direction::Incoming,
             b.0,
+            &HashMap::new(),
         )
         .unwrap();
 

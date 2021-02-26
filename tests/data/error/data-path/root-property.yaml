@@ -1,9 +1,0 @@
-schema:
-  version: 1
-  properties:
-    - name:
-        type: string
-tests:
-  - description: Error data-path must equal to name
-    data: {}
-    data-path: name

@@ -1,0 +1,5 @@
+{
+  "gpuMem": 16,
+  "appUpdatePollInterval": "60000",
+  "networkType": "ethernet"
+}

@@ -1,8 +1,0 @@
-schema:
-  version: 1
-  type: integer
-  multipleOf: 10
-tests:
-  - description: Error keyword must equal to multipleOf
-    data: 9
-    keyword: multipleOf

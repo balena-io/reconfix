@@ -1,29 +1,30 @@
-language: generic
+language: cpp
+sudo: false
 
-cache:
-  directories:
-    - /home/travis/.cargo/
-    - target/
-  timeout: 1000
+env:
+  - NODE_VERSION="6" UV_THREADPOOL_SIZE="16"
+  - NODE_VERSION="8" UV_THREADPOOL_SIZE="16"
+  - NODE_VERSION="10" UV_THREADPOOL_SIZE="16"
+
+os:
+  - linux
+  - osx
+
+before_install:
+  - rm -rf ~/.nvm
+  - git clone https://github.com/creationix/nvm.git ~/.nvm
+  - source ~/.nvm/nvm.sh
+  - nvm --version
+  - nvm install $NODE_VERSION
+  - node --version
+  - npm --version
+  - npm config set spin=false
 
 install:
-  - ci/install.sh
+  - npm install
 
 script:
-  - ci/test.sh
-
-deploy:
-  provider: script
-  script: ci/deploy.sh
-  skip_cleanup: true
-  on:
-    tags: true
-    branch: master
-
-addons:
-  firefox: latest
-  chrome: stable
+  - npm test
 
 notifications:
-  email:
-    on_success: never
+  email: false

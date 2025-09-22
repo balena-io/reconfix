@@ -17,12 +17,12 @@
 'use strict';
 
 const ava = require('ava');
-const Bluebird = require('bluebird');
 const fs = require('fs');
 const rindle = require('rindle');
 const path = require('path');
-const tmp = Bluebird.promisifyAll(require('tmp'));
+const tmp = require('tmp');
 const filesystem = require('../../../lib/engine/filesystem');
+const { promisify } = require('util');
 
 const testReadFixture = (name) => {
   const fixturePath = path.join(__dirname, 'fixtures', 'images', name);
@@ -50,10 +50,11 @@ testReadFixture('resinos-v1');
 testReadFixture('resinos-v2');
 
 const createTemporaryFileFromFile = (file) => {
-  return tmp.fileAsync().tap((temporaryFilePath) => {
+  return promisify(tmp.file)().then(async (temporaryFilePath) => {
     const stream = fs.createReadStream(file)
       .pipe(fs.createWriteStream(temporaryFilePath));
-    return rindle.wait(stream);
+    await rindle.wait(stream);
+    return temporaryFilePath;
   });
 };
 

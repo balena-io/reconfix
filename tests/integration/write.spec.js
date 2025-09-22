@@ -17,20 +17,21 @@
 'use strict';
 
 const ava = require('ava');
-const Bluebird = require('bluebird');
-const tmp = Bluebird.promisifyAll(require('tmp'));
+const tmp = require('tmp');
 const path = require('path');
 const imagefs = require('balena-image-fs');
 const fs = require('fs');
 const rindle = require('rindle');
 const filesystem = require('../../lib/engine/filesystem');
 const reconfix = require('../../lib');
+const { promisify } = require('util');
 
 const createTemporaryFileFromFile = (file) => {
-  return tmp.fileAsync().tap((temporaryFilePath) => {
+  return promisify(tmp.file)().then(async (temporaryFilePath) => {
     const stream = fs.createReadStream(file)
       .pipe(fs.createWriteStream(temporaryFilePath));
-    return rindle.wait(stream);
+    await rindle.wait(stream);
+    return temporaryFilePath;
   });
 };
 
@@ -130,19 +131,19 @@ ava('should be able to modify a fileset', (test) => {
     return imagefs.interact(
       image,
       schema.files.system_connections.location.partition,
-      (_fs) => {
-        const readFileAsync = Bluebird.promisify(_fs.readFile);
-        return Bluebird.props({
-          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')).then((b) => {
+      async (_fs) => {
+        const readFileAsync = _fs.promises.readFile;
+        return {
+          cellular: await readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')).then((b) => {
             return b.toString();
           }),
-          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')).then((b) => {
+          ethernet: await readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')).then((b) => {
             return b.toString();
           }),
-          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi')).then((b) => {
+          wifi: await readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi')).then((b) => {
             return b.toString();
           })
-        });
+        };
       }
     );
   };
@@ -181,19 +182,19 @@ ava('should not override custom properties inside a fileset', (test) => {
     return imagefs.interact(
       image,
       schema.files.system_connections.location.partition,
-      (_fs) => {
-        const readFileAsync = Bluebird.promisify(_fs.readFile);
-        return Bluebird.props({
-          cellular: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')).then((b) => {
+      async (_fs) => {
+        const readFileAsync = _fs.promises.readFile;
+        return {
+          cellular: await readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'cellular')).then((b) => {
             return b.toString();
           }),
-          ethernet: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')).then((b) => {
+          ethernet: await readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'ethernet')).then((b) => {
             return b.toString();
           }),
-          wifi: readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi')).then((b) => {
+          wifi: await readFileAsync(path.posix.join(schema.files.system_connections.location.path, 'wifi')).then((b) => {
             return b.toString();
           })
-        });
+        };
       }
     );
   };
@@ -203,7 +204,7 @@ ava('should not override custom properties inside a fileset', (test) => {
       imagePath,
       schema.files.system_connections.location.partition,
       (_fs) => {
-        const writeFileAsync = Bluebird.promisify(_fs.writeFile);
+        const writeFileAsync = _fs.promises.writeFile;
         const filePath = path.posix.join(schema.files.system_connections.location.path, 'cellular');
         return writeFileAsync(filePath, '[connection]\nname=cellular\nfoo=bar\nbar=baz');
       }

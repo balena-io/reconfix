@@ -18,15 +18,14 @@
 
 const ava = require('ava');
 const path = require('path');
-const Bluebird = require('bluebird');
-const fs = Bluebird.promisifyAll(require('fs'));
+const fs = require('fs/promises');
 const json = require('../../../../lib/engine/formats/json');
 
 const testFile = (filename) => {
   ava(`should parse ${filename}`, (test) => {
     const absolutePath = path.join(__dirname, 'fixtures', filename);
 
-    return fs.readFileAsync(`${absolutePath}.json`, {
+    return fs.readFile(`${absolutePath}.json`, {
       encoding: 'utf8'
     }).then((contents) => {
       const parsedJSON = json.parse(contents);

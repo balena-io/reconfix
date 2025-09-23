@@ -1,0 +1,44 @@
+{
+  "object": {
+    "service_home_ethernet": {
+      "type": "ethernet",
+      "nameservers": "8.8.8.8,8.8.4.4"
+    },
+    "service_home_wifi": {
+      "hidden": true,
+      "type": "wifi",
+      "name": "resin",
+      "passphrase": "secret",
+      "nameservers": "8.8.8.8,8.8.4.4"
+    }
+  },
+  "choices": [
+    {
+      "title": "ethernet",
+      "matches": false,
+      "template": {
+        "service_home_ethernet": {
+          "type": "ethernet",
+          "nameservers": "8.8.8.8,8.8.4.4"
+        }
+      }
+    },
+    {
+      "title": "wifi",
+      "matches": true,
+      "template": {
+        "service_home_ethernet": {
+          "type": "ethernet",
+          "nameservers": "8.8.8.8,8.8.4.4"
+        },
+        "service_home_wifi": {
+          "hidden": true,
+          "type": "wifi",
+          "name": "{{network.ssid}}",
+          "passphrase": "{{network.key}}",
+          "nameservers": "8.8.8.8,8.8.4.4"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "system_connections": {
+    "cellular": {
+      "connection": {
+        "name": "cellular"
+      }
+    },
+    "ethernet": {
+      "connection": {
+        "name": "ethernet"
+      }
+    },
+    "wifi": {
+      "connection": {
+        "name": "wifi"
+      }
+    }
+  }
+}

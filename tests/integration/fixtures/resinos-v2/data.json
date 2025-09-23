@@ -1,0 +1,5 @@
+{
+  "cellularConnectionName": "cellular",
+  "ethernetConnectionName": "ethernet",
+  "wifiConnectionName": "wifi"
+}

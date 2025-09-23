@@ -1,0 +1,116 @@
+{
+  "questions": [
+    {
+      "title": "GPU Mem",
+      "name": "gpuMem",
+      "type": "number"
+    },
+    {
+      "title": "Application Update Poll Interval",
+      "name": "appUpdatePollInterval",
+      "type": "text"
+    },
+    {
+      "title": "Network Type",
+      "name": "networkType",
+      "type": "list",
+      "choices": [
+        {
+          "title": "Wifi",
+          "name": "wifi",
+          "questions": [
+            {
+              "title": "Wifi SSID",
+              "name": "networkSsid",
+              "type": "text"
+            },
+            {
+              "title": "Wifi Key",
+              "name": "networkKey",
+              "type": "password"
+            }
+          ]
+        },
+        {
+          "title": "Ethernet",
+          "name": "ethernet"
+        }
+      ]
+    }
+  ],
+  "mapper": [
+    {
+      "template": {
+        "gpu_mem": "{{gpuMem}}"
+      },
+      "domain": [
+        [ "config_txt", "gpu_mem" ]
+      ]
+    },
+    {
+      "template": {
+        "appUpdatePollInterval": "{{appUpdatePollInterval}}"
+      },
+      "domain": [
+        [ "config_json", "appUpdatePollInterval" ]
+      ]
+    },
+    {
+      "property": [ "networkType" ],
+      "domain": [
+        [ "network_config", "service_home_ethernet" ],
+        [ "network_config", "service_home_wifi" ]
+      ],
+      "choice": [
+        {
+          "value": "ethernet",
+          "template": {
+            "service_home_ethernet": {
+              "Type": "ethernet",
+              "Nameservers": "8.8.8.8,8.8.4.4"
+            }
+          }
+        },
+        {
+          "value": "wifi",
+          "template": {
+            "service_home_ethernet": {
+              "Type": "ethernet",
+              "Nameservers": "8.8.8.8,8.8.4.4"
+            },
+            "service_home_wifi": {
+              "Hidden": true,
+              "Type": "wifi",
+              "Name": "{{networkSsid}}",
+              "Passphrase": "{{networkKey}}",
+              "Nameservers": "8.8.8.8,8.8.4.4"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "files": {
+    "config_txt": {
+      "type": "ini",
+      "location": {
+        "path": "config.txt",
+        "partition": 1
+      }
+    },
+    "network_config": {
+      "type": "ini",
+      "location": {
+        "parent": "config_json",
+        "property": [ "files", "network/network.config" ]
+      }
+    },
+    "config_json": {
+      "type": "json",
+      "location": {
+        "path": "config.json",
+        "partition": 5
+      }
+    }
+  }
+}

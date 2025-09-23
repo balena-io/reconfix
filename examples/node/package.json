@@ -1,9 +1,0 @@
-{
-    "name": "reconfix-node-example",
-    "scripts": {
-        "start": "node index.js"
-    },
-    "dependencies": {
-        "reconfix": "file:../../target/npm/pkg"
-    }
-}

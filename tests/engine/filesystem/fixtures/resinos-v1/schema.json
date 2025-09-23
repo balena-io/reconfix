@@ -1,0 +1,23 @@
+{
+  "config_txt": {
+    "type": "ini",
+    "location": {
+      "path": "config.txt",
+      "partition": 1
+    }
+  },
+  "network_config": {
+    "type": "ini",
+    "location": {
+      "parent": "config_json",
+      "property": [ "files", "network/network.config" ]
+    }
+  },
+  "config_json": {
+    "type": "json",
+    "location": {
+      "path": "config.json",
+      "partition": 5
+    }
+  }
+}

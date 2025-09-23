@@ -1,0 +1,15 @@
+{
+  "network_config": {
+    "service_home_ethernet": {
+      "type": "ethernet",
+      "nameservers": "8.8.8.8,8.8.4.4"
+    },
+    "service_home_wifi": {
+      "hidden": true,
+      "type": "wifi",
+      "name": "resin",
+      "passphrase": "secret",
+      "nameservers": "8.8.8.8,8.8.4.4"
+    }
+  }
+}

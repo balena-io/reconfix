@@ -1,0 +1,22 @@
+{
+  "applicationName": "AppTest",
+  "applicationId": "999999",
+  "deviceType": "raspberry-pi",
+  "userId": "999",
+  "username": "jviotti",
+  "files": {
+    "network/settings": "[global]\nOfflineMode=false\nTimeUpdates=manual\n\n[WiFi]\nEnable=true\nTethering=false\n\n[Wired]\nEnable=true\nTethering=false\n\n[Bluetooth]\nEnable=true\nTethering=false",
+    "network/network.config": "[service_home_ethernet]\nType = ethernet\nNameservers = 8.8.8.8,8.8.4.4"
+  },
+  "appUpdatePollInterval": "60000",
+  "listenPort": "48484",
+  "vpnPort": "443",
+  "apiEndpoint": "https://api.resin.io",
+  "vpnEndpoint": "vpn.resin.io",
+  "registryEndpoint": "registry.resin.io",
+  "deltaEndpoint": "https://delta.resin.io",
+  "pubnubSubscribeKey": "sub-c-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "pubnubPublishKey": "pub-c-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "mixpanelToken": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "apiKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}

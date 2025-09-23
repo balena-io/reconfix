@@ -1,0 +1,10 @@
+{
+  "system_connections": {
+    "fileset": true,
+    "type": "ini",
+    "location": {
+      "path": "system-connections",
+      "partition": 5
+    }
+  }
+}

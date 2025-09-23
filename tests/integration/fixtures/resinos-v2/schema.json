@@ -1,0 +1,55 @@
+{
+  "questions": [
+    {
+      "title": "Cellular connection name",
+      "name": "cellularConnectionName",
+      "type": "text"
+    },
+    {
+      "title": "Ethernet connection name",
+      "name": "ethernetConnectionName",
+      "type": "text"
+    },
+    {
+      "title": "Wifi connection name",
+      "name": "wifiConnectionName",
+      "type": "text"
+    }
+  ],
+  "mapper": [
+    {
+      "template": {
+        "name": "{{cellularConnectionName}}"
+      },
+      "domain": [
+        [ "system_connections", "cellular", "connection", "name" ]
+      ]
+    },
+    {
+      "template": {
+        "name": "{{ethernetConnectionName}}"
+      },
+      "domain": [
+        [ "system_connections", "ethernet", "connection", "name" ]
+      ]
+    },
+    {
+      "template": {
+        "name": "{{wifiConnectionName}}"
+      },
+      "domain": [
+        [ "system_connections", "wifi", "connection", "name" ]
+      ]
+    }
+  ],
+  "files": {
+    "system_connections": {
+      "fileset": true,
+      "type": "ini",
+      "location": {
+        "path": "system-connections",
+        "partition": 5
+      }
+    }
+  }
+}

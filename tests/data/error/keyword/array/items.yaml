@@ -1,9 +1,0 @@
-schema:
-  version: 1
-  type: array
-  items:
-    type: integer
-tests:
-  - description: Error keyword must equal to type
-    data: [foo]
-    keyword: type

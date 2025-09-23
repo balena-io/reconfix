@@ -1,4 +1,15 @@
 - commits:
+    - subject: Change rindle to a devDependency
+      hash: c503420ce5492daae6d95a99db36739c33dc54f8
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+  version: 1.0.1
+  title: ""
+  date: 2025-09-23T13:59:36.930Z
+- commits:
     - subject: Start using flowzone
       hash: b3cdd82139d53e9579d90f68be285c08b73e8786
       body: ""

@@ -1,0 +1,1048 @@
+- commits:
+    - subject: Start using flowzone
+      hash: b3cdd82139d53e9579d90f68be285c08b73e8786
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+    - subject: Drop travis, appveyor & circleci ymls
+      hash: 659a80783aeaabbbab70f73bfc3b534a7f18effd
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+    - subject: Stop using Bluebird in favor of native Promises
+      hash: 384edcf2a3cc23389ba86faff858bc70d0e64043
+      body: ""
+      footer:
+        Change-type: major
+        change-type: major
+      author: Thodoris Greasidis
+    - subject: Update balena-image-fs from 7.0.6 to 7.5.3
+      hash: 14401b54eacc31f3fc5ece37c7bf8b8cbebf5d0c
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+    - subject: Drop support for nodejs < 20
+      hash: 7dbcefec4540c2d627a12532f2518eadc3cc922a
+      body: ""
+      footer:
+        Change-type: major
+        change-type: major
+      author: Thodoris Greasidis
+    - subject: Update rindle from 1.3.0 to 2.0.0
+      hash: d6dea4003c3d1f2e48004314d9bc2ec10b186207
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+    - subject: Block the generation of package-lock.json
+      hash: 185049bade22b63435b025f1c4e5f98e58bef2ed
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Thodoris Greasidis
+    - subject: Add * from reconfix-v0.1.0-fork
+      hash: 46760acff4d165f5238bfac5e464256ef1944476
+      body: ""
+      footer:
+        Change-type: major
+        change-type: major
+        Signed-off-by: Marios Balamatsias <mbalamatsias@gmail.com>
+        signed-off-by: Marios Balamatsias <mbalamatsias@gmail.com>
+      author: Marios Balamatsias
+    - subject: Add validator
+      hash: 6683ccae57beda2517d49519a65afdb5c42d8cf6
+      body: ""
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+    - subject: Fix project name
+      hash: 057cbd68a40c6f86a1c39c6e0940ad733ef50a41
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+    - subject: Bump to 0.2.0
+      hash: 35cfaf2c4b179a97e7e92426ea5d488d4d4e6848
+      body: |
+        I tried to update version(ist) manually by deleting changelog entries,
+        etc. but I kind of messed it. So, I'm bumping to 0.2 to skip all the
+        0.0.* and 0.1.* mess I made.
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+    - subject: Reset changelog
+      hash: 2ce1b65003b2e9706e64718c99aac623366aae64
+      body: >
+        Reconfix from scratch, no one is using the previous (removed) version,
+        we can reset versioning.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+    - subject: New skeleton
+      hash: 38a767004b178ee2c5c1c131abd8f4be2f87fab1
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Vojta <robert@balena.io>
+        signed-off-by: Robert Vojta <robert@balena.io>
+      author: Robert Vojta
+    - subject: "chore: Reformat"
+      hash: 21f8cf910cbd5219b2fe031df967fc3ca51cbbf4
+      body: |
+        Reformat code via latest rustfmt-preview.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Vojta <robert@resin.io>
+        signed-off-by: Robert Vojta <robert@resin.io>
+      author: Robert Vojta
+    - subject: "chore: Test Jack’s Resin CI"
+      hash: b3eb9ec732f5ccee51798e019b6d90c21018780d
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Zrzka
+    - subject: "reconfix: Replace bin/reconfix-cli with examples/resin-cli"
+      hash: b3e94e0e42eb6b1abeafb7052b8b78df098b4b3e
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "reconfix: Rust 2018 & use_extern_macros"
+      hash: a05b6f45b18afe32ce4529a5667151a8698d0045
+      body: >
+        #[macro_use] replaced with proper macro import via use log::debug for
+        example. “Imports” reordered - modules, standard library, external
+        crates, current crate.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Run cargo audit on CI"
+      hash: f4c1060e22bd6ef78c505e7db5e4e0f7b638abaf
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "schema: Move test inputs from json to source code"
+      hash: 586b81b33aff092b7d6f4eb7d19ef24d9c940f26
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Ignore private notes.md file"
+      hash: 9f898024315e50d56185d32114c44d9d23aeb274
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resion.io>
+        signed-off-by: Zrzka <robert@resion.io>
+      author: Zrzka
+    - subject: "reconfix: Fix rust_2018_idioms warnings"
+      hash: c6b86c1be91c31b2dc1d3071c3e0c7106999e41a
+      body: >
+        Part of the ongoing cleanup and Rust 2018 edition transition. Down to 0
+        warnings.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "doc: Add link to The Rust Edition Guide"
+      hash: ca33d2e6688ff1aa46d5cf03776ce18db16f806a
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "doc: Fix links"
+      hash: a6f3d18d16cb987ae1c22351d30b843b298078b4
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Reenable MD024 and set line length to 100"
+      hash: 061a8023d37cbc416dba63685c539c656c30e32e
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Show vertical ruler (100 chars)"
+      hash: cd83308cdd059182162d4db49bb355865b3b9c78
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "doc: Merge into CONTRIBUTING.md"
+      hash: 0e9730599d42debef3ed2a111f4c90c3606f4bcc
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Run tests without —verbose"
+      hash: b96d0ea07a16e047ff187048975152548d2b0d44
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "reconfix: Make clippy happy"
+      hash: db4ea156e6cfcade44084983368cfccb4c6d502e
+      body: >
+        Part of the ongoing refactoring. Some changes are not perfect, but I’d
+        like to silent clippy first and then change the code to be more Rust
+        idiomatic.
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Format"
+      hash: 6d91167117deaefdd131686d7798f9625c435cd0
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "reconfix: Switch to Rust 2018 edition"
+      hash: f6def0e903840f0d22edad105b7a632447a1291a
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "doc: Fix link [ci skip]"
+      hash: 1141a9d68f8094421d9a35f519af6f413c039530
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "doc: Fix typos [ci skip]"
+      hash: 5e24a90ceb7ec47560268c4b61712f44a461b676
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "doc: Add style, linters, … info [ci skip]"
+      hash: d8712b2f714485a0826d8abed81e8ca067ebd20a
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Markdown linter configuration"
+      hash: 6d41a3cb54a25055b756c4ff86754375187537ab
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "doc: Make linter happy, Rust info [ci skip]"
+      hash: 31a3232b66bce92abc9b73a0f57a6c8a5c99c00a
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "reconfix: Remove dead code, fix warnings & errors"
+      hash: dc5a1b3a8cb89ef23fa686480dae5ed1a3c5d128
+      body: |
+        Dead code remove, fix compiler warnings & errors.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Reformat"
+      hash: dfb0d6d2d3ef791ef7c2c268fb40da2effb882f2
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Remove commented code"
+      hash: 2194dd7c9abcbe422b1a150df9cecb8aedf01bbd
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+    - subject: "chore: Cleanup"
+      hash: f3f938a88a5fb3fe3d267ccde7ae06e45be7ec54
+      body: >
+        Switch to Rust nightly, remove bindings, run cargo fmt, move
+        reconfix-cli to the main package, VS Code settings.
+
+
+        No change in functionality.
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Zrzka <robert@resin.io>
+        signed-off-by: Zrzka <robert@resin.io>
+      author: Zrzka
+  version: 1.0.0
+  title: ""
+  date: 2025-09-23T13:19:22.154Z
+- version: 0.3.0
+  date: 2019-02-04T14:34:57Z
+  commits:
+    - hash: 96975b76b50efd0c88709c9c84043697dc7011c3
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add validator support
+      body: ""
+    - hash: 96a67278e0d43b8794d3d68d14f735e333725a67
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Replace regex with std::net::IpAddr parser
+      body: ""
+    - hash: ca0c69e1136eb654539afe8225ca6a7f7596e8fc
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add IPv4/v6 tests
+      body: ""
+    - hash: 6b206ebc3b488b79056c36ff0d18a120b5f2473e
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Replace blob hash with tag
+      body: ""
+    - hash: f9edf2b5860d72a894c69d2023b9346996329136
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Deserialize Regex directly
+      body: ""
+    - hash: d1e307a1516051403ddb78f3cede87c7419cbc0d
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Optimize imports
+      body: ""
+    - hash: f24bbd9964e98ec4ba63534bfc7c0533e16a1122
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Limit dynamic object keys
+      body: ""
+    - hash: fa3a99250a629ee8afd6fa971b1aeb62bf4e7b82
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add stringlist validation
+      body: ""
+    - hash: b6925909451a0575ac9dbf4318993ca994478bcb
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Move types tests to types folder
+      body: ""
+    - hash: 0869e6f6521d770fa311fa3112b397cb7e02cc8d
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Report schema & data path with error
+      body: ""
+    - hash: 988565529b8f47a9c339ade83150abdcd79e1cf9
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add additionalProperties keyword
+      body: ""
+    - hash: 9d5e3184541512cc46984ff22cd1023ced3bf438
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Fix clippy warning
+      body: ""
+    - hash: d7a9e2775cfa2c48ae0a34424c832c1eea11cf34
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Simplify scope methods
+      body: ""
+    - hash: 4b714b401e156c8f96b2e5815d87ecf1c7c60535
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: "Add type: object validation (WIP)"
+      body: ""
+    - hash: 9d5829126b635cd8fffe209b45c2a8ca20bf4cd1
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Validator tests refactoring
+      body: Allows to write more granular tests.
+    - hash: d490d4bd44c28ada57550c69db962e9552e4b8f7
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add chrony-address & dnsmasq-address tests
+      body: ""
+    - hash: cd75af26f0d9673ffab5e3914411c7673ccc124b
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add notes about chrony / dnsmasq address
+      body: ""
+    - hash: 51a9d3e1cf8a45a413c62500848d4b965676e1ef
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Remove Option for unique_items
+      body: Value is always present and it defaults to false.
+    - hash: e748e10d28e62c9483c4f4bcd431cb3156ab52af
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add uniqueItems support (WIP)
+      body: It just validates true / false, but no paths (yet).
+    - hash: eb3163a76840613c2cac0d9489c940c23e6ef38f
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add uniqueItems paths support
+      body: ""
+    - hash: 8c5a930d12c62f3efee3b06895ebe7c89aac9ed0
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: "Add type: file validator"
+      body: ""
+    - hash: 3f5b314a1887f1df5884b43bd455617b7ca30e14
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Sync build-wasm with temen/cdsl
+      body: Produce an NPM package with files with different file names (without
+        extension). To avoid ambiguity between X.js & X.wasm.
+    - hash: 0a6485f601ca17335485d83fe04a6b846e995bcf
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add error keyword tests
+      body: ""
+    - hash: 67edac9353e00ef00153c35a7a278f89a5391cd3
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Rename tests folders (plural -> singular)
+      body: ""
+    - hash: ae5921bae1f0cd0cc43ca60bff864c3aff2a1b8b
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Rename tests folders (plural -> singular)
+      body: ""
+    - hash: 5beae2931f414042c3edd3b7a23916b07ea3990f
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Fix folder name in build script
+      body: ""
+    - hash: 48ce2be052bea9142a55319b3e934f00c07eebe5
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Error data-path tests
+      body: ""
+    - hash: 9e9a1173c746ef1966a7b83b50ca0d82d87186c8
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add error schema-path tests
+      body: ""
+    - hash: 5d40edb33d6ae77660e0f0e7528aedb565145861
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Fix error schema path
+      body: ""
+    - hash: 677ad1de067713b6f33c29112914db6fcd5af430
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Remove -preview suffix for clippy / rustfmt
+      body: ""
+- version: 0.2.1
+  date: 2018-12-03T12:59:24Z
+  commits:
+    - hash: 057cbd68a40c6f86a1c39c6e0940ad733ef50a41
+      author: Robert Vojta
+      footers:
+        change-type: patch
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Fix project name
+      body: ""
+- version: 0.2.0
+  date: 2018-12-03T11:59:17Z
+  commits:
+    - hash: 35cfaf2c4b179a97e7e92426ea5d488d4d4e6848
+      author: Robert Vojta
+      footers:
+        change-type: minor
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Bump to 0.2.0
+      body: |-
+        I tried to update version(ist) manually by deleting changelog entries,
+        etc. but I kind of messed it. So, I'm bumping to 0.2 to skip all the
+        0.0.* and 0.1.* mess I made.
+    - hash: d01c2101b70f0d7e1cd8e8a535a48e4e6c6a7111
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Replace wasm32 triplet with arch
+      body: ""
+    - hash: bf9bda0d5b5be6e6d13aa73e47fb7e9bb9ff5c67
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add balena-cdsl dependency
+      body: ""
+    - hash: 7ceca31c062062b5979144df0cb834e034896fd4
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add Build run configuration
+      body: ""
+    - hash: 0cebfc66f6e3fed2819bfffad80bdfd07dfc8deb
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Fix deps
+      body: ""
+    - hash: d3edd0d22deb4ceff241e5d6a125dfc3b68208f8
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add notes
+      body: ""
+    - hash: b48c2dd53c0870c08af9f54a30885224023f5cc5
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add Mapping (de)serialization
+      body: ""
+    - hash: 743560e77c476def75c732c6701264c974c79ad6
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add mapping.map support
+      body: ""
+    - hash: 2ce1b65003b2e9706e64718c99aac623366aae64
+      author: Robert Vojta
+      footers:
+        change-type: patch
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Reset changelog
+      body: Reconfix from scratch, no one is using the previous (removed) version, we
+        can reset versioning.
+    - hash: 3ab2eeb926ade02a37bf4ae87b7cbec8066ae6f9
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add todo
+      body: ""
+    - hash: 4013312574a93e3b68b8d2c78ac1efe5b4ee4f31
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Set publish to false
+      body: ""
+    - hash: 38a767004b178ee2c5c1c131abd8f4be2f87fab1
+      author: Robert Vojta
+      footers:
+        change-type: patch
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: New skeleton
+      body: ""
+    - hash: 43acf54f823b6b6333407a2ebabd80b3942a512d
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Add empty changelog
+      body: ""
+    - hash: e4c0366de93cff079971c6b2ba0b4f9c58185c51
+      author: Robert Vojta
+      footers:
+        signed-off-by: Robert Vojta <robert@balena.io>
+      subject: Fix initial changelog
+      body: ""
+    - hash: 21f8cf910cbd5219b2fe031df967fc3ca51cbbf4
+      author: Robert Vojta
+      footers:
+        change-type: patch
+        signed-off-by: Robert Vojta <robert@resin.io>
+      subject: "chore: Reformat"
+      body: Reformat code via latest rustfmt-preview.
+    - hash: f98a49e084f8c39ecefd838c42ef472ac6e29915
+      author: Aaron Brodersen
+      subject: Work in progress fixes for Reconfix CLI.
+      body: ""
+    - hash: f4ee05429c6a47acf128e77b31a584ecc34fab2d
+      author: Aaron Brodersen
+      subject: Fix failing tests.
+      body: ""
+    - hash: 5300403621fbe7f99a551d13c771b0ec722c44c0
+      author: Aaron Brodersen
+      subject: Implement const keyword.
+      body: ""
+    - hash: 83ad29e408857c66ad71b6a728863e2fa66ab61f
+      author: Aaron Brodersen
+      subject: Add a stringify transform.
+      body: ""
+    - hash: c11ad119fa01c6a8302f23d7bb686681028b61d0
+      author: Aaron Brodersen
+      subject: Add stringify function to map capabilities.
+      body: ""
+    - hash: 7839ed07a18822eff0599b855d7a256f50b33e1d
+      author: Aaron Brodersen
+      subject: Bump version.
+      body: ""
+    - hash: 6b450d11a52bdfce742f9dae305003a16c544217
+      author: Aaron Brodersen
+      subject: Set export to Reconfix object and increment version.
+      body: ""
+    - hash: c25b013c9787dab27e2f6341ee2c2a2416c36da9
+      author: Aaron Brodersen
+      subject: Remove `-preview` from package name.
+      body: ""
+    - hash: d0dbf69fe24fd12ce5e7cf42c3abcf0819b553f4
+      author: Aaron Brodersen
+      subject: Allow more characters in INI key strings.
+      body: ""
+    - hash: 5f81577f57340830bb33e2d51a6e176613e39614
+      author: Aaron Brodersen
+      subject: Enable degree heuristic for template matching.
+      body: ""
+    - hash: 2cebe2ef0f06fc2a966a403b86f3d3abd8b96040
+      author: Aaron Brodersen
+      subject: Bump version.
+      body: ""
+    - hash: 78753b888d1edf32cd83269980b29af845c73bc1
+      author: Aaron Brodersen
+      subject: Add more comments to clarify purpose of changes.
+      body: ""
+    - hash: d23f35f5638fba0b5d787e96f60f8571c7fdbf9f
+      author: Aaron Brodersen
+      subject: Use buffers rather than streams in the Node.js API.
+      body: ""
+    - hash: 7b3a61e9cba66646126cc35c06a6c8c4bae11fd5
+      author: Aaron Brodersen
+      subject: Fix optional properties on wet -> dry transition.
+      body: ""
+    - hash: 1e32c6083cd6d2be2d5f9aef16c9a2e04ee34623
+      author: Aaron Brodersen
+      subject: Change package name and license.
+      body: |-
+        Change the package name to reconfix-preview until we are completely
+        ready to supplant the existing package. Also fix incorrect license
+        setting in package.json.
+    - hash: 55a8e9fe3fe8758cb5d09aabbef89d692a84440e
+      author: Aaron Brodersen
+      subject: Add new JSON pointer type.
+      body: ""
+    - hash: 3f1ae21fe863d115f5ebb32a102b150fc29de6a5
+      author: Aaron Brodersen
+      subject: Implement simple conditional verification.
+      body: ""
+    - hash: b843ea68a39801db1ef8849898f9f54c76ca809b
+      author: Aaron Brodersen
+      subject: Run rustfmt.
+      body: ""
+    - hash: 1ebfe16c4b79a85804170b40b07998b779429473
+      author: Aaron Brodersen
+      subject: Add a plugin model to reconfix.
+      body: Add support for pluggable I/O backends to support multiple use cases.
+    - hash: b2f57fe3557352975ba1af36fae2ce65184f3735
+      author: Aaron Brodersen
+      subject: Add code path for writing values to an I/O backend.
+      body: ""
+    - hash: fa681f70db27ce8346f0149465a661916929cf34
+      author: Aaron Brodersen
+      subject: Work on partition identification and mapping.
+      body: ""
+    - hash: f22122236435cb3805fa9e5a3705b7aa398aab7b
+      author: Aaron Brodersen
+      subject: Switch to integer based partitions.
+      body: ""
+    - hash: 8094658de5b0df0eb9a57c34be4779f8d15b639b
+      author: Aaron Brodersen
+      subject: First attempt at working around Neon issues.
+      body: ""
+    - hash: 0272729eacc168af7ccd5fedca455551de3c59af
+      author: Aaron Brodersen
+      subject: Finalize Reconfix interface.
+      body: ""
+    - hash: 32e907a9ef0f387e3ab330bb1990386bbb03074e
+      author: Aaron Brodersen
+      subject: Improve error handling for Reconfix.
+      body: ""
+    - hash: 4ded26df48c2905033f0cc4af2add22077b7f177
+      author: Aaron Brodersen
+      subject: Integrate Node.js bindings into reconfix repository.
+      body: ""
+    - hash: 4f8c8ac08dfbdf048d50dd67563fcbe6dc3bdcbd
+      author: Aaron Brodersen
+      subject: Make npm package functional.
+      body: ""
+    - hash: 78848e080735ec51326158c55f4ed6879e892cda
+      author: Aaron Brodersen
+      subject: Use empty values for missing keys in schema.
+      body: ""
+    - hash: f380f2f8658a73945018a0f1fabcd300b0ecae55
+      author: Aaron Brodersen
+      subject: Remove unused code.
+      body: ""
+    - hash: 65b5cb70d2c73413652eafb2003f0188dd000f3e
+      author: Aaron Brodersen
+      subject: Promisify the Node.js bindings. Assume stream objects are wrapped in a
+        disposer.
+      body: ""
+    - hash: ce64a2d0598227747c693dbb83b79bae138d5338
+      author: Aaron Brodersen
+      subject: Add optional field for property definitions.
+      body: ""
+    - hash: 78f62727536ddc2ad17591fda7891f5bd7c04a9c
+      author: Aaron Brodersen
+      subject: Fix inner function binding.
+      body: ""
+    - hash: c526adb9e3e88c9cd17c7cf14a6f1cefb49df090
+      author: Aaron Brodersen
+      subject: Fix test compile errors.
+      body: ""
+    - hash: 817f0dbb747bef8b1c33f6af4dea1a12511a2d56
+      author: Aaron Brodersen
+      subject: Run rustfmt.
+      body: ""
+    - hash: 9789a3f444aefd9dca3a596daeac160ae47a29e4
+      author: Aaron Brodersen
+      subject: Address PR feedback.
+      body: ""
+    - hash: 9191f0141291d18a5f1c6d2f02d539be8d9d8f13
+      author: Aaron Brodersen
+      subject: Upgrade to nightly rustfmt.
+      body: ""
+    - hash: 3b880916f5c56d1da95585f03ffa0ab7606f3c2d
+      author: Aaron Brodersen
+      subject: Overwrite stable rustfmt.
+      body: ""
+    - hash: 8c8282fedef30a27d7d807caa5d459ae00343ffb
+      author: Aaron Brodersen
+      subject: Enable pretty test files.
+      body: |-
+        Test files can now contain `# comments` and multi-line JSON sections.
+        Comments cannot be mixed in with JSON structures. Every file must
+        contain a comment on the first line. This currently does not have a
+        purpose but may be used later on.
+    - hash: 5ad69e95ccbedcd7616074ee4af4f738f8ad490b
+      author: Aaron Brodersen
+      subject: Output pretty JSON for configuration files.
+      body: ""
+    - hash: b5600716772348a05ea3dd40ef64d10a06585c0e
+      author: Aaron Brodersen
+      subject: Parameterize pretty JSON output.
+      body: ""
+    - hash: 280c8fde677fc2cd9264b2547dcaaca2fcba1528
+      author: Aaron Brodersen
+      subject: Run rustfmt.
+      body: ""
+    - hash: f4b99919c7d77d88754553ee6375ee362f7e94f2
+      author: Aaron Brodersen
+      subject: Refit test cases and check wildcards.
+      body: |-
+        Modified the existing test cases to work with the current code
+        structure. Added macros to generate the appropriate test cases. Added
+        code to detect and process wildcard values.
+    - hash: ac8d2fb933e67eb25eed3cec119c0b2ba7c353df
+      author: Aaron Brodersen
+      subject: I always forget about rustfmt!
+      body: ""
+    - hash: c1729023f75e3232757919b68a4a8eee97cec333
+      author: Aaron Brodersen
+      subject: Enable CircleCI builds.
+      body: ""
+    - hash: 09c834072aff73de3b97bf818e37d49069c5a478
+      author: Aaron Brodersen
+      subject: Don't show user prompts.
+      body: ""
+    - hash: dfe5441c355f72f9a70b99a956ddc9958447b194
+      author: Aaron Brodersen
+      subject: Enable tests on CircleCI.
+      body: ""
+    - hash: 441efcaa2f42f8945b913b1d186c052fee8628d0
+      author: Corey Richardson
+      subject: "schema: first pass at parsing from JSON"
+      body: ""
+    - hash: 39219896f2d184bfbd4bd74e9545680a123b31ba
+      author: Aaron Brodersen
+      subject: Initial implementation of dry->wet transformation.
+      body: ""
+    - hash: 9e24a06ab817a1b2a1e9b78de0bcd6a38e0274da
+      author: Aaron Brodersen
+      subject: Add wet->dry transform and some documentation.
+      body: ""
+    - hash: 9093653b6a91c17179f40fcf3b45f172ee6fef10
+      author: Aaron Brodersen
+      subject: Fix up formatting issues.
+      body: ""
+    - hash: 61e25a77796ace8b4e48f7ac5a84391161df0145
+      author: Aaron Brodersen
+      subject: More fighting with rustfmt.
+      body: ""
+    - hash: 4ef0d75e06eccb9f955298309e28b82365933586
+      author: Juan Cruz Viotti
+      footers:
+        signed-off-by: Juan Cruz Viotti <jv@jviotti.com>
+      subject: Add a document describing the initial transformation algorithms
+      body: ""
+    - hash: 441efcaa2f42f8945b913b1d186c052fee8628d0
+      author: Corey Richardson
+      subject: "schema: first pass at parsing from JSON"
+      body: ""
+    - hash: 0d6b1cfe7f3c82cdd20b66f9e0f436d1dc173d2e
+      author: Aaron Brodersen
+      subject: Add nested section handling and error_chain.
+      body: ""
+    - hash: 7673b186a36befa512792b901d60589156ec9d27
+      author: Aaron Brodersen
+      subject: Add some comments and a bit of cleanup.
+      body: ""
+    - hash: e1eb7fcf41f3e4a9ae91a351c1c9db3a8c62a5ec
+      author: Aaron Brodersen
+      subject: Disable Travis caching
+      body: ""
+    - hash: b442119518d9b64b82558a90b70e19cad1fd9d0a
+      author: Aaron Brodersen
+      subject: Remove unecessary caret requirements
+      body: ""
+    - hash: 8df2112be8755cfe5e4b89620b6541fdbd1027dc
+      author: Aaron Brodersen
+      subject: Address clippy warnings
+      body: ""
+    - hash: 62dd890b31fe347b8bc346527f21d74940ce5ce2
+      author: Aaron Brodersen
+      subject: Trim section names
+      body: ""
+    - hash: 9130a3f43a491d25e73fc1bbf710c61616285991
+      author: Aaron Brodersen
+      subject: Fix formatting errors
+      body: |-
+        A new version of rustfmt came out, and it wants to make even more
+        changes. We shall oblige this implaccable sentinel.
+    - hash: 041b06254fd2d383660b9e85ca6db6308b2510dd
+      author: Corey Richardson
+      subject: "docs: fix typos in schema"
+      body: ""
+    - hash: 3dc9e50e57cbb456b9fb802f7923884246546648
+      author: Corey Richardson
+      subject: First pass at schema types
+      body: ""
+    - hash: 194d7cbdf627c7b4b2bc6514d9cd8b74559c8ed3
+      author: Corey Richardson
+      subject: rustfmt
+      body: ""
+    - hash: f1d9352f305bbdee1597d3fef2fa87649a1add4e
+      author: Aaron Brodersen
+      subject: Groundwork for the INI Reconfix backend
+      body: |-
+        Implement a basic INI parser using the Nom parser combinator library.
+        This logic will be used to convert INI files to the Reconfix internal
+        representation. Tests are included to ensure correct behavior.
+    - hash: 545384affaacfda19ad404f96db0d52ffa9c986d
+      author: Aaron Brodersen
+      subject: Implement deserializer logic for INI Adaptor
+      body: |-
+        Wire up the parser combinators into logic that converts the parsed data
+        into the Config AST, performing de-duplication along the way.
+    - hash: 10c08c6d49611c9a097f48142d2c34e4514fb509
+      author: Aaron Brodersen
+      subject: Implement serializer logic for INI adaptor
+      body: |-
+        Write necessary transform and byte emitting logic. Eventually, we need
+        support for different formatting options, line endings, and text
+        encodings.
+    - hash: af6bef98384fd3abcdd1d4d9bea14f5e32d078c4
+      author: Aaron Brodersen
+      subject: Move tests into seperate module. Move to end of file.
+      body: ""
+    - hash: aea0e7178d708fbacd22c2791417bb8df5669d45
+      author: Aaron Brodersen
+      subject: Allow for key-value pairs without a section header.
+      body: ""
+    - hash: b27108f551fe43a1a5858fd7c8d6753b2b0e2a21
+      author: Aaron Brodersen
+      subject: Use a hueristic to infer property type.
+      body: ""
+    - hash: 305288413bf3c0bfe9d1cb92776ee151ff94b881
+      author: Aaron Brodersen
+      subject: Enable deserializing sectionless key-value pairs from INI
+      body: ""
+    - hash: b1814b16d1444f226772d78280b0636cd8ec06f1
+      author: Aaron Brodersen
+      subject: Change some type  names.
+      body: ""
+    - hash: 9b266af9cf5d65d950febd0dd97c98df972b7268
+      author: Aaron Brodersen
+      subject: Switch to BTreeMap for all hash maps.
+      body: ""
+    - hash: f038bb1b5283248db93c6225c4886d2ad2e9ee61
+      author: Aaron Brodersen
+      subject: Enable serialization of sectionless data.
+      body: ""
+    - hash: 889338154b85d34a325e3c66c86f537c9fa9cb9f
+      author: Aaron Brodersen
+      subject: Switch to serde_json::Value
+      body: ""
+    - hash: 7afc00ad36ffb8bd0f3211b61ef205adf0abee73
+      author: Aaron Brodersen
+      subject: Clean up warnings and add new test cases.
+      body: ""
+    - hash: 6be545e05a00c70b0aec2af6096315aa638db247
+      author: Aaron Brodersen
+      subject: Add rustfmt config and fix CI issues.
+      body: ""
+- version: 0.1.0
+  date: 2018-05-31T09:07:57Z
+  commits:
+    - hash: 48a5b2b2d411e5b9a8e6f9844321cddadccc6209
+      author: Tim Perry
+      footers:
+        change-type: minor
+      subject: Update resin-image-fs to use a Node 10 compatible ext2fs
+      body: This breaks compatibility with older node versions
+    - hash: f90dd7404c1f0e94d282de508ea79fc906da9d57
+      author: Tim Perry
+      footers:
+        change-type: patch
+      subject: Run JS circle build on modern node only, and autopublish it
+      body: ""
+    - hash: 99105e2493721cf5d28f95344a03ae5cddd416a9
+      author: Alexis Svinartchouk
+      footers:
+        change-type: patch
+      subject: Use UV_THREADPOOL_SIZE=16 in travis, circleci and appveyor
+      body: ""
+    - hash: 5d14b5ca0891e2d4d9cf602d3f333aba04e7b89c
+      author: Tim Perry
+      subject: Test in Node 10
+      body: ""
+- version: 0.0.5
+  date: 2017-12-14T14:17:52Z
+  commits:
+    - hash: be9bcfa37497a13f147b931db0b872a687ddc7e2
+      author: Tim Perry
+      footers:
+        change-type: patch
+      subject: Upgrade resin-image-fs to 4.1.1. Note that this changes the partition
+        defn format.
+      body: |-
+        Changes to images here are because resin-image-fs lists .* files in
+        directories from 3.0.0 onwards, and the images contained ._ethernet and
+        ._wifi files with assorted bits of OSX binary metadata that broke the
+        tests.
+        Definitely a major change normally, but leaving as patch since we're
+        thoroughly in pre-1.0.0 territory.
+    - hash: 14df17c665974e52b2995299081495515cd23735
+      author: Tim Perry
+      subject: Drop Node 4 testing, add Node 8
+      body: ""
+- version: 0.0.4
+  date: 2017-11-22T14:47:46Z
+  commits:
+    - hash: edf38b27a5b51af3b85bd21cfbbfe97a34882c4e
+      author: Tim Perry
+      footers:
+        change-type: patch
+      subject: Fix issues with paths when using windows with linux images
+      body: ""
+    - hash: 8a4905736cedb1ad2fae36db4d0e01239d93eabd
+      author: Tim Perry
+      subject: Fix windows path.join bugs in the test suite too
+      body: ""
+- version: 0.0.1
+  date: 2016-10-05T01:01:07Z
+  commits:
+    - hash: 1807381191819b09869cb406bcead8bea9b6445d
+      author: Juan Cruz Viotti
+      footers:
+        signed-off-by: Juan Cruz Viotti <jviotti@openmailbox.org>
+      subject: Make Reconfix test suite pass on Windows
+      body: ""

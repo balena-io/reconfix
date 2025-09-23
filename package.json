@@ -1,6 +1,6 @@
 {
   "name": "reconfix",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "(Re)Configuration toolkit",
   "main": "lib/index.js",
   "homepage": "https://github.com/balena-io/reconfix",
@@ -40,5 +40,8 @@
     "inquirer": "^1.1.3",
     "lodash": "^4.16.2",
     "rindle": "^2.0.0"
+  },
+  "versionist": {
+    "publishedAt": "2025-09-23T13:19:22.377Z"
   }
 }

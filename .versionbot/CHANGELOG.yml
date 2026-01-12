@@ -1,4 +1,15 @@
 - commits:
+    - subject: Update `inquirer` to v12
+      hash: 1a67d52e92eb5fac3a0766e7b15d15b4580040fe
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Matthew Yarmolinsky
+  version: 1.0.2
+  title: ""
+  date: 2026-01-12T17:22:22.990Z
+- commits:
     - subject: Change rindle to a devDependency
       hash: c503420ce5492daae6d95a99db36739c33dc54f8
       body: ""

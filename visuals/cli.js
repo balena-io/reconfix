@@ -264,7 +264,7 @@ exports.flatten = (questions) => {
  */
 exports.run = (questions, defaults) => {
   defaults = defaults || {};
-  return inquirer.prompt(_.map(exports.flatten(questions), (question) => {
+  return inquirer.default.prompt(_.map(exports.flatten(questions), (question) => {
     question.default = _.get(defaults, question.name) || question.default;
     return exports.transpileQuestion(question);
   }));

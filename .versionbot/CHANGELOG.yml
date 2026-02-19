@@ -1,4 +1,17 @@
 - commits:
+    - subject: "Add id-token: write permission for NPM OIDC publishing"
+      hash: 1bdc566c81d5d6b285848d6707c632e4a94ed917
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Kyle Harding <kyle@balena.io>
+        signed-off-by: Kyle Harding <kyle@balena.io>
+      author: Kyle Harding
+  version: 1.0.3
+  title: ""
+  date: 2026-02-19T01:44:06.479Z
+- commits:
     - subject: Update `inquirer` to v12
       hash: 1a67d52e92eb5fac3a0766e7b15d15b4580040fe
       body: ""
